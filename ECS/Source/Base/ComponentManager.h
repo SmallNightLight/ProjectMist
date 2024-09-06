@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ComponentArray.h"
+#include "ComponentCollection.h"
 
 class ComponentManager
 {
@@ -15,9 +15,8 @@ public:
 		//Add component type to component map
 		_componentTypes.insert({ typeName, _nextComponentType });
 
-		//Create componenetArray pointer and add it to the component array map
-		_componentArrays.insert({ typeName, std::make_shared < SingleComponentArray<T>>() });
-
+		//Create componentArray pointer and add it to the component array map
+		_componentArrays.insert({ typeName, std::make_shared < ComponentCollection<T>>() });
 		_nextComponentType++;
 	}
 
@@ -34,14 +33,26 @@ public:
 	template<typename T>
 	void AddComponent(Entity entity, T component)
 	{
-		GetComponentArray<T>()->InsertData(entity, component);
+        GetComponentCollection<T>()->AddComponent(entity, component);
 	}
 
-	template<typename T>
+    template<typename T>
+    void RemoveComponent(Entity entity)
+    {
+        GetComponentCollection<T>()->RemoveComponent(entity);
+    }
+
+    template<typename T>
 	T& GetComponent(Entity entity)
 	{
-		return GetComponentArray<T>()->GetData(entity);
+		return GetComponentCollection<T>()->GetData(entity);
 	}
+
+    template<typename T>
+    bool HasComponent(Entity entity)
+    {
+        return GetComponentCollection<T>()->HasComponent(entity);
+    }
 
 	void DestroyEntity(Entity entity)
 	{
@@ -52,18 +63,18 @@ public:
 		}
 	}
 
-
 private:
 	std::unordered_map<const char*, ComponentType> _componentTypes{};
-	std::unordered_map<const char*, std::shared_ptr<IComponentArray>> _componentArrays{};
+	std::unordered_map<const char*, std::shared_ptr<IComponentCollection>> _componentArrays{};
 	ComponentType _nextComponentType{};
 
+    //ToDO: redo this and remove the string usage
 	template<typename T>
-	std::shared_ptr<SingleComponentArray<T>> GetComponentArray()
+	std::shared_ptr<ComponentCollection<T>> GetComponentCollection()
 	{
 		const char* typeName = typeid(T).name();
 		assert(_componentTypes.find(typeName) != _componentTypes.end() && "Component not yet registered");
 
-		return std::static_pointer_cast<SingleComponentArray<T>>(_componentArrays[typeName]);
+		return std::static_pointer_cast<ComponentCollection<T>>(_componentArrays[typeName]);
 	}
 };

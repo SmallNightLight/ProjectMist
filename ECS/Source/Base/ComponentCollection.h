@@ -8,27 +8,33 @@
 #include <bitset>
 #include <memory>
 
-class IComponentArray
+class IComponentCollection
 {
 public:
-	virtual ~IComponentArray() = default;
+	virtual ~IComponentCollection() = default;
 	virtual void DestroyEntity(Entity entity) = 0;
 };
 
+//Issues:
+//Components not next to each other in memory, but spread out, based to the entity ID
+//A lot of memory used for storing components
+
 template<typename T>
-class SingleComponentArray : public IComponentArray
+class ComponentCollection : public IComponentCollection
 {
 public:
-	void InsertData(Entity entity, T component) //TODO: assert entity out of range?
+	void AddComponent(Entity entity, T component)
 	{
-		assert(!_usedComponents[entity] && "Component added to same entity more then once. Use MultiArray instead");
+        assert(entity < MAXENTITIES && "Entity out of range");
+		assert(!_usedComponents[entity] && "Component added to same entity more then once. Use MultiComponentArray instead");
 
 		_components[entity] = component;
 		_usedComponents[entity] = true;
 	}
 
-	void RemoveData(Entity entity)
+	void RemoveComponent(Entity entity)
 	{
+        assert(entity < MAXENTITIES && "Entity out of range");
 		assert(_usedComponents[entity] && "Removing a component that does not exist");
 
 		_usedComponents[entity] = false;
@@ -36,17 +42,22 @@ public:
 
 	T& GetData(Entity entity)
 	{
+        assert(entity < MAXENTITIES && "Entity out of range");
 		assert(_usedComponents[entity] && "Trying to get a component that does not exist");
 
 		return _components[entity];
 	}
 
+    bool HasComponent(Entity entity)
+    {
+        return _usedComponents[entity];
+    }
+
 	void DestroyEntity(Entity entity) override
 	{
-		if (_components[entity])
-		{
-			RemoveData(entity);
-		}
+        assert(entity < MAXENTITIES && "Entity out of range");
+
+        _usedComponents[entity] = false;
 	}
 
 private:
@@ -55,9 +66,11 @@ private:
 };
 
 
+//Components should not be able to be added multiple times for an entity. An additive solution on one component is often better
+/*
 template<typename T>
 //A multi component array - allows to store up to 255 components per entity. NOTE: First iterate and meanwhile keep track of the component index, Remove the component after each component iteration. When removing decrease the iterator by 1
-class MultiComponentArray : public IComponentArray
+class MultiComponentArray : public IComponentCollection
 {
 public:
 	MultiComponentArray(byte maxComponentCount)
@@ -66,9 +79,9 @@ public:
 		_components = std::make_unique<T[]>(MAXENTITIES * _maxComponentCount);
 	}
 
-	void AddComponent(Entity entity, T component) //TODO: assert entity out of range?
+	void AddComponent(Entity entity, T component)
 	{
-		assert(_componentCount[entity] < 255 && "Component overflow - can't add more then 255 components");
+		assert(_componentCount[entity] < 255 && "Component overflow - can't add more than 255 components");
 
 		_components[entity * _maxComponentCount + _componentCount[entity]] = component;
 		_componentCount[entity]++;
@@ -113,4 +126,4 @@ private:
 	std::array<byte, MAXENTITIES> _componentCount{};
 
 	byte _maxComponentCount;
-};
+};*/

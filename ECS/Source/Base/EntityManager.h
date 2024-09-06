@@ -40,6 +40,7 @@ public:
 	void SetSignature(Entity entity, Signature signature)
 	{
 		assert(entity < MAXENTITIES && "Entity out of range");
+
 		_signatures[entity] = signature;
 	}
 
@@ -55,3 +56,5 @@ private:
 	std::array<Signature, MAXENTITIES> _signatures{};
 	uint32_t _livingEntityCount{};
 };
+
+//ToDo: Not compatible with MultiComponentArray (signatures)
