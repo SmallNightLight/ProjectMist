@@ -7,7 +7,7 @@
 class ECSManager
 {
 public:
-    void Init()
+    void Setup()
     {
         //Setup all managers
         _entityManager = std::make_unique<EntityManager>();
@@ -77,7 +77,7 @@ public:
     template<typename T>
     std::shared_ptr<T> RegisterSystem()
     {
-        _systemManager->RegisterSystem<T>();
+        return _systemManager->RegisterSystem<T>();
     }
 
     template<typename T>

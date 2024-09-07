@@ -19,6 +19,8 @@ add_executable(ECS Source/main.cpp
         Source/Systems/Renderer.h
         Source/Components/RenderData.h
         Source/Components/Transform.h
+        Source/Components/ComponentHeaders.h
+        Source/Systems/SystemHeader.h
 )
 
 # Link SFML libraries to your executable
