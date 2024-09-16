@@ -5,8 +5,10 @@ project(ECS)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#maybe 2.6??
-find_package(SFML 2.6 COMPONENTS graphics window system REQUIRED)
+#find_package(SFML 2.6 COMPONENTS graphics window system REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
 
 add_executable(ECS Source/main.cpp
         Source/Base/ComponentCollection.h
@@ -21,7 +23,18 @@ add_executable(ECS Source/main.cpp
         Source/Components/Transform.h
         Source/Components/ComponentHeaders.h
         Source/Systems/SystemHeader.h
+        Source/Math/FPM/fixed.hpp
+        Source/Math/FPM/math.hpp
+        Source/Math/FPM/ios.hpp
+        Source/Math/FixedVector2.h
 )
 
-# Link SFML libraries to your executable
-target_link_libraries(ECS sfml-graphics sfml-window sfml-system)
+#target_link_libraries(ECS sfml-graphics sfml-window sfml-system)
+target_link_libraries(ECS
+        PRIVATE
+        glfw
+        OpenGL::GL
+        GLEW::GLEW
+)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")

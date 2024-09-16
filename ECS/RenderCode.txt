@@ -1,0 +1,119 @@
+#include <iostream>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <chrono>
+
+// Vertex shader source code
+const char* vertexShaderSource = R"(
+#version 330 core
+layout(location = 0) in vec3 aPos;
+void main() {
+    gl_Position = vec4(aPos, 1.0);
+}
+)";
+
+// Fragment shader source code
+const char* fragmentShaderSource = R"(
+#version 330 core
+out vec4 FragColor;
+void main() {
+    FragColor = vec4(1.0, 0.0, 0.0, 1.0); // Red color
+}
+)";
+
+// Rectangle vertices
+float vertices[] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.5f,  0.5f, 0.0f,
+        -0.5f,  0.5f, 0.0f
+};
+
+// Indices for the two triangles
+unsigned int indices[] = {
+        0, 1, 2,  // First triangle
+        0, 2, 3   // Second triangle
+};
+
+int main() {
+    glfwInit();
+    GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL Rectangle", NULL, NULL);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval( 0 );
+    glewInit();
+
+    // Compile shaders
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    // Create VBO, VAO, and EBO
+    GLuint VBO, VAO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    // Bind VAO
+    glBindVertexArray(VAO);
+
+    // Bind VBO and buffer data
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    // Bind EBO and buffer data
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // Set vertex attribute pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    int frameCount = 0;
+    auto start = std::chrono::steady_clock::now();
+
+    // Main render loop
+    while (!glfwWindowShouldClose(window))
+    {
+        frameCount++;
+
+        auto now = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed = now - start;
+
+        double dt = 1.0 / frameCount;
+
+        if (elapsed.count() >= 1.0)
+        {
+            std::cout << "FPS: " << frameCount << "   Delta: " << dt << std::endl;
+
+            frameCount = 0;
+            start = now;
+        }
+
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // Draw the rectangle
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // Clean up
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    glfwTerminate();
+    return 0;
+}

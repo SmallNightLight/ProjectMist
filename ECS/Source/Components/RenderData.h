@@ -1,13 +1,12 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
-
 struct RendererData
 {
-    sf::Vector2f Position;
-    sf::Vector2f Size;
-    sf::Color Color;
+    float X, Y;
+    float Width, Height;
+    float Red, Green, Blue;
 
-    RendererData() = default;
-    RendererData(const sf::Vector2f& position, const sf::Vector2f& size, const sf::Color& color) : Position(position), Size(size), Color(color) { }
+    RendererData()  = default;
+    RendererData(float x, float y, float width, float height, float red, float green, float blue)
+            : X(x), Y(y), Width(width), Height(height), Red(red), Blue(blue), Green(green) {}
 };

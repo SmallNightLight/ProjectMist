@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <GLFW/glfw3.h>
 #include <random>
 
 extern ECSManager EcsManager;
@@ -15,25 +16,22 @@ public:
         return signature;
     }
 
-    void Render(sf::RenderWindow& window)
+    void Render()
     {
-        sf::VertexArray vertices(sf::Quads);
         for (const Entity& entity : Entities)
         {
             auto& renderData = EcsManager.GetComponent<RendererData>(entity);
 
-            //Create vertices for the rectangle
-            sf::Vertex v1(renderData.Position, renderData.Color);
-            sf::Vertex v2(sf::Vector2f(renderData.Position.x + renderData.Size.x, renderData.Position.y), renderData.Color);
-            sf::Vertex v3(sf::Vector2f(renderData.Position.x + renderData.Size.x, renderData.Position.y + renderData.Size.y), renderData.Color);
-            sf::Vertex v4(sf::Vector2f(renderData.Position.x, renderData.Position.y + renderData.Size.y), renderData.Color);
+            //Draw red rectangle
+            glColor3f(renderData.Red, renderData.Green, renderData.Blue);
+            glBegin(GL_QUADS);
 
-            vertices.append(v1);
-            vertices.append(v2);
-            vertices.append(v3);
-            vertices.append(v4);
+            glVertex2f(renderData.X, renderData.Y);
+            glVertex2f(renderData.X + renderData.Width, renderData.Y);
+            glVertex2f(renderData.X + renderData.Width, renderData.Y - renderData.Height);
+            glVertex2f(renderData.X, renderData.Y - renderData.Height);
+
+            glEnd();
         }
-
-        window.draw(vertices);
     }
 };

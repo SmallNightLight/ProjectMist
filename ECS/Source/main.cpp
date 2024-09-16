@@ -2,12 +2,13 @@
 #include "Components/ComponentHeaders.h"
 #include "Systems/SystemHeader.h"
 
+
 #include <iostream>
 #include <chrono>
-#include <thread>
-#include <SFML/Graphics.hpp>
+#include <GLFW/glfw3.h>
 
 ECSManager EcsManager;
+
 
 int main()
 {
@@ -32,26 +33,43 @@ int main()
 
         std::uniform_real_distribution<float> randomPosition(0.0f, 700.0f);
         std::uniform_real_distribution<float> randomSize(1.0f, 30.0f);
-        std::uniform_int_distribution<int> randomColor(0, 255);
+        std::uniform_real_distribution<float> randomColor(0.0f, 1.0f);
 
-        EcsManager.AddComponent(entity, RendererData{sf::Vector2f (randomPosition(random), randomPosition(random)), sf::Vector2f (randomSize(random), randomSize(random)), sf::Color(randomColor(random), randomColor(random), randomColor(random))});
+        EcsManager.AddComponent(entity, RendererData{randomPosition(random), randomPosition(random), randomSize(random), randomSize(random), randomColor(random), randomColor(random), randomColor(random)});
     }
 
-    //Initialize SFML
-    sf::RenderWindow window(sf::VideoMode(800, 800), "SFML Test Window");
+    //Initialize glfw3
+    if (!glfwInit())
+    {
+        return -1;
+    }
+
+    GLFWwindow* window = glfwCreateWindow(700, 700, "Rendering Test", nullptr, nullptr);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwMakeContextCurrent(window);
+
+    //Set vsync (0 = disabled)
+    glfwSwapInterval( 0 );
+
+
+    //Set up the viewport
+    glViewport(0, 0, 700, 700);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, 700, 0, 700, -1, 1);
+
+
     int frameCount = 0;
     auto start = std::chrono::steady_clock::now();
 
-    while (window.isOpen())
+
+    while (!glfwWindowShouldClose(window))
     {
-        sf::Event event{};
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
-                window.close();
-        }
-
-        //std::this_thread::sleep_for(std::chrono::milliseconds(16));
-
         frameCount++;
 
         auto now = std::chrono::steady_clock::now();
@@ -67,12 +85,14 @@ int main()
             start = now;
         }
 
-
         //Render
-        window.clear(); // Clear the window with the current clear color
-        rendererComponent->Render(window);
-        window.display();
+        glClear(GL_COLOR_BUFFER_BIT);
+        rendererComponent->Render();
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
+    glfwTerminate();
     return 0;
 }
