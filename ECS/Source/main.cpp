@@ -38,6 +38,7 @@ int main()
         EcsManager.AddComponent(entity, RendererData{randomPosition(random), randomPosition(random), randomSize(random), randomSize(random), randomColor(random), randomColor(random), randomColor(random)});
     }
 
+
     //Initialize glfw3
     if (!glfwInit())
     {

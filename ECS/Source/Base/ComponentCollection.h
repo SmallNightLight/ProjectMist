@@ -15,9 +15,10 @@ public:
 	virtual void DestroyEntity(Entity entity) = 0;
 };
 
-//Issues:
-//Components not next to each other in memory, but spread out, based to the entity ID
-//A lot of memory used for storing components
+/**
+//Iteration 1: Bit-based ECS
+
+//Issues: Components are not next to each other in memory, but spread out, based to the entity ID, inefficient for CPU caching
 
 template<typename T>
 class ComponentCollection : public IComponentCollection
@@ -40,7 +41,7 @@ public:
 		_usedComponents[entity] = false;
 	}
 
-	T& GetData(Entity entity)
+	T& GetComponent(Entity entity)
 	{
         assert(entity < MAXENTITIES && "Entity out of range");
 		assert(_usedComponents[entity] && "Trying to get a component that does not exist");
@@ -64,66 +65,89 @@ private:
 	std::array<T, MAXENTITIES> _components{};
 	std::bitset<MAXENTITIES> _usedComponents{};
 };
+/**/
 
+/**/
+//Iteration 2: Sparse set-based ECS
 
-//Components should not be able to be added multiple times for an entity. An additive solution on one component is often better
-/*
+//Issues: When removing components are removed the array reorders the entity indexes to make the array dense, resulting in a non-optimal order
+
 template<typename T>
-//A multi component array - allows to store up to 255 components per entity. NOTE: First iterate and meanwhile keep track of the component index, Remove the component after each component iteration. When removing decrease the iterator by 1
-class MultiComponentArray : public IComponentCollection
+class ComponentCollection : public IComponentCollection
 {
 public:
-	MultiComponentArray(byte maxComponentCount)
-	{
-		_maxComponentCount = maxComponentCount;
-		_components = std::make_unique<T[]>(MAXENTITIES * _maxComponentCount);
-	}
+    ComponentCollection()
+    {
+        _entityToIndex.fill(ENTITYNULL);
+    }
 
-	void AddComponent(Entity entity, T component)
-	{
-		assert(_componentCount[entity] < 255 && "Component overflow - can't add more than 255 components");
+    void AddComponent(Entity entity, T component)
+    {
+        assert(entity < MAXENTITIES && "Entity out of range");
+        assert(_entityToIndex[entity] == ENTITYNULL&& "Component added to the same entity more than once. Use MultiComponentArray instead");
 
-		_components[entity * _maxComponentCount + _componentCount[entity]] = component;
-		_componentCount[entity]++;
-	}
+        //New index is the next available index in the component list
+        std::int32_t entityIndex = _entityCount;
 
-	void RemoveComponent(Entity entity, byte componentIndex)
-	{
-		assert(_componentCount[entity] > componentIndex && "Trying to remove a component that is out of range");
+        //Update the maps and assign the component
+        _entityToIndex[entity] = entityIndex;
+        _indexToEntity[entityIndex] = entity;
 
-		_components[entity * _maxComponentCount + componentIndex] = _components[entity * _maxComponentCount + _componentCount[entity] - 1];
-		_componentCount[entity]--;
-	}
+        //Store the component
+        _components[entityIndex] = component;
+        _entityCount++;
+    }
 
-	void DestroyEntity(Entity entity) override
-	{
-		_componentCount[entity] = 0;
-	}
+    void RemoveComponent(Entity entity)
+    {
+        assert(entity < MAXENTITIES && "Entity out of range");
+        assert(_entityToIndex[entity] != ENTITYNULL && "Removing a component that does not exist");
 
-	//Methods to iterate over the components
-	T* begin(Entity entity)
-	{
-		return _components.get() + entity * _maxComponentCount;
-	}
+        std::int32_t indexOfRemovedEntity = _entityToIndex[entity];
+        std::int32_t lastEntityIndex = _entityCount - 1;
 
-	T* end(Entity entity)
-	{
-		return  _components.get() + entity * _maxComponentCount + _componentCount[entity];
-	}
+        //Move the last component to the index of the removed entity
+        _components[indexOfRemovedEntity] = _components[lastEntityIndex];
+        Entity entityOfLastIndex = _indexToEntity[lastEntityIndex];
 
-	const T* begin(Entity entity) const
-	{
-		return _components.get() + entity * _maxComponentCount;
-	}
+        //Update the sparse set
+        _entityToIndex[entityOfLastIndex] = indexOfRemovedEntity;
+        _indexToEntity[indexOfRemovedEntity] = entityOfLastIndex;
 
-	const T* end(Entity entity) const
-	{
-		return  _components.get() + entity * _maxComponentCount + _componentCount[entity];
-	}
+        //Set the now invalid index to NULL
+        _entityToIndex[entity] = ENTITYNULL;
+        _indexToEntity[lastEntityIndex] = ENTITYNULL;
+
+        _entityCount--;
+    }
+
+    T& GetComponent(Entity entity)
+    {
+        assert(entity < MAXENTITIES);
+        assert(_entityToIndex[entity] != ENTITYNULL && "Trying to get a component that does not exist");
+        return _components[_entityToIndex[entity]];
+    }
+
+    bool HasComponent(Entity entity)
+    {
+        return entity < MAXENTITIES && _entityToIndex[entity] != ENTITYNULL;
+    }
+
+    void DestroyEntity(Entity entity) override
+    {
+        assert(entity < MAXENTITIES && "Entity out of range");
+
+        if (_entityToIndex[entity] != ENTITYNULL)
+        {
+            RemoveComponent(entity);
+        }
+    }
 
 private:
-	std::unique_ptr<T[]> _components;
-	std::array<byte, MAXENTITIES> _componentCount{};
+    std::array<T, MAXENTITIES> _components { };
+    std::array<Entity, MAXENTITIES> _indexToEntity { };
+    std::array<std::int32_t, MAXENTITIES> _entityToIndex { };
 
-	byte _maxComponentCount;
-};*/
+    std::uint32_t _entityCount = 0;
+};
+/**/

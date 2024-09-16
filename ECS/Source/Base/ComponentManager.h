@@ -45,7 +45,7 @@ public:
     template<typename T>
 	T& GetComponent(Entity entity)
 	{
-		return GetComponentCollection<T>()->GetData(entity);
+		return GetComponentCollection<T>()->GetComponent(entity);
 	}
 
     template<typename T>
