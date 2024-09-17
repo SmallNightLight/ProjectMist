@@ -79,6 +79,7 @@ public:
     ComponentCollection()
     {
         _entityToIndex.fill(ENTITYNULL);
+        _indexToEntity.fill(ENTITYNULL); //Maybe not needed (in that case also remove the code for RemoveComponent)
     }
 
     void AddComponent(Entity entity, T component)
@@ -146,7 +147,7 @@ public:
 private:
     std::array<T, MAXENTITIES> _components { };
     std::array<Entity, MAXENTITIES> _indexToEntity { };
-    std::array<std::int32_t, MAXENTITIES> _entityToIndex { };
+    std::array<std::uint32_t, MAXENTITIES> _entityToIndex { };
 
     std::uint32_t _entityCount = 0;
 };
