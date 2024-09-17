@@ -8,9 +8,11 @@
 #include <unordered_map>
 #include <cassert>
 
+//Manages the systems, their signatures and gives functionality to automatically adding components to a system when their signature match (or not)
 class SystemManager
 {
 public:
+    //Registers the system of type T
 	template<typename T>
 	std::shared_ptr<T> RegisterSystem()
 	{
@@ -23,6 +25,7 @@ public:
 		return system;
 	}
 
+    //Set the signature (a mask indicating required components) for a system of type T
 	template<typename T>
 	void SetSignature(Signature signature)
 	{
@@ -33,6 +36,7 @@ public:
 		_signatures.insert({ typeName, signature });
 	}
 
+    //Removes the given entity from all systems that have a reference to the entity
 	void DestroyEntity(Entity entity)
 	{
 		for (auto const& pair : _systems)
@@ -43,6 +47,9 @@ public:
 		}
 	}
 
+    //Compares the new entity signature to all system signatures
+    //When the signatures match the entity gets added to the system entity set
+    //When the signatures do not match the entity gets removes from the system entity set
 	void EntitySignatureChanged(Entity entity, Signature newSignature)
 	{
 		for (auto const& pair : _systems)

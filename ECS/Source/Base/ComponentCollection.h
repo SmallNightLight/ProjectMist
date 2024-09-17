@@ -8,6 +8,7 @@
 #include <bitset>
 #include <memory>
 
+//Interface for component collections, used to enforce the `DestroyEntity` method in all collections
 class IComponentCollection
 {
 public:
@@ -16,14 +17,14 @@ public:
 };
 
 /**
-//Iteration 1: Bit-based ECS
-
+//Stores the components of type T in an array
+//Iteration 1: Bitset-based ECS
 //Issues: Components are not next to each other in memory, but spread out, based to the entity ID, inefficient for CPU caching
-
 template<typename T>
 class ComponentCollection : public IComponentCollection
 {
 public:
+    //Adds the component of type T to the given entity
 	void AddComponent(Entity entity, T component)
 	{
         assert(entity < MAXENTITIES && "Entity out of range");
@@ -33,6 +34,7 @@ public:
 		_usedComponents[entity] = true;
 	}
 
+    //Removes the component from the given entity
 	void RemoveComponent(Entity entity)
 	{
         assert(entity < MAXENTITIES && "Entity out of range");
@@ -41,6 +43,7 @@ public:
 		_usedComponents[entity] = false;
 	}
 
+    //Gets a reference to the component for the given entity
 	T& GetComponent(Entity entity)
 	{
         assert(entity < MAXENTITIES && "Entity out of range");
@@ -49,11 +52,13 @@ public:
 		return _components[entity];
 	}
 
+    //Checks whether the given entity has the component
     bool HasComponent(Entity entity)
     {
         return _usedComponents[entity];
     }
 
+    //Removes the component from the entity
 	void DestroyEntity(Entity entity) override
 	{
         assert(entity < MAXENTITIES && "Entity out of range");
@@ -68,20 +73,21 @@ private:
 /**/
 
 /**/
+//Stores the components of type T in an array
 //Iteration 2: Sparse set-based ECS
-
 //Issues: When removing components are removed the array reorders the entity indexes to make the array dense, resulting in a non-optimal order
-
 template<typename T>
 class ComponentCollection : public IComponentCollection
 {
 public:
+    //Initializes the sparse set with null entities, to indicate that all entities have no components
     ComponentCollection()
     {
         _entityToIndex.fill(ENTITYNULL);
         _indexToEntity.fill(ENTITYNULL); //Maybe not needed (in that case also remove the code for RemoveComponent)
     }
 
+    //Adds the component of type T to the given entity
     void AddComponent(Entity entity, T component)
     {
         assert(entity < MAXENTITIES && "Entity out of range");
@@ -99,6 +105,7 @@ public:
         _entityCount++;
     }
 
+    //Removes the component from the given entity
     void RemoveComponent(Entity entity)
     {
         assert(entity < MAXENTITIES && "Entity out of range");
@@ -122,6 +129,7 @@ public:
         _entityCount--;
     }
 
+    //Gets a reference to the component for the given entity
     T& GetComponent(Entity entity)
     {
         assert(entity < MAXENTITIES);
@@ -129,11 +137,13 @@ public:
         return _components[_entityToIndex[entity]];
     }
 
+    //Checks whether the given entity has the component by checking the sparse set for entity null
     bool HasComponent(Entity entity)
     {
         return entity < MAXENTITIES && _entityToIndex[entity] != ENTITYNULL;
     }
 
+    //Removes the component from the entity if possible
     void DestroyEntity(Entity entity) override
     {
         assert(entity < MAXENTITIES && "Entity out of range");
