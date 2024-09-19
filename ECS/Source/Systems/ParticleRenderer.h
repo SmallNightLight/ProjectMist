@@ -27,7 +27,7 @@ public:
             auto& particleData = EcsManager.GetComponent<ParticleData>(entity, particleDataType);
 
 
-            int segments = 3;
+            int segments = 10;
 
             glColor3ub(particleData.R, particleData.G, particleData.B);
             glBegin(GL_TRIANGLE_FAN);

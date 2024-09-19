@@ -31,6 +31,8 @@ add_executable(ECS Source/main.cpp
         Source/Systems/ParticleRenderer.h
         Source/Components/RectangleData.h
         Source/Systems/RectangleRenderer.h
+        Source/Components/MovingParticleData.h
+        Source/Systems/MovingParticleRenderer.h
 )
 
 #target_link_libraries(ECS sfml-graphics sfml-window sfml-system)
