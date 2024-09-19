@@ -1,3 +1,5 @@
 #pragma once
 
-#include "Renderer.h"
+#include "Movement.h"
+#include "ParticleRenderer.h"
+#include "RectangleRenderer.h"

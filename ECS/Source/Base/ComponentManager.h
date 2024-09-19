@@ -2,6 +2,8 @@
 
 #include "ComponentCollection.h"
 
+//#include <array>
+
 //Manages all component collections and uses the component name for easy lookups
 class ComponentManager
 {
@@ -18,7 +20,7 @@ public:
 		_componentTypes.insert({ typeName, _nextComponentType });
 
 		//Create a componentArray pointer and add it to the component array map
-		_componentArrays.insert({ typeName, std::make_shared < ComponentCollection<T>>() });
+		_componentArrays[_componentTypes[typeName]] = std::make_unique<ComponentCollection<T>>();
 		_nextComponentType++;
 	}
 
@@ -37,53 +39,55 @@ public:
 	template<typename T>
 	void AddComponent(Entity entity, T component)
 	{
-        GetComponentCollection<T>()->AddComponent(entity, component);
+        int componentType = GetComponentType<T>();
+        GetComponentCollection<T>(componentType)->AddComponent(entity, component);
 	}
 
     //Removes the component of type T from the given entity
     template<typename T>
     void RemoveComponent(Entity entity)
     {
-        GetComponentCollection<T>()->RemoveComponent(entity);
+        int componentType = GetComponentType<T>();
+        GetComponentCollection<T>(componentType)->RemoveComponent(entity);
     }
 
     //Gets a reference to the component of type T for the given entity
     template<typename T>
-	T& GetComponent(Entity entity)
+	T& GetComponent(Entity entity, ComponentType componentType)
 	{
-		return GetComponentCollection<T>()->GetComponent(entity);
+        //TODO: Set componentType as a function?
+
+        return GetComponentCollection<T>(componentType)->GetComponent(entity);
 	}
 
     //Checks whether the given entity has the component of type T
     template<typename T>
     bool HasComponent(Entity entity)
     {
-        return GetComponentCollection<T>()->HasComponent(entity);
+        int componentType = GetComponentType<T>();
+        return ComponentCollection<T>(componentType)->HasComponent(entity);
     }
 
     //Removes all components that are associated to the given entity
 	void DestroyEntity(Entity entity)
 	{
-		for (auto const& pair : _componentArrays)
+		for (auto const& componentCollection : _componentArrays)
 		{
-			auto const& component = pair.second;
-			component->DestroyEntity(entity);
+            componentCollection->DestroyEntity(entity);
 		}
 	}
 
 private:
-	std::unordered_map<const char*, ComponentType> _componentTypes{};
-	std::unordered_map<const char*, std::shared_ptr<IComponentCollection>> _componentArrays{};
-	ComponentType _nextComponentType{};
+	std::unordered_map<const char*, ComponentType> _componentTypes { };
+    std::array<std::unique_ptr<IComponentCollection>, MAXCOMPONENTS> _componentArrays { };
+	ComponentType _nextComponentType { };
 
     //Gets the component collection for a specific component of type T
 	template<typename T>
-	std::shared_ptr<ComponentCollection<T>> GetComponentCollection()
+	ComponentCollection<T>* GetComponentCollection(ComponentType componentType)
 	{
-        //ToDO: redo this and remove the string usage
-		const char* typeName = typeid(T).name();
-		assert(_componentTypes.find(typeName) != _componentTypes.end() && "Component not yet registered");
+		assert(_componentArrays[componentType] && "Component not yet registered");
 
-		return std::static_pointer_cast<ComponentCollection<T>>(_componentArrays[typeName]);
+        return static_cast<ComponentCollection<T>*>(_componentArrays[componentType].get());
 	}
 };

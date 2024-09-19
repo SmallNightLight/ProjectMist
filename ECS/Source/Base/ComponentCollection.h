@@ -9,7 +9,7 @@
 #include <memory>
 
 //Interface for component collections, used to enforce the `DestroyEntity` method in all collections
-class IComponentCollection
+class IComponentCollection //TODO: Implement all functions and avoid type conversion
 {
 public:
 	virtual ~IComponentCollection() = default;
@@ -96,7 +96,7 @@ public:
         //New index is the next available index in the component list
         std::int32_t entityIndex = _entityCount;
 
-        //Update the maps and assign the component
+        //Render the maps and assign the component
         _entityToIndex[entity] = entityIndex;
         _indexToEntity[entityIndex] = entity;
 
@@ -118,7 +118,7 @@ public:
         _components[indexOfRemovedEntity] = _components[lastEntityIndex];
         Entity entityOfLastIndex = _indexToEntity[lastEntityIndex];
 
-        //Update the sparse set
+        //Render the sparse set
         _entityToIndex[entityOfLastIndex] = indexOfRemovedEntity;
         _indexToEntity[indexOfRemovedEntity] = entityOfLastIndex;
 

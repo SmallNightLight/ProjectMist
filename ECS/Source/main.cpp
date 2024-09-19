@@ -16,13 +16,20 @@ int main()
     EcsManager.Setup();
 
     //Register components
-    EcsManager.RegisterComponent<RendererData>();
+    EcsManager.RegisterComponent<Transform>();
+    EcsManager.RegisterComponent<Velocity>();
+    EcsManager.RegisterComponent<ParticleData>();
+    EcsManager.RegisterComponent<RectangleData>();
 
     //Register systems
-    auto rendererComponent = EcsManager.RegisterSystem<Renderer>();
+    auto movementSystem = EcsManager.RegisterSystem<Movement>();
+    auto particleRenderer = EcsManager.RegisterSystem<ParticleRenderer>();
+    auto rectangleRenderer = EcsManager.RegisterSystem<RectangleRenderer>();
 
     //Setup signatures
-    EcsManager.SetSignature<Renderer>(Renderer::GetSignature());
+    EcsManager.SetSignature<Movement>(Movement::GetSignature());
+    EcsManager.SetSignature<ParticleRenderer>(ParticleRenderer::GetSignature());
+    EcsManager.SetSignature<RectangleRenderer>(RectangleRenderer::GetSignature());
 
     std::default_random_engine random;
 
@@ -33,11 +40,13 @@ int main()
 
         std::uniform_real_distribution<float> randomPosition(0.0f, 700.0f);
         std::uniform_real_distribution<float> randomSize(1.0f, 30.0f);
-        std::uniform_real_distribution<float> randomColor(0.0f, 1.0f);
+        std::uniform_int_distribution<int> randomColor(0, 255);
 
-        EcsManager.AddComponent(entity, RendererData{randomPosition(random), randomPosition(random), randomSize(random), randomSize(random), randomColor(random), randomColor(random), randomColor(random)});
+        EcsManager.AddComponent(entity, Transform {randomPosition(random), randomPosition(random)});
+        EcsManager.AddComponent(entity, Velocity {0, 0});
+        //EcsManager.AddComponent(entity, ParticleData { randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
+        EcsManager.AddComponent(entity, RectangleData{ randomSize(random),randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
     }
-
 
     //Initialize glfw3
     if (!glfwInit())
@@ -88,7 +97,9 @@ int main()
 
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
-        rendererComponent->Render();
+        movementSystem->Update();
+        particleRenderer->Render();
+        rectangleRenderer->Render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

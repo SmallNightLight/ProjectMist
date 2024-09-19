@@ -1,3 +1,6 @@
 #pragma once
 
-#include "RenderData.h"
+#include "Transform.h"
+#include "Velocity.h"
+#include "ParticleData.h"
+#include "RectangleData.h"

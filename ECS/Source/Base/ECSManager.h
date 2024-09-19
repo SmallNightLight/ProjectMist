@@ -49,7 +49,7 @@ public:
     {
         _componentManager->AddComponent<T>(entity, component);
 
-        //Update the signature of the entity by including the new component
+        //Render the signature of the entity by including the new component
         Signature signature = _entityManager->GetSignature(entity);
         signature.set(_componentManager->GetComponentType<T>(), true);
         _entityManager->SetSignature(entity, signature);
@@ -64,7 +64,7 @@ public:
     {
         _componentManager->RemoveComponent<T>(entity);
 
-        //Update the signature of the entity by removing the component
+        //Render the signature of the entity by removing the component
         Signature  signature = _entityManager->GetSignature(entity);
         signature.set(_componentManager->GetComponentType<T>(), false);
         _entityManager->SetSignature(entity, signature);
@@ -75,9 +75,9 @@ public:
 
     //Gets a reference to the component of type T for the given entity
     template<typename T>
-    T& GetComponent(Entity entity)
+    T& GetComponent(Entity entity, ComponentType componentType)
     {
-        return _componentManager->GetComponent<T>(entity);
+        return _componentManager->GetComponent<T>(entity, componentType);
     }
 
     //Checks whether the given entity has the component of type T

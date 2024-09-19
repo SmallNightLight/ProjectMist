@@ -18,14 +18,19 @@ add_executable(ECS Source/main.cpp
         Source/Base/System.h
         Source/Base/SystemManager.h
         Source/Base/ECSManager.h
-        Source/Systems/Renderer.h
-        Source/Components/RenderData.h
         Source/Components/ComponentHeaders.h
         Source/Systems/SystemHeader.h
         Source/Math/FPM/fixed.hpp
         Source/Math/FPM/math.hpp
         Source/Math/FPM/ios.hpp
         Source/Math/FixedVector2.h
+        Source/Components/Transform.h
+        Source/Components/ParticleData.h
+        Source/Systems/Movement.h
+        Source/Components/Velocity.h
+        Source/Systems/ParticleRenderer.h
+        Source/Components/RectangleData.h
+        Source/Systems/RectangleRenderer.h
 )
 
 #target_link_libraries(ECS sfml-graphics sfml-window sfml-system)
