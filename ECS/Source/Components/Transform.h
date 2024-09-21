@@ -1,9 +1,12 @@
 #pragma once
 
+#include <GLM/glm.hpp>
+
 struct Transform
 {
-    float X, Y;
+    glm::vec2 Position;
 
-    Transform() = default;
-    Transform(float x, float y) : X(x), Y(y) { }
+    Transform() : Position(0.0f, 0.0f) { }
+    Transform(float x, float y) : Position(x, y) { }
+    explicit Transform(const glm::vec2& value) : Position(value) { }
 };

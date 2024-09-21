@@ -1,9 +1,12 @@
 #pragma once
 
+#include <GLM/glm.hpp>
+
 struct Velocity
 {
-    float X, Y;
+    glm::vec2 Value;
 
-    Velocity() = default;
-    Velocity(float x, float y) : X(x), Y(y) { }
+    Velocity() : Value(0.0f, 0.0f) { }
+    Velocity(float x, float y) : Value(x, y) { }
+    explicit Velocity(const glm::vec2& value) : Value(value) { }
 };

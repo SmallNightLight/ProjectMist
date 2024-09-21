@@ -29,10 +29,10 @@ public:
             glColor3ub(rectangleData.R, rectangleData.G, rectangleData.B);
             glBegin(GL_QUADS);
 
-            glVertex2f(transform.X, transform.Y);
-            glVertex2f(transform.X + rectangleData.Width, transform.Y);
-            glVertex2f(transform.X + rectangleData.Width, transform.Y - rectangleData.Height);
-            glVertex2f(transform.X, transform.Y - rectangleData.Height);
+            glVertex2f(transform.Position.x, transform.Position.y);
+            glVertex2f(transform.Position.x + rectangleData.Width, transform.Position.y);
+            glVertex2f(transform.Position.x + rectangleData.Width, transform.Position.y - rectangleData.Height);
+            glVertex2f(transform.Position.x, transform.Position.y - rectangleData.Height);
 
             glEnd();
         }

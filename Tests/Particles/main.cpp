@@ -158,6 +158,7 @@ int main()
 
         //Render particles
         UpdateParticles((float)deltaTime);
+        glPointSize(4);
         RenderParticles();
 
         //Update the framerate every second
