@@ -11,12 +11,6 @@
 #define SCREEN_WIDTH 1680
 #define SCREEN_HEIGHT 1050
 
-struct Particle
-{
-    glm::vec2 position;
-    glm::vec2 velocity;
-};
-
 GLuint vao, vbo;
 Shader shader;
 
@@ -30,18 +24,14 @@ float softening = 50.0f;
 const int MAXPARTICLES = 100000;
 const int ParticleAttributeCount = 4;
 
-std::array<float, MAXPARTICLES * ParticleAttributeCount> instanceData;
-std::array<Particle, MAXPARTICLES> particles;
+std::array<glm::vec2, MAXPARTICLES> positions;
+std::array<glm::vec2, MAXPARTICLES> velocities;
 
 void InitializeParticles()
 {
     for (int i = 0; i < MAXPARTICLES; ++i)
     {
-        particles[i].position = { static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f, static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f }; //Random [-1, 1]
-
-        //Convert the particle data to a float array
-        instanceData[i * ParticleAttributeCount + 0] = particles[i].position.x;
-        instanceData[i * ParticleAttributeCount + 1] = particles[i].position.y;
+        positions[i] = { static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f, static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f }; //Random [-1, 1]
     }
 }
 
@@ -57,14 +47,14 @@ void InitOpenGLBuffers()
 
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, MAXPARTICLES * ParticleAttributeCount * sizeof(float), instanceData.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, MAXPARTICLES * ParticleAttributeCount * sizeof(float), nullptr, GL_STATIC_DRAW);
 
     //Set up instanced attributes
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, ParticleAttributeCount * sizeof(float), (void*)nullptr);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribDivisor(1, 1);
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, ParticleAttributeCount * sizeof(float), (void*)(2 * sizeof(float)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)(MAXPARTICLES * sizeof(glm::vec2))); // Velocity
     glEnableVertexAttribArray(2);
     glVertexAttribDivisor(2, 1);
 
@@ -97,36 +87,26 @@ void UpdateGravityCenterBasedOnMouse(GLFWwindow* window)
     //Convert mouse X and Y to normalized screen coordinates [-1, 1]
     gravityCenter.x = ((float)mouseX / SCREEN_WIDTH) * 2.0f - 1.0f;
     gravityCenter.y = 1.0f - ((float)mouseY / SCREEN_HEIGHT) * 2.0f;
-
 }
 
 void UpdateParticles(float deltaTime)
 {
     float combinedMass = gravity * attractorMass * particleMass;
-    int counter = 0;
 
     for (int i = 0; i < MAXPARTICLES; ++i)
     {
-        glm::vec2 r = gravityCenter - particles[i].position;
+        glm::vec2 r = gravityCenter - positions[i];
         float rSquared = glm::length(r) + softening;
         glm::vec2 force = (combinedMass * glm::normalize(r) / rSquared);
 
         glm::vec2 acceleration = force / particleMass;
-        glm::vec2 position = particles[i].position + (particles[i].velocity * deltaTime + 0.5f * acceleration * deltaTime * deltaTime);
-        glm::vec2 velocity = particles[i].velocity + acceleration * deltaTime;
-
-        particles[i].position = position;
-        particles[i].velocity = velocity;
-
-        int c = i * ParticleAttributeCount;
-        instanceData[c] = position.x;
-        instanceData[c + 1] = position.y;
-        instanceData[c + 2] = velocity.x;
-        instanceData[c + 3] = velocity.y;
+        positions[i] = positions[i] + (velocities[i] * deltaTime + 0.5f * acceleration * deltaTime * deltaTime);
+        velocities[i] = velocities[i] + acceleration * deltaTime;
     }
 
     //Update buffer data with the new data
-    glBufferSubData(GL_ARRAY_BUFFER, 0, MAXPARTICLES * ParticleAttributeCount * sizeof(float), instanceData.data());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, MAXPARTICLES * sizeof(glm::vec2), positions.data());
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * MAXPARTICLES, MAXPARTICLES * sizeof(glm::vec2), velocities.data());
 }
 
 int main()
