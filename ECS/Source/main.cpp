@@ -4,11 +4,18 @@
 
 
 #include <iostream>
-#include <chrono>
+#include <sstream>
 #include <GLFW/glfw3.h>
 
 ECSManager EcsManager;
 
+double GetDeltaTime(double& lastTime)
+{
+    double currentTime = glfwGetTime();
+    double deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+    return deltaTime;
+}
 
 int main()
 {
@@ -65,7 +72,7 @@ int main()
         return -1;
     }
 
-    GLFWwindow* window = glfwCreateWindow(700, 700, "Rendering Test", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(700, 700, "ECS Test", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
@@ -85,25 +92,22 @@ int main()
     glOrtho(0, 700, 0, 700, -1, 1);
 
 
-    int frameCount = 0;
-    auto start = std::chrono::steady_clock::now();
-
+    double lastTime = 0.0;
+    double lastTitleUpdateTime = 0.0;
 
     while (!glfwWindowShouldClose(window))
     {
-        frameCount++;
+        //Calculate delta time
+        double currentTime = glfwGetTime();
+        double deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
 
-        auto now = std::chrono::steady_clock::now();
-        std::chrono::duration<double> elapsed = now - start;
-
-        double dt = 1.0 / frameCount;
-
-        if (elapsed.count() >= 1.0)
+        if (currentTime - lastTitleUpdateTime >= 1.0f)
         {
-            std::cout << "FPS: " << frameCount << "   Delta: " << dt << std::endl;
-
-            frameCount = 0;
-            start = now;
+            std::ostringstream title;
+            title << "ECS Test - FPS: " << static_cast<int>(1.0 / deltaTime);
+            glfwSetWindowTitle(window, title.str().c_str());
+            lastTitleUpdateTime = currentTime;
         }
 
         //Render

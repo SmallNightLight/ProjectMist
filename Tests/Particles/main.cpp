@@ -7,8 +7,6 @@
 #include <sstream>
 #include <iostream>
 #include <array>
-#include <thread>
-#include <vector>
 
 #define SCREEN_WIDTH 1680
 #define SCREEN_HEIGHT 1050
@@ -39,17 +37,11 @@ void InitializeParticles()
 {
     for (int i = 0; i < MAXPARTICLES; ++i)
     {
-        particles[i].position = { static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f, static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f }; //Random y in [-1, 1]
-        //particles[i].color = {static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX, static_cast<float>(rand()) / RAND_MAX }; //Random color in [0, 1]
+        particles[i].position = { static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f, static_cast<float>(rand()) / RAND_MAX * 2.0f - 1.0f }; //Random [-1, 1]
 
         //Convert the particle data to a float array
         instanceData[i * ParticleAttributeCount + 0] = particles[i].position.x;
         instanceData[i * ParticleAttributeCount + 1] = particles[i].position.y;
-
-
-        /*instanceData[i * ParticleAttributeCount + 2] = particles[i].color.r;
-        instanceData[i * ParticleAttributeCount + 3] = particles[i].color.g;
-        instanceData[i * ParticleAttributeCount + 4] = particles[i].color.b;*/
     }
 }
 
@@ -62,15 +54,6 @@ void InitOpenGLBuffers()
 {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
-    GLuint pointVbo;
-    float pointVertices[] = { 0.0f, 0.0f };
-    glGenBuffers(1, &pointVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, pointVbo);
-    glBufferData(GL_ARRAY_BUFFER, 2, pointVertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*)nullptr);
-    glEnableVertexAttribArray(0);
 
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -88,7 +71,7 @@ void InitOpenGLBuffers()
     glBindVertexArray(0);
 }
 
-void RenderParticles(float deltaTime)
+void RenderParticles()
 {
     shader.Use();
 
@@ -125,7 +108,7 @@ void UpdateParticles(float deltaTime)
     for (int i = 0; i < MAXPARTICLES; ++i)
     {
         glm::vec2 r = gravityCenter - particles[i].position;
-        float rSquared = glm::dot(r, r) + softening;
+        float rSquared = glm::length(r) + softening;
         glm::vec2 force = (combinedMass * glm::normalize(r) / rSquared);
 
         glm::vec2 acceleration = force / particleMass;
@@ -135,10 +118,11 @@ void UpdateParticles(float deltaTime)
         particles[i].position = position;
         particles[i].velocity = velocity;
 
-        instanceData[counter++] = position.x;
-        instanceData[counter++] = position.y;
-        instanceData[counter++] = particles[i].velocity.x;
-        instanceData[counter++] = particles[i].velocity.y;
+        int c = i * ParticleAttributeCount;
+        instanceData[c] = position.x;
+        instanceData[c + 1] = position.y;
+        instanceData[c + 2] = velocity.x;
+        instanceData[c + 3] = velocity.y;
     }
 
     //Update buffer data with the new data
@@ -194,7 +178,7 @@ int main()
 
         //Render particles
         UpdateParticles((float)deltaTime);
-        RenderParticles((float)deltaTime);
+        RenderParticles();
 
         //Update the framerate every second
         double currentTime = glfwGetTime();

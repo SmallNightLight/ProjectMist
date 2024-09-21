@@ -23,6 +23,3 @@ target_link_libraries(${PROJECT_NAME} PRIVATE glad::glad)
 target_link_libraries(${PROJECT_NAME} PRIVATE glm::glm)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-
-message(STATUS "GLEW_INCLUDE_DIR: ${GLEW_INCLUDE_DIRS}")
-message(STATUS "GLEW_LIBRARIES: ${GLEW_LIBRARIES}")

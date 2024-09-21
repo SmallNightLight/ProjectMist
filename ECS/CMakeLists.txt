@@ -5,10 +5,10 @@ project(ECS)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#find_package(SFML 2.6 COMPONENTS graphics window system REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
+find_package(glad CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
 
 add_executable(ECS Source/main.cpp
         Source/Base/ComponentCollection.h
@@ -33,14 +33,15 @@ add_executable(ECS Source/main.cpp
         Source/Systems/RectangleRenderer.h
         Source/Components/MovingParticleData.h
         Source/Systems/MovingParticleRenderer.h
+        Source/Rendering/Shader.h
 )
 
-#target_link_libraries(ECS sfml-graphics sfml-window sfml-system)
 target_link_libraries(ECS
         PRIVATE
         glfw
         OpenGL::GL
-        GLEW::GLEW
+        glad::glad
+        glm::glm
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
