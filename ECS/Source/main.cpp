@@ -46,17 +46,17 @@ int main()
         std::uniform_int_distribution<int> randomColor(0, 255);
 
         //Particles with split components
-        /**/
+
+
         EcsManager.AddComponent(entity, Transform {randomPosition(random), randomPosition(random)});
         EcsManager.AddComponent(entity, Velocity {0, 0});
         EcsManager.AddComponent(entity, ParticleData { randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
         //EcsManager.AddComponent(entity, RectangleData{ randomSize(random),randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
-        /**/
+
+
 
         //Particles with one component and one system that handles movement and rendering
-        /**
-        EcsManager.AddComponent(entity, MovingParticleData {randomPosition(random), randomPosition(random), 0, 0, randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
-        /**/
+        //EcsManager.AddComponent(entity, MovingParticleData {randomPosition(random), randomPosition(random), 0, 0, randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
     }
 
     //Initialize glfw3

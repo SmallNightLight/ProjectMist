@@ -7,6 +7,8 @@ extern ECSManager EcsManager;
 
 class ParticleRenderer : public System
 {
+    GLuint VAO, VBO[2];
+
 public:
     static Signature GetSignature()
     {
@@ -16,31 +18,27 @@ public:
         return signature;
     }
 
+    void Setup()
+    {
+
+    }
+
     void Render()
     {
         ComponentType transformType = EcsManager.GetComponentType<Transform>();
         ComponentType particleDataType = EcsManager.GetComponentType<ParticleData>();
 
+        glPointSize(20);
+        glEnable(GL_POINT_SMOOTH);
+        glBegin(GL_POINTS);
         for (const Entity& entity : Entities)
         {
             auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
             auto& particleData = EcsManager.GetComponent<ParticleData>(entity, particleDataType);
 
-
-            int segments = 10;
-
             glColor3ub(particleData.R, particleData.G, particleData.B);
-            glBegin(GL_TRIANGLE_FAN);
             glVertex2f(transform.X, transform.Y);
-
-            for (int i = 0; i <= segments; i++)
-            {
-                float angle = 2.0f * 3.14159f * (float)i / (float)segments;
-                float x = transform.X + cos(angle) * particleData.Radius;
-                float y = transform.Y + sin(angle) * particleData.Radius;
-                glVertex2f(x, y);
-            }
-            glEnd();
         }
+        glEnd();
     }
 };
