@@ -25,14 +25,9 @@ add_executable(ECS Source/main.cpp
         Source/Math/FPM/ios.hpp
         Source/Math/FixedVector2.h
         Source/Components/Transform.h
-        Source/Components/ParticleData.h
         Source/Systems/Movement.h
         Source/Components/Velocity.h
         Source/Systems/ParticleRenderer.h
-        Source/Components/RectangleData.h
-        Source/Systems/RectangleRenderer.h
-        Source/Components/MovingParticleData.h
-        Source/Systems/MovingParticleRenderer.h
         Source/Rendering/Shader.h
 )
 

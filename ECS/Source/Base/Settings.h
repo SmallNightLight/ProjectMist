@@ -7,13 +7,13 @@
 
 //Window
 #define SCREEN_WIDTH 1680
-#define SCREEN_HEIGHT 1050
+#define SCREEN_HEIGHT 945
 
 //ECS
 using Entity = std::uint32_t;
 using ComponentType = std::uint8_t;
 
-const std::uint32_t MAXENTITIES = 40000;
+const std::uint32_t MAXENTITIES = 50000;
 const ComponentType MAXCOMPONENTS = 32;
 
 using Signature = std::bitset<MAXCOMPONENTS>;

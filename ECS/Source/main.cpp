@@ -65,21 +65,14 @@ int main()
     //Register components
     EcsManager.RegisterComponent<Transform>();
     EcsManager.RegisterComponent<Velocity>();
-    EcsManager.RegisterComponent<ParticleData>();
-    EcsManager.RegisterComponent<RectangleData>();
-    EcsManager.RegisterComponent<MovingParticleData>();
 
     //Register systems
     auto movementSystem = EcsManager.RegisterSystem<Movement>();
     auto particleRenderer = EcsManager.RegisterSystem<ParticleRenderer>();
-    auto rectangleRenderer = EcsManager.RegisterSystem<RectangleRenderer>();
-    auto movingParticleRenderer = EcsManager.RegisterSystem<MovingParticleRenderer>();
 
     //Setup signatures
     EcsManager.SetSignature<Movement>(Movement::GetSignature());
     EcsManager.SetSignature<ParticleRenderer>(ParticleRenderer::GetSignature());
-    EcsManager.SetSignature<RectangleRenderer>(RectangleRenderer::GetSignature());
-    EcsManager.SetSignature<MovingParticleRenderer>(MovingParticleRenderer::GetSignature());
 
     std::default_random_engine random;
 
@@ -90,17 +83,9 @@ int main()
 
         std::uniform_real_distribution<float> randomPositionX(0.0f, SCREEN_WIDTH);
         std::uniform_real_distribution<float> randomPositionY(0.0f, SCREEN_HEIGHT);
-        std::uniform_real_distribution<float> randomSize(1.0f, 30.0f);
-        std::uniform_int_distribution<int> randomColor(0, 255);
 
-        //Particles with split components
         EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
         EcsManager.AddComponent(entity, Velocity {0, 0});
-        //EcsManager.AddComponent(entity, RectangleData{ randomSize(random),randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
-
-
-        //Particles with one component and one system that handles movement and rendering
-        //EcsManager.AddComponent(entity, MovingParticleData {randomPosition(random), randomPosition(random), 0, 0, randomSize(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random), (std::uint8_t)randomColor(random)});
     }
 
 
@@ -126,8 +111,6 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         movementSystem->Update((float)deltaTime, GetMousePosition(window));
         particleRenderer->Render();
-        rectangleRenderer->Render();
-        movingParticleRenderer->Render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
