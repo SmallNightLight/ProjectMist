@@ -65,14 +65,19 @@ int main()
     //Register components
     EcsManager.RegisterComponent<Transform>();
     EcsManager.RegisterComponent<Velocity>();
+    EcsManager.RegisterComponent<Boid>();
 
     //Register systems
     auto movementSystem = EcsManager.RegisterSystem<Movement>();
     auto particleRenderer = EcsManager.RegisterSystem<ParticleRenderer>();
+    auto boidMovement = EcsManager.RegisterSystem<BoidMovement>();
+    auto boidRenderer = EcsManager.RegisterSystem<BoidRenderer>();
 
     //Setup signatures
     EcsManager.SetSignature<Movement>(Movement::GetSignature());
     EcsManager.SetSignature<ParticleRenderer>(ParticleRenderer::GetSignature());
+    EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
+    EcsManager.SetSignature<BoidRenderer>(BoidRenderer::GetSignature());
 
     std::default_random_engine random;
 
@@ -81,11 +86,12 @@ int main()
     {
         EcsManager.CreateEntity();
 
-        std::uniform_real_distribution<float> randomPositionX(0.0f, SCREEN_WIDTH);
-        std::uniform_real_distribution<float> randomPositionY(0.0f, SCREEN_HEIGHT);
+        std::uniform_real_distribution<float> randomPositionX(0.0, SCREEN_WIDTH);
+        std::uniform_real_distribution<float> randomPositionY(0.0, SCREEN_HEIGHT);
+        std::uniform_real_distribution<float> randomVelocity(-1.0, 1.0);
 
         EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        EcsManager.AddComponent(entity, Velocity {0, 0});
+        EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
     }
 
 
@@ -109,8 +115,12 @@ int main()
 
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
+
         movementSystem->Update((float)deltaTime, GetMousePosition(window));
+        boidMovement->Update((float)deltaTime, GetMousePosition(window));
+
         particleRenderer->Render();
+        boidRenderer->Render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -29,6 +29,9 @@ add_executable(ECS Source/main.cpp
         Source/Components/Velocity.h
         Source/Systems/ParticleRenderer.h
         Source/Rendering/Shader.h
+        Source/Components/Boid.h
+        Source/Systems/BoidMovement.h
+        Source/Systems/BoidRenderer.h
 )
 
 target_link_libraries(ECS

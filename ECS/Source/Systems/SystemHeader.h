@@ -2,3 +2,5 @@
 
 #include "Movement.h"
 #include "ParticleRenderer.h"
+#include "BoidMovement.h"
+#include "BoidRenderer.h"
