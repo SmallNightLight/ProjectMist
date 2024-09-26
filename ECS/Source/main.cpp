@@ -94,7 +94,7 @@ int main()
         EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
     }
 
-
+    bool isPaused = false;
     double lastTime = 0.0;
     double lastTitleUpdateTime = 0.0;
 
@@ -113,11 +113,20 @@ int main()
             lastTitleUpdateTime = currentTime;
         }
 
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        {
+            isPaused = !isPaused;
+            glfwWaitEventsTimeout(0.3);
+        }
+
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
 
-        movementSystem->Update((float)deltaTime, GetMousePosition(window));
-        boidMovement->Update((float)deltaTime, GetMousePosition(window));
+        if (!isPaused)
+        {
+            movementSystem->Update((float)deltaTime, GetMousePosition(window));
+            boidMovement->Update((float)deltaTime, GetMousePosition(window));
+        }
 
         particleRenderer->Render();
         boidRenderer->Render();

@@ -1,6 +1,11 @@
 #pragma once
 
+#include "../Math/PartitionGrid.h"
+
+#include <array>
 #include <iostream>
+#include <thread>
+#include <mutex>
 
 extern ECSManager EcsManager;
 
@@ -18,62 +23,91 @@ public:
     void Update(float deltaTime, glm::vec2 mousePosition)
     {
         ComponentType transformType = EcsManager.GetComponentType<Transform>();
+
+        //Construct partition grid
+        PartitionGrid partitionGrid = PartitionGrid();
+
+        glm::vec2 particleSize = glm::vec2 {1.0f * vision, 1.0f * vision};
+
+        for (const Entity& entity : Entities)
+        {
+            auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
+            partitionGrid.InsertEntity(entity, Rect(transform.Position, particleSize));
+        }
+
+
         ComponentType boidType = EcsManager.GetComponentType<Boid>();
 
         float noiseRange = (3.1415926f / 80) * noise;
         std::uniform_real_distribution<float> randomNoise(-noiseRange, noiseRange);
+
+        //TODO fill correct
+        std::array<glm::vec2, MAXENTITIES> alignmentDirections = { };
+        std::array<glm::vec2, MAXENTITIES> cohesionDirections = { };
+        std::array<glm::vec2, MAXENTITIES> separationDirections = { };
+        std::array<std::uint32_t , MAXENTITIES> neighbourCounts = { };
+
+        alignmentDirections.fill(glm::vec2{0.0f, 0.0f});
+        cohesionDirections.fill(glm::vec2{0.0f, 0.0f});
+        separationDirections.fill(glm::vec2{0.0f, 0.0f});
+        neighbourCounts.fill(0);
+
+        int entityPairs = 0;
+
+        for(auto entityPair : partitionGrid.GetEntityPairs())
+        {
+            auto& transform = EcsManager.GetComponent<Transform>(entityPair.Entity1, transformType);
+            auto& boid = EcsManager.GetComponent<Boid>(entityPair.Entity1, boidType);
+
+            auto &otherTransform = EcsManager.GetComponent<Transform>(entityPair.Entity2, transformType);
+            auto& otherBoid = EcsManager.GetComponent<Boid>(entityPair.Entity2, boidType);
+
+
+            float distance = glm::length(transform.Position - otherTransform.Position);
+
+            if (distance > vision) continue;
+
+            //Alignment
+            float b = pow(bias, glm::dot(otherBoid.Velocity, boid.Velocity));
+            alignmentDirections[entityPair.Entity1] += otherBoid.Velocity * b;
+            alignmentDirections[entityPair.Entity2] += boid.Velocity * b;
+
+            //Cohesion
+            cohesionDirections[entityPair.Entity1] += otherTransform.Position;
+            cohesionDirections[entityPair.Entity2] += transform.Position;
+
+            //Separation
+            float d = distance != 0 ? 1.0f/ (float)distance : 0.00001f;
+            separationDirections[entityPair.Entity1] += (transform.Position - otherTransform.Position) * d;
+            separationDirections[entityPair.Entity2] += (otherTransform.Position - transform.Position) * d;
+
+            neighbourCounts[entityPair.Entity1]++;
+            neighbourCounts[entityPair.Entity2]++;
+
+            entityPairs++;
+        }
+
+        //std::cout << entityPairs << std::endl;
 
         for (const Entity& entity : Entities)
         {
             auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
             auto& boid = EcsManager.GetComponent<Boid>(entity, boidType);
 
-            //TODO: Check if this can be local (yes)
             boid.Acceleration = glm::vec2{0.0, 0.0};
 
-            glm::vec2 alignmentDirection = glm::vec2{0.0, 0.0};
-            glm::vec2 cohesionDirection = glm::vec2{0.0, 0.0};
-            glm::vec2 separationDirection = glm::vec2{0.0, 0.0};
-
-            int neighbourCount = 0;
-
-            for(const Entity& other : Entities)
-            {
-                auto &otherTransform = EcsManager.GetComponent<Transform>(other, transformType);
-                auto& otherBoid = EcsManager.GetComponent<Boid>(other, boidType);
-
-                if (entity == other) continue;
-
-                float distance = glm::length(transform.Position - otherTransform.Position);
-
-                if (distance > vision) continue;
-
-                //Alignment
-                float b = pow(bias, glm::dot(otherBoid.Velocity, boid.Velocity));
-                alignmentDirection += otherBoid.Velocity * b;
-
-                //Cohesion
-                cohesionDirection += otherTransform.Position;
-
-                //Separation
-                float d = distance != 0 ? 1.0f/ (float)distance : 0.00001f;
-                separationDirection += (transform.Position - otherTransform.Position) * d;
-
-                neighbourCount++;
-            }
-
             //Correct vectors
-            if (neighbourCount > 0)
+            if (neighbourCounts[entity] > 0)
             {
-                alignmentDirection = LimitMagnitudeMax(ChangeMagnitude(alignmentDirection, maxSpeed) - boid.Velocity, maxForce);
-                cohesionDirection = LimitMagnitudeMax(ChangeMagnitude((cohesionDirection / (float) neighbourCount++) - transform.Position, maxSpeed) - boid.Velocity, maxForce);
-                separationDirection = LimitMagnitudeMax(ChangeMagnitude(separationDirection, maxSpeed) - boid.Velocity, maxForce);
+                alignmentDirections[entity] = LimitMagnitudeMax(ChangeMagnitude(alignmentDirections[entity], maxSpeed) - boid.Velocity, maxForce);
+                cohesionDirections[entity] = LimitMagnitudeMax(ChangeMagnitude((cohesionDirections[entity] / (float) neighbourCounts[entity]++) - transform.Position, maxSpeed) - boid.Velocity, maxForce);
+                separationDirections[entity] = LimitMagnitudeMax(ChangeMagnitude(separationDirections[entity], maxSpeed) - boid.Velocity, maxForce);
             }
 
             //Add vectors to acceleration
-            boid.Acceleration += alignmentDirection * alignment;
-            boid.Acceleration += cohesionDirection * cohesion;
-            boid.Acceleration += separationDirection * separation;
+            boid.Acceleration += alignmentDirections[entity] * alignment;
+            boid.Acceleration += cohesionDirections[entity] * cohesion;
+            boid.Acceleration += separationDirections[entity]* separation;
 
             boid.Velocity += boid.Acceleration;
 
@@ -98,7 +132,106 @@ public:
             if (transform.Position.x > SCREEN_WIDTH) transform.Position.x = 0;
             if (transform.Position.y < 0) transform.Position.y = SCREEN_HEIGHT;
             if (transform.Position.y> SCREEN_HEIGHT) transform.Position.y = 0;
+
+
+            //Debug
+            bool debug = false;
+            if (debug)
+            {
+                glLineWidth(1.0f); // Adjust this for a thinner/thicker line
+
+                for (auto bound : partitionGrid.GetCellAreas())
+                {
+                    // Define the vertices of the rectangle
+                    float vertices[] = {
+                            bound.Position.x, bound.Position.y,                     // Bottom-left corner
+                            bound.Position.x + bound.Size.x, bound.Position.y,       // Bottom-right corner
+                            bound.Position.x + bound.Size.x, bound.Position.y + bound.Size.y, // Top-right corner
+                            bound.Position.x, bound.Position.y + bound.Size.y        // Top-left corner
+                    };
+
+                    // Enable the vertex array and bind the vertices
+                    glEnableClientState(GL_VERTEX_ARRAY);
+                    glVertexPointer(2, GL_FLOAT, 0, vertices);
+
+                    // Draw the rectangle as a line loop
+                    glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+                    // Disable the vertex array
+                    glDisableClientState(GL_VERTEX_ARRAY);
+                }
+
+                for (auto bound : partitionGrid.GetEntityAreas())
+                {
+                    // Define the vertices of the rectangle
+                    float vertices[] = {
+                            bound.Position.x, bound.Position.y,                     // Bottom-left corner
+                            bound.Position.x + bound.Size.x, bound.Position.y,       // Bottom-right corner
+                            bound.Position.x + bound.Size.x, bound.Position.y + bound.Size.y, // Top-right corner
+                            bound.Position.x, bound.Position.y + bound.Size.y        // Top-left corner
+                    };
+
+                    // Enable the vertex array and bind the vertices
+                    glEnableClientState(GL_VERTEX_ARRAY);
+                    glVertexPointer(2, GL_FLOAT, 0, vertices);
+
+                    // Draw the rectangle as a line loop
+                    glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+                    // Disable the vertex array
+                    glDisableClientState(GL_VERTEX_ARRAY);
+                }
+            }
         }
+
+        /*for (const Entity& entity : Entities)
+        {
+            //Debug - Draw quadtree
+            glLineWidth(1.0f); // Adjust this for a thinner/thicker line
+
+            for (auto bound : quadtree.GetQuadBounds())
+            {
+                // Define the vertices of the rectangle
+                float vertices[] = {
+                        bound.Position.x, bound.Position.y,                     // Bottom-left corner
+                        bound.Position.x + bound.Size.x, bound.Position.y,       // Bottom-right corner
+                        bound.Position.x + bound.Size.x, bound.Position.y + bound.Size.y, // Top-right corner
+                        bound.Position.x, bound.Position.y + bound.Size.y        // Top-left corner
+                };
+
+                // Enable the vertex array and bind the vertices
+                glEnableClientState(GL_VERTEX_ARRAY);
+                glVertexPointer(2, GL_FLOAT, 0, vertices);
+
+                // Draw the rectangle as a line loop
+                glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+                // Disable the vertex array
+                glDisableClientState(GL_VERTEX_ARRAY);
+            }
+
+            for (auto bound : quadtree.GetObjectBounds())
+            {
+                // Define the vertices of the rectangle
+                float vertices[] = {
+                        bound.Position.x, bound.Position.y,                     // Bottom-left corner
+                        bound.Position.x + bound.Size.x, bound.Position.y,       // Bottom-right corner
+                        bound.Position.x + bound.Size.x, bound.Position.y + bound.Size.y, // Top-right corner
+                        bound.Position.x, bound.Position.y + bound.Size.y        // Top-left corner
+                };
+
+                // Enable the vertex array and bind the vertices
+                glEnableClientState(GL_VERTEX_ARRAY);
+                glVertexPointer(2, GL_FLOAT, 0, vertices);
+
+                // Draw the rectangle as a line loop
+                glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+                // Disable the vertex array
+                glDisableClientState(GL_VERTEX_ARRAY);
+            }
+
+        }*/
     }
 
     glm::vec2 ChangeMagnitude(glm::vec2 vector, float magnitude)
@@ -150,14 +283,14 @@ public:
     }
 
 private:
-    const float vision = 50.0;
+    const float vision = 25.0;
     const float bias = 1.5;
     const float alignment = 1.3f;
     const float cohesion = 1.15;
     const float separation = 1.3;
-    const float maxForce = 0.15;
-    const float minSpeed = 0.5;
-    const float maxSpeed = 2.0;
+    const float maxForce = 0.07;
+    const float minSpeed = 0.25;
+    const float maxSpeed = 1.0;
     const float drag = 0.007;
     const float noise = 1.0;
 

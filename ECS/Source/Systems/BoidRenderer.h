@@ -23,7 +23,7 @@ public:
         ComponentType transformType = EcsManager.GetComponentType<Transform>();
         ComponentType boidType = EcsManager.GetComponentType<Boid>();
 
-        float triangleSize = 10;
+        float triangleSize = 7;
 
         glBegin(GL_TRIANGLES);
         for (const Entity &entity: Entities)

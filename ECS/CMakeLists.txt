@@ -32,6 +32,10 @@ add_executable(ECS Source/main.cpp
         Source/Components/Boid.h
         Source/Systems/BoidMovement.h
         Source/Systems/BoidRenderer.h
+        Source/Math/Quadtree.h
+        Source/Math/Box.h
+        Source/Math/Rect.h
+        Source/Math/PartitionGrid.h
 )
 
 target_link_libraries(ECS
