@@ -1,0 +1,22 @@
+Running perf on 2000 boids with 1000 update cycles with partition grid 2
+
+Performance counter stats for './ECS':
+
+        11.812.642      cache-misses                     #   13,51% of all cache refs         
+        87.447.247      cache-references                                                      
+
+       5,288044597 seconds time elapsed
+
+       5,246671000 seconds user
+       0,040997000 seconds sys
+
+    17.067.488.561      L1-dcache-loads                                                       
+        73.053.670      L1-dcache-load-misses            #    0,43% of all L1-dcache accesses 
+   <not supported>      L1-dcache-stores                                                      
+
+       5,372754833 seconds time elapsed
+
+       5,329386000 seconds user
+       0,042995000 seconds sys
+
+

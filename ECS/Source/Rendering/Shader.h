@@ -12,7 +12,7 @@ class Shader
 public:
     ~Shader()
     {
-        glDeleteProgram(ID);
+        //glDeleteProgram(ID); //ToDo: Some bug when exiting programm
     }
 
     void InitializeFromPath(const char* vertexPath, const char* fragmentPath)

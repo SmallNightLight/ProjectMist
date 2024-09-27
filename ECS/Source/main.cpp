@@ -120,13 +120,19 @@ int main()
             glfwWaitEventsTimeout(0.3);
         }
 
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        {
+            glfwSetWindowShouldClose(window, true);
+            break;
+        }
+
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
 
         if (!isPaused)
         {
             movementSystem->Update((float)deltaTime, GetMousePosition(window));
-            boidMovement->Update((float)deltaTime, GetMousePosition(window));
+            boidMovement->Update((float)deltaTime);
         }
 
         particleRenderer->Render();
@@ -142,3 +148,63 @@ int main()
 
     return 0;
 }
+
+
+//Main function to run with no window
+/*
+int main()
+{
+    //ECS setup
+    EcsManager.Setup();
+
+    //Register components
+    EcsManager.RegisterComponent<Transform>();
+    EcsManager.RegisterComponent<Velocity>();
+    EcsManager.RegisterComponent<Boid>();
+
+    //Register systems
+    auto movementSystem = EcsManager.RegisterSystem<Movement>();
+    auto boidMovement = EcsManager.RegisterSystem<BoidMovement>();
+
+    //Setup signatures
+    EcsManager.SetSignature<Movement>(Movement::GetSignature());
+    EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
+
+    std::default_random_engine random;
+
+    //Add entities
+    for (Entity entity = 0; entity < MAXENTITIES; ++entity)
+    {
+        EcsManager.CreateEntity();
+
+        std::uniform_real_distribution<float> randomPositionX(0.0, SCREEN_WIDTH);
+        std::uniform_real_distribution<float> randomPositionY(0.0, SCREEN_HEIGHT);
+        std::uniform_real_distribution<float> randomVelocity(-1.0, 1.0);
+
+        EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
+        EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
+    }
+
+    bool isPaused = false;
+    double lastTime = 0.0;
+    double lastTitleUpdateTime = 0.0;
+
+    int i = 0;
+    while (i < 1000)
+    {
+        //Calculate delta time
+        double currentTime = glfwGetTime();
+        double deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        if (!isPaused)
+        {
+            movementSystem->Update((float)deltaTime, glm::vec2{0, 0});
+            boidMovement->Update((float)deltaTime, glm::vec2{0, 0});
+        }
+
+        i++;
+    }
+
+    return 0;
+}*/

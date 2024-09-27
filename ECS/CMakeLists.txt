@@ -40,8 +40,10 @@ add_executable(ECS Source/main.cpp
 
 include_directories(${CMAKE_SOURCE_DIR}/Includes)
 
+if (WIN32)
+    find_package(OpenGL REQUIRED)
+endif()
 
-find_package(OpenGL REQUIRED)
 find_package(glad CONFIG REQUIRED)
 target_link_libraries(ECS PRIVATE glad::glad)
 find_package(glfw3 CONFIG REQUIRED)

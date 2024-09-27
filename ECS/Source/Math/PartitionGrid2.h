@@ -158,7 +158,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         return entityPairs;
     }
 
-    /*void MoveEntity(Entity entity, glm::vec2 newPosition)
+    void MoveEntity(Entity entity, glm::vec2 newPosition)
     {
         //Replace this entity with the last entity in the buffer to keep the memory continuous
         Cell cell = entityCells[entity];
@@ -166,7 +166,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         entityCount[cell]--;
 
         InsertEntity(entity, newPosition);
-    }*/
+    }
 
     [[nodiscard]] const std::array<Rect, CellCount>& GetCellAreas() const
     {

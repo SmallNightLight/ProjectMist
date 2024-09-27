@@ -21,7 +21,7 @@ public:
         return signature;
     }
 
-    void Update(float deltaTime, glm::vec2 mousePosition)
+    void Update(float deltaTime)
     {
         ComponentType transformType = EcsManager.GetComponentType<Transform>();
         ComponentType boidType = EcsManager.GetComponentType<Boid>();
@@ -231,6 +231,115 @@ public:
             }
 
         }*/
+
+
+    }
+
+    void UpdateThreads(float deltaTime)
+    {
+        ComponentType transformType = EcsManager.GetComponentType<Transform>();
+        ComponentType boidType = EcsManager.GetComponentType<Boid>();
+
+        //Construct partition grid
+        PartitionGrid2 partitionGrid = PartitionGrid2();
+
+        glm::vec2 particleSize = glm::vec2 {1.0f * vision, 1.0f * vision};
+
+        for (const Entity& entity : Entities)
+        {
+            auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
+            partitionGrid.InsertEntity(entity, transform.Position);
+        }
+
+
+        float noiseRange = (3.1415926f / 80) * noise;
+        std::uniform_real_distribution<float> randomNoise(-noiseRange, noiseRange);
+
+        std::array<glm::vec2, MAXENTITIES> alignmentDirections = { };
+        std::array<glm::vec2, MAXENTITIES> cohesionDirections = { };
+        std::array<glm::vec2, MAXENTITIES> separationDirections = { };
+        std::array<std::uint32_t , MAXENTITIES> neighbourCounts = { };
+
+        alignmentDirections.fill(glm::vec2{0.0f, 0.0f});
+        cohesionDirections.fill(glm::vec2{0.0f, 0.0f});
+        separationDirections.fill(glm::vec2{0.0f, 0.0f});
+        neighbourCounts.fill(0);
+
+        for(auto entityPair : partitionGrid.GetEntityPairs())
+        {
+            auto& transform = EcsManager.GetComponent<Transform>(entityPair.Entity1, transformType);
+            auto& boid = EcsManager.GetComponent<Boid>(entityPair.Entity1, boidType);
+
+            auto &otherTransform = EcsManager.GetComponent<Transform>(entityPair.Entity2, transformType);
+            auto& otherBoid = EcsManager.GetComponent<Boid>(entityPair.Entity2, boidType);
+
+
+            float distance = glm::length(transform.Position - otherTransform.Position);
+
+            if (distance > vision) continue;
+
+            //Alignment
+            float b = pow(bias, glm::dot(otherBoid.Velocity, boid.Velocity));
+            alignmentDirections[entityPair.Entity1] += otherBoid.Velocity * b;
+            alignmentDirections[entityPair.Entity2] += boid.Velocity * b;
+
+            //Cohesion
+            cohesionDirections[entityPair.Entity1] += otherTransform.Position;
+            cohesionDirections[entityPair.Entity2] += transform.Position;
+
+            //Separation
+            float d = distance != 0 ? 1.0f/ (float)distance : 0.00001f;
+            separationDirections[entityPair.Entity1] += (transform.Position - otherTransform.Position) * d;
+            separationDirections[entityPair.Entity2] += (otherTransform.Position - transform.Position) * d;
+
+            neighbourCounts[entityPair.Entity1]++;
+            neighbourCounts[entityPair.Entity2]++;
+        }
+
+        for (const Entity& entity : Entities)
+        {
+            auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
+            auto& boid = EcsManager.GetComponent<Boid>(entity, boidType);
+
+            boid.Acceleration = glm::vec2{0.0, 0.0};
+
+            //Correct vectors
+            if (neighbourCounts[entity] > 0)
+            {
+                alignmentDirections[entity] = LimitMagnitudeMax(ChangeMagnitude(alignmentDirections[entity], maxSpeed) - boid.Velocity, maxForce);
+                cohesionDirections[entity] = LimitMagnitudeMax(ChangeMagnitude((cohesionDirections[entity] / (float) neighbourCounts[entity]++) - transform.Position, maxSpeed) - boid.Velocity, maxForce);
+                separationDirections[entity] = LimitMagnitudeMax(ChangeMagnitude(separationDirections[entity], maxSpeed) - boid.Velocity, maxForce);
+            }
+
+            //Add vectors to acceleration
+            boid.Acceleration += alignmentDirections[entity] * alignment;
+            boid.Acceleration += cohesionDirections[entity] * cohesion;
+            boid.Acceleration += separationDirections[entity]* separation;
+
+            boid.Velocity += boid.Acceleration;
+
+            boid.Velocity *= 1 - drag;
+            boid.Velocity = Rotate(boid.Velocity, randomNoise(random));
+
+            if (glm::length(boid.Velocity) == 0)
+            {
+                //Set velocity to a random direction
+                boid.Velocity = RandomVector(minSpeed);
+            }
+            else
+            {
+                boid.Velocity = LimitMagnitudeMin(boid.Velocity, minSpeed);
+            }
+
+            boid.Velocity = LimitMagnitudeMax(boid.Velocity, maxSpeed);
+            transform.Position += boid.Velocity * deltaTime * 100.0f;
+
+            //Set to other side of screen when exiting edges
+            if (transform.Position.x < 0) transform.Position.x = SCREEN_WIDTH;
+            if (transform.Position.x > SCREEN_WIDTH) transform.Position.x = 0;
+            if (transform.Position.y < 0) transform.Position.y = SCREEN_HEIGHT;
+            if (transform.Position.y> SCREEN_HEIGHT) transform.Position.y = 0;
+        }
     }
 
     glm::vec2 ChangeMagnitude(glm::vec2 vector, float magnitude)
