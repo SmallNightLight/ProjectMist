@@ -1,6 +1,6 @@
 #pragma once
 
-#include "./Math/FPM/fixed.hpp"
+#include "../Math/FPM/fixed.hpp"
 
 #include <bitset>
 #include <cstdint>
@@ -13,7 +13,7 @@
 using Entity = std::uint32_t;
 using ComponentType = std::uint8_t;
 
-static constexpr std::uint32_t MAXENTITIES = 1500;
+static constexpr std::uint32_t MAXENTITIES = 2500;
 static constexpr ComponentType MAXCOMPONENTS = 32;
 
 using Signature = std::bitset<MAXCOMPONENTS>;

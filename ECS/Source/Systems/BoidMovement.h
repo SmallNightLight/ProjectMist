@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../Math/PartitionGrid.h"
+//#include "../Math/PartitionGrid.h"
+#include "../Math/PartitionGrid2.h"
 
 #include <array>
 #include <iostream>
@@ -23,25 +24,23 @@ public:
     void Update(float deltaTime, glm::vec2 mousePosition)
     {
         ComponentType transformType = EcsManager.GetComponentType<Transform>();
+        ComponentType boidType = EcsManager.GetComponentType<Boid>();
 
         //Construct partition grid
-        PartitionGrid partitionGrid = PartitionGrid();
+        PartitionGrid2 partitionGrid = PartitionGrid2();
 
         glm::vec2 particleSize = glm::vec2 {1.0f * vision, 1.0f * vision};
 
         for (const Entity& entity : Entities)
         {
             auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
-            partitionGrid.InsertEntity(entity, Rect(transform.Position, particleSize));
+            partitionGrid.InsertEntity(entity, transform.Position);
         }
 
-
-        ComponentType boidType = EcsManager.GetComponentType<Boid>();
 
         float noiseRange = (3.1415926f / 80) * noise;
         std::uniform_real_distribution<float> randomNoise(-noiseRange, noiseRange);
 
-        //TODO fill correct
         std::array<glm::vec2, MAXENTITIES> alignmentDirections = { };
         std::array<glm::vec2, MAXENTITIES> cohesionDirections = { };
         std::array<glm::vec2, MAXENTITIES> separationDirections = { };
@@ -161,7 +160,7 @@ public:
                     glDisableClientState(GL_VERTEX_ARRAY);
                 }
 
-                for (auto bound : partitionGrid.GetEntityAreas())
+                /*for (auto bound : partitionGrid.GetEntityAreas())
                 {
                     // Define the vertices of the rectangle
                     float vertices[] = {
@@ -180,7 +179,7 @@ public:
 
                     // Disable the vertex array
                     glDisableClientState(GL_VERTEX_ARRAY);
-                }
+                }*/
             }
         }
 

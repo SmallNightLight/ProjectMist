@@ -24,7 +24,7 @@ using Cell = std::uint32_t;
 static constexpr std::int32_t BufferSize = 64;
 
 static constexpr Rect PartitionArea = Rect(glm::vec2(0, 0), glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
-static constexpr float MaxEntitySize = 25.0f;
+static constexpr float MaxEntitySize = 50.0f;
 static constexpr float CellSize = MaxEntitySize * 2.0f;
 
 static constexpr Cell CellCountX = int_ceil(PartitionArea.Size.x / CellSize);

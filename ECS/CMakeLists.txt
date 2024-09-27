@@ -1,14 +1,13 @@
-set(CMAKE_TOOLCHAIN_FILE "C:/Matthias/Study/VStudio/LibariesCPP/vcpkg/scripts/buildsystems/vcpkg.cmake")
+if(WIN32)
+    set(CMAKE_TOOLCHAIN_FILE "C:/Matthias/Study/VStudio/LibariesCPP/vcpkg/scripts/buildsystems/vcpkg.cmake")
+elseif(UNIX)
+    include("/home/matthias/Applications/vcpkg/scripts/buildsystems/vcpkg.cmake")
+endif()
 
 cmake_minimum_required(VERSION 3.27)
 project(ECS)
 
 set(CMAKE_CXX_STANDARD 17)
-
-find_package(glfw3 CONFIG REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(glad CONFIG REQUIRED)
-find_package(glm CONFIG REQUIRED)
 
 add_executable(ECS Source/main.cpp
         Source/Base/ComponentCollection.h
@@ -36,14 +35,20 @@ add_executable(ECS Source/main.cpp
         Source/Math/Box.h
         Source/Math/Rect.h
         Source/Math/PartitionGrid.h
+        Source/Math/PartitionGrid2.h
 )
 
-target_link_libraries(ECS
-        PRIVATE
-        glfw
-        OpenGL::GL
-        glad::glad
-        glm::glm
-)
+include_directories(${CMAKE_SOURCE_DIR}/Includes)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+
+find_package(OpenGL REQUIRED)
+find_package(glad CONFIG REQUIRED)
+target_link_libraries(ECS PRIVATE glad::glad)
+find_package(glfw3 CONFIG REQUIRED)
+target_link_libraries(ECS PRIVATE glfw)
+find_package(glm CONFIG REQUIRED)
+target_link_libraries(ECS PRIVATE glm::glm)
+
+if (WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+endif()
