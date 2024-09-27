@@ -6,7 +6,7 @@
 #include <array>
 #include <iostream>
 #include <thread>
-#include <mutex>
+//#include <mutex>
 
 extern ECSManager EcsManager;
 
@@ -41,15 +41,10 @@ public:
         float noiseRange = (3.1415926f / 80) * noise;
         std::uniform_real_distribution<float> randomNoise(-noiseRange, noiseRange);
 
-        std::array<glm::vec2, MAXENTITIES> alignmentDirections = { };
-        std::array<glm::vec2, MAXENTITIES> cohesionDirections = { };
-        std::array<glm::vec2, MAXENTITIES> separationDirections = { };
-        std::array<std::uint32_t , MAXENTITIES> neighbourCounts = { };
-
-        alignmentDirections.fill(glm::vec2{0.0f, 0.0f});
-        cohesionDirections.fill(glm::vec2{0.0f, 0.0f});
-        separationDirections.fill(glm::vec2{0.0f, 0.0f});
-        neighbourCounts.fill(0);
+        auto alignmentDirections = std::vector(MAXENTITIES, glm::vec2(0.0f, 0.0f));
+        auto cohesionDirections = std::vector(MAXENTITIES, glm::vec2(0.0f, 0.0f));
+        auto separationDirections = std::vector(MAXENTITIES, glm::vec2(0.0f, 0.0f));
+        auto neighbourCounts = std::vector<std::uint32_t>(MAXENTITIES, 0);
 
         int entityPairs = 0;
 

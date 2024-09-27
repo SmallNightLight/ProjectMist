@@ -92,6 +92,7 @@ int main()
         std::uniform_real_distribution<float> randomVelocity(-1.0, 1.0);
 
         EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
+        //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
         EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
     }
 
