@@ -80,6 +80,18 @@ public:
         return _componentManager->GetComponent<T>(entity, componentType);
     }
 
+    template<typename T>
+    ComponentCollection<T>* GetComponentCollection()
+    {
+        return _componentManager->GetComponentCollection<T>();
+    }
+
+    template<typename T>
+    ComponentCollection<T>* GetComponentCollection(ComponentType componentType)
+    {
+        return _componentManager->GetComponentCollection<T>(componentType);
+    }
+
     //Checks whether the given entity has the component of type T
     template<typename T>
     bool HasComponent(Entity entity)

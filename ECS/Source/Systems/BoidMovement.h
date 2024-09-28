@@ -23,8 +23,8 @@ public:
 
     void Update(float deltaTime)
     {
-        ComponentType transformType = EcsManager.GetComponentType<Transform>();
-        ComponentType boidType = EcsManager.GetComponentType<Boid>();
+        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
+        auto boidCollection = EcsManager.GetComponentCollection<Boid>();
 
         //Construct partition grid
         PartitionGrid2 partitionGrid = PartitionGrid2();
@@ -33,7 +33,7 @@ public:
 
         for (const Entity& entity : Entities)
         {
-            auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
+            auto& transform = transformCollection->GetComponent(entity);
             partitionGrid.InsertEntity(entity, transform.Position);
         }
 
@@ -50,12 +50,11 @@ public:
 
         for(auto entityPair : partitionGrid.GetEntityPairs())
         {
-            auto& transform = EcsManager.GetComponent<Transform>(entityPair.Entity1, transformType);
-            auto& boid = EcsManager.GetComponent<Boid>(entityPair.Entity1, boidType);
+            auto& transform = transformCollection->GetComponent(entityPair.Entity1);
+            auto& boid = boidCollection->GetComponent(entityPair.Entity1);
 
-            auto &otherTransform = EcsManager.GetComponent<Transform>(entityPair.Entity2, transformType);
-            auto& otherBoid = EcsManager.GetComponent<Boid>(entityPair.Entity2, boidType);
-
+            auto &otherTransform = transformCollection->GetComponent(entityPair.Entity2);
+            auto& otherBoid = boidCollection->GetComponent(entityPair.Entity2);
 
             float distance = glm::length(transform.Position - otherTransform.Position);
 
@@ -85,8 +84,8 @@ public:
 
         for (const Entity& entity : Entities)
         {
-            auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
-            auto& boid = EcsManager.GetComponent<Boid>(entity, boidType);
+            auto& transform = transformCollection->GetComponent(entity);
+            auto& boid = boidCollection->GetComponent(entity);
 
             boid.Acceleration = glm::vec2{0.0, 0.0};
 

@@ -115,7 +115,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
     std::vector<EntityPair> GetEntityPairs()
     {
         std::vector<EntityPair> entityPairs;
-        entityPairs.reserve(MAXENTITIES);
+        entityPairs.reserve(MAXENTITIES * 5);
 
         for(Cell cellX = 0; cellX < CellCountX; ++cellX)
         {

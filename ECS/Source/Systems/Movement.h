@@ -15,15 +15,15 @@ public:
 
     void Update(float deltaTime, glm::vec2 mousePosition)
     {
-        ComponentType transformType = EcsManager.GetComponentType<Transform>();
-        ComponentType velocityType = EcsManager.GetComponentType<Velocity>();
+        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
+        auto velocityCollection = EcsManager.GetComponentCollection<Velocity>();
 
         float combinedMass = gravity * attractorMass * particleMass;
 
         for (const Entity& entity : Entities)
         {
-            auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
-            auto& velocity = EcsManager.GetComponent<Velocity>(entity, velocityType);
+            auto& transform = transformCollection->GetComponent(entity);
+            auto& velocity = velocityCollection->GetComponent(entity);
 
             glm::vec2 r = mousePosition - transform.Position;
             float rSquared = glm::length(r) + softening;

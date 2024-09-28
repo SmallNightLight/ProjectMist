@@ -25,16 +25,16 @@ public:
 
     void Render()
     {
-        ComponentType transformType = EcsManager.GetComponentType<Transform>();
-        ComponentType velocityType = EcsManager.GetComponentType<Velocity>();
+        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
+        auto velocityCollection = EcsManager.GetComponentCollection<Velocity>();
 
         glPointSize(4);
         glEnable(GL_POINT_SMOOTH);
         glBegin(GL_POINTS);
         for (const Entity& entity : Entities)
         {
-            auto& transform = EcsManager.GetComponent<Transform>(entity, transformType);
-            auto& velocity = EcsManager.GetComponent<Velocity>(entity, velocityType);
+            auto& transform = transformCollection->GetComponent(entity);
+            auto& velocity = velocityCollection->GetComponent(entity);
 
             glColor3ub(velocity.Value.x, 0, velocity.Value.y);
             glVertex2f(transform.Position.x, transform.Position.y);

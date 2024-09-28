@@ -55,8 +55,6 @@ public:
     template<typename T>
 	T& GetComponent(Entity entity, ComponentType componentType)
 	{
-        //TODO: Set componentType as a function?
-
         return GetComponentCollection<T>(componentType)->GetComponent(entity);
 	}
 
@@ -77,17 +75,27 @@ public:
 		}
 	}
 
-private:
-	std::unordered_map<const char*, ComponentType> _componentTypes { };
-    std::array<std::unique_ptr<IComponentCollection>, MAXCOMPONENTS> _componentArrays { };
-	ComponentType _nextComponentType { };
-
-    //Gets the component collection for a specific component of type T
+	//Gets the component collection for a specific component of type T
 	template<typename T>
 	ComponentCollection<T>* GetComponentCollection(ComponentType componentType)
 	{
 		assert(_componentArrays[componentType] && "Component not yet registered");
 
-        return static_cast<ComponentCollection<T>*>(_componentArrays[componentType].get());
+		return static_cast<ComponentCollection<T>*>(_componentArrays[componentType].get());
 	}
+
+	template<typename T>
+	ComponentCollection<T>* GetComponentCollection()
+	{
+		ComponentType componentType = GetComponentType<T>();
+
+		assert(_componentArrays[componentType] && "Component not yet registered");
+
+		return static_cast<ComponentCollection<T>*>(_componentArrays[componentType].get());
+	}
+
+private:
+	std::unordered_map<const char*, ComponentType> _componentTypes { };
+    std::array<std::unique_ptr<IComponentCollection>, MAXCOMPONENTS> _componentArrays { };
+	ComponentType _nextComponentType { };
 };

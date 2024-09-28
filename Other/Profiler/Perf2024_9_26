@@ -1,7 +1,5 @@
 Running perf on 2000 boids with 1000 update cycles with partition grid 2
 
-Performance counter stats for './ECS':
-
         11.812.642      cache-misses                     #   13,51% of all cache refs         
         87.447.247      cache-references                                                      
 
@@ -18,5 +16,28 @@ Performance counter stats for './ECS':
 
        5,329386000 seconds user
        0,042995000 seconds sys
+
+
+
+for the particle ECS sim
+
+        47.992.194      cache-misses                     #   17,91% of all cache refs         
+       267.911.123      cache-references                                                      
+
+       5,810417253 seconds time elapsed
+
+       5,737179000 seconds user
+       0,374734000 seconds sys
+
+
+    16.139.679.392      L1-dcache-loads                                                       
+       110.977.476      L1-dcache-load-misses            #    0,69% of all L1-dcache accesses 
+   <not supported>      L1-dcache-stores                                                      
+
+       5,887486355 seconds time elapsed
+
+       5,857249000 seconds user
+       0,354770000 seconds sys
+
 
 

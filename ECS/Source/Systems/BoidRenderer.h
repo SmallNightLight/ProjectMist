@@ -20,16 +20,16 @@ public:
 
     void Render()
     {
-        ComponentType transformType = EcsManager.GetComponentType<Transform>();
-        ComponentType boidType = EcsManager.GetComponentType<Boid>();
+        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
+        auto boidCollection = EcsManager.GetComponentCollection<Boid>();
 
         float triangleSize = 7;
 
         glBegin(GL_TRIANGLES);
         for (const Entity &entity: Entities)
         {
-            auto &transform = EcsManager.GetComponent<Transform>(entity, transformType);
-            auto &boid = EcsManager.GetComponent<Boid>(entity, boidType);
+            auto& transform = transformCollection->GetComponent(entity);
+            auto& boid = boidCollection->GetComponent(entity);
 
             glm::vec2 pos = transform.Position;
             glm::vec2 vel = glm::normalize(boid.Velocity);
