@@ -16,7 +16,7 @@ constexpr int int_ceil(float f)
 
 
 using Cell = std::uint32_t;
-static constexpr std::int32_t BufferSize = 32;
+static constexpr std::int32_t BufferSize = 64;
 
 static constexpr Rect PartitionArea = Rect(glm::vec2(0, 0), glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
 static constexpr float MaxEntitySize = 50.0f;
@@ -64,9 +64,9 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 {
     PartitionGrid2()
     {
-        //secondaryIndexes.fill(IndexNull);
-
-        //CreateGrid();
+        secondaryIndexes.fill(IndexNull);
+        entityCells.fill(CellNull);
+        CreateGrid();
     }
 
     void CreateGrid()
@@ -84,19 +84,17 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 
     void InsertEntity(Entity entity, glm::vec2 position) //Does not handle out of bounds position
     {
-        //Calculate the cell base on the position
-        Cell cellX = static_cast<Cell>(std::floor(position.x / CellSize));
-        Cell cellY = static_cast<Cell>(std::floor(position.y / CellSize));
+        InsertEntity(entity, position, GetCell(position));
+    }
 
-        Cell cell = cellY * CellCountX + cellX;
-
+    void InsertEntity(Entity entity, glm::vec2 position, Cell cell) //Does not handle out of bounds position
+    {
         if (entityCount[cell] < BufferSize)
         {
-            int32_t index = cell * BufferSize + entityCount[cell];
+            int32_t index = BufferSize * cell + entityCount[cell];
 
             if (entity > MAXENTITIES || cell > CellCount)
                 return;
-
 
             entityIndexes[entity] = index;
             entities[index] = entity;
@@ -110,6 +108,15 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 
             //std::cout << "Could not add entity buffer overflow" << std::endl; //TODO: CHECK HOW MUCH OVERFLOW THERE EIS
         }
+    }
+
+    [[nodiscard]] Cell GetCell(glm::vec2 position) const
+    {
+        //Calculate the cell base on the position
+        Cell cellX = static_cast<Cell>(std::floor(position.x / CellSize));
+        Cell cellY = static_cast<Cell>(std::floor(position.y / CellSize));
+
+        return cellY * CellCountX + cellX;
     }
 
     std::vector<EntityPair> GetEntityPairs()
@@ -126,7 +133,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
                     Cell newX = cellX + offset.x;
                     Cell newY = cellY + offset.y;
 
-                    // heck if the new cell is within grid bounds
+                    //Check if the new cell is within grid bounds
                     if (newX >= 0 && newX < CellCountX && newY >= 0 && newY < CellCountY)
                     {
                         Cell cell = newY * CellCountX + newX;
@@ -160,12 +167,19 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 
     void MoveEntity(Entity entity, glm::vec2 newPosition)
     {
-        //Replace this entity with the last entity in the buffer to keep the memory continuous
         Cell cell = entityCells[entity];
-        entities[entityIndexes[entity]] = entities[cell * BufferSize + (BufferSize - 1)];
-        entityCount[cell]--;
+        Cell newCell = GetCell(newPosition);
 
-        InsertEntity(entity, newPosition);
+        if (cell == newCell) return;
+
+        if (cell != CellNull)
+        {
+            //Replace this entity with the last entity in the buffer to keep the memory continuous
+            entities[entityIndexes[entity]] = entities[cell * BufferSize + (entityCount[cell] - 1)];
+            entityCount[cell]--;
+        }
+
+        InsertEntity(entity, newPosition, newCell);
     }
 
     [[nodiscard]] const std::array<Rect, CellCount>& GetCellAreas() const
@@ -180,6 +194,10 @@ private:
 
     //Primary buffer
     std::array<Entity, CellCount * BufferSize> entities { };
-    //std::array<int32_t,  CellCount> secondaryIndexes { };
+
     std::array<std::int8_t, CellCount> entityCount { };
+
+    //Secondary buffer
+    std::array<int32_t,  CellCount> secondaryIndexes { };
+    std::array<SecondaryBuffer, CellCount * BufferSize> secondaryBuffer { };
 };

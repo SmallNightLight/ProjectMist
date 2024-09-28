@@ -26,15 +26,12 @@ public:
         auto transformCollection = EcsManager.GetComponentCollection<Transform>();
         auto boidCollection = EcsManager.GetComponentCollection<Boid>();
 
-        //Construct partition grid
-        PartitionGrid2 partitionGrid = PartitionGrid2();
-
-        glm::vec2 particleSize = glm::vec2 {1.0f * vision, 1.0f * vision};
+        //glm::vec2 particleSize = glm::vec2 {1.0f * vision, 1.0f * vision};
 
         for (const Entity& entity : Entities)
         {
             auto& transform = transformCollection->GetComponent(entity);
-            partitionGrid.InsertEntity(entity, transform.Position);
+            partitionGrid.MoveEntity(entity, transform.Position);
         }
 
 
@@ -391,10 +388,11 @@ private:
     const float cohesion = 1.15;
     const float separation = 1.3;
     const float maxForce = 0.07;
-    const float minSpeed = 0.25;
+    const float minSpeed = 0.7;
     const float maxSpeed = 1.0;
     const float drag = 0.007;
     const float noise = 1.0;
 
     std::default_random_engine random;
+    PartitionGrid2 partitionGrid = PartitionGrid2();
 };
