@@ -8,7 +8,6 @@
 #include <vector>
 #include <queue>
 #include <cmath>
-#include <algorithm>
 
 constexpr int int_ceil(float f)
 {
@@ -20,7 +19,7 @@ constexpr int int_ceil(float f)
 using Cell = std::uint32_t;
 static constexpr std::uint32_t MainBufferSize = 64;
 static constexpr std::uint32_t ExtraBufferSize = 32;
-static constexpr std::uint32_t ExtraBufferCount = MAXENTITIES / ExtraBufferSize; //?
+static constexpr std::uint32_t ExtraBufferCount = MAXENTITIES / ExtraBufferSize;
 
 static constexpr Rect PartitionArea = Rect(glm::vec2(0, 0), glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
 static constexpr float MaxEntitySize = 50.0f;
@@ -29,7 +28,7 @@ static constexpr float CellSize = MaxEntitySize;
 static constexpr Cell CellCountX = int_ceil(PartitionArea.Size.x / CellSize);
 static constexpr Cell CellCountY = int_ceil(PartitionArea.Size.y / CellSize);
 static constexpr Cell CellCount = CellCountX * CellCountY;
-static constexpr std::uint32_t IndexNull = MAXENTITIES + 1; //?
+static constexpr std::uint32_t IndexNull = MAXENTITIES + 1;
 static constexpr std::uint32_t CellNull = CellCount + 1;
 static constexpr std::uint32_t SecondaryIndexNull = ExtraBufferCount + 1;
 static constexpr glm::ivec2 CellOffsets[4] =
@@ -180,13 +179,13 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
     [[nodiscard]] static Cell GetCell(glm::vec2 position)
     {
         //Calculate the cell base on the position
-        Cell cellX = static_cast<Cell>(std::floor(position.x / CellSize));
-        Cell cellY = static_cast<Cell>(std::floor(position.y / CellSize));
+        const Cell cellX = static_cast<Cell>(std::floor(position.x / CellSize));
+        const Cell cellY = static_cast<Cell>(std::floor(position.y / CellSize));
 
         return cellY * CellCountX + cellX;
     }
 
-    std::vector<EntityPair> GetEntityPairs() const
+    [[nodiscard]] std::vector<EntityPair> GetEntityPairs() const
     {
         std::vector<EntityPair> entityPairs;
         entityPairs.reserve(MAXENTITIES * 5);
@@ -197,15 +196,15 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
             {
                 Cell mainCell = cellY * CellCountX + cellX;
 
-                for(glm::ivec2 offset : CellOffsets)
+                for(const glm::ivec2 offset : CellOffsets)
                 {
-                    Cell newX = cellX + offset.x;
-                    Cell newY = cellY + offset.y;
+                    const Cell newX = cellX + offset.x;
+                    const Cell newY = cellY + offset.y;
 
                     //Check if the new cell is within grid bounds
                     if (newX < CellCountX && newY < CellCountY)
                     {
-                        Cell otherCell = newY * CellCountX + newX;
+                        const Cell otherCell = newY * CellCountX + newX;
 
                         uint32_t currentBufferIndex1 = mainCell;
                         uint8_t totalEntityCount1 = entityCount[mainCell];
@@ -239,9 +238,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
                                 currentBufferIndex2 = otherCell;
                             }
 
-                            uint8_t totalEntityCount2 = entityCount[currentBufferIndex2];
-
-                            for(; j < totalEntityCount2; j++)
+                            for(uint8_t totalEntityCount2 = entityCount[currentBufferIndex2]; j < totalEntityCount2; j++)
                             {
                                 uint32_t index2 = currentBufferIndex2 == otherCell ? otherCell * MainBufferSize + j : MainBufferSize * CellCount + ExtraBufferSize * (currentBufferIndex2 - CellCount) + j;
 
@@ -260,14 +257,13 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
             }
         }
 
-        //std::cout << "Extra buffers available: " << availableSecondaryBuffers.size() << std::endl;
         return entityPairs;
     }
 
-    void MoveEntity(Entity entity, glm::vec2 newPosition)
+    void MoveEntity(const Entity entity, const glm::vec2 newPosition)
     {
-        Cell cell = entityCells[entity];
-        Cell newCell = GetCell(newPosition);
+        const Cell cell = entityCells[entity];
+        const Cell newCell = GetCell(newPosition);
 
         if (cell == newCell) return;
 
@@ -286,7 +282,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
             }
 
             //Replace this entity with the last entity in the buffer to keep the memory continuous
-            Entity lastEntity = buffer[startBufferIndex + (entityCount[bufferIndex] - 1)];
+            const Entity lastEntity = buffer[startBufferIndex + (entityCount[bufferIndex] - 1)];
             buffer[entityIndexes[entity]] = lastEntity;
 
             entityIndexes[lastEntity] = entityIndexes[entity];
