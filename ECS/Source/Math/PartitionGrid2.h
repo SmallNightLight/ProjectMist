@@ -8,6 +8,7 @@
 #include <vector>
 #include <queue>
 #include <cmath>
+#include <algorithm>
 
 constexpr int int_ceil(float f)
 {
@@ -17,9 +18,9 @@ constexpr int int_ceil(float f)
 
 
 using Cell = std::uint32_t;
-static constexpr std::int32_t MainBufferSize = 64;
-static constexpr std::int32_t ExtraBufferSize = 32;
-static constexpr std::int32_t ExtraBufferCount = MAXENTITIES; //?
+static constexpr std::uint32_t MainBufferSize = 64;
+static constexpr std::uint32_t ExtraBufferSize = 32;
+static constexpr std::uint32_t ExtraBufferCount = MAXENTITIES / ExtraBufferSize; //?
 
 static constexpr Rect PartitionArea = Rect(glm::vec2(0, 0), glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
 static constexpr float MaxEntitySize = 50.0f;
@@ -28,9 +29,9 @@ static constexpr float CellSize = MaxEntitySize;
 static constexpr Cell CellCountX = int_ceil(PartitionArea.Size.x / CellSize);
 static constexpr Cell CellCountY = int_ceil(PartitionArea.Size.y / CellSize);
 static constexpr Cell CellCount = CellCountX * CellCountY;
-static constexpr std::int32_t IndexNull = MAXENTITIES + 1; //?
-static constexpr std::int32_t CellNull = CellCount + 1;
-static constexpr std::int32_t SecondaryIndexNull = ExtraBufferCount + 1;
+static constexpr std::uint32_t IndexNull = MAXENTITIES + 1; //?
+static constexpr std::uint32_t CellNull = CellCount + 1;
+static constexpr std::uint32_t SecondaryIndexNull = ExtraBufferCount + 1;
 static constexpr glm::ivec2 CellOffsets[4] =
 {
     glm::ivec2(0, 0),  //Self
@@ -81,7 +82,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         {
             for (Cell x = 0; x < CellCountX; ++x)
             {
-                cellAreas[y * CellCountX + x] = Rect(glm::vec2((float)x * CellSize, (float)y * CellSize), cellSize);
+                cellAreas[y * CellCountX + x] = Rect(glm::vec2(static_cast<float>(x) * CellSize, static_cast<float>(y) * CellSize), cellSize);
             }
         }
     }
@@ -98,7 +99,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 
         if (entityCount[cell] < MainBufferSize)
         {
-            int32_t index = MainBufferSize * cell + entityCount[cell];
+            uint32_t index = MainBufferSize * cell + entityCount[cell];
             entityIndexes[entity] = index;
             buffer[index] = entity;
             entityCells[entity] = cell;
@@ -106,7 +107,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         }
         else
         {
-            int32_t bufferIndex = SecondaryIndexNull;
+            uint32_t bufferIndex = SecondaryIndexNull;
 
             if (extraBufferIndex[cell] == IndexNull)
             {
@@ -130,7 +131,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
                     if (entityCount[bufferIndex] >= ExtraBufferSize)
                     {
                         //This buffer is full - check if next buffer already exists
-                        int32_t nextBufferIndex = extraBufferIndex[bufferIndex];
+                        uint32_t nextBufferIndex = extraBufferIndex[bufferIndex];
 
                         if (nextBufferIndex == IndexNull)
                         {
@@ -161,7 +162,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 
             if (bufferIndex != SecondaryIndexNull)
             {
-                int32_t index = MainBufferSize * CellCount + ExtraBufferSize * (bufferIndex - CellCount) + entityCount[bufferIndex];
+                uint32_t index = MainBufferSize * CellCount + ExtraBufferSize * (bufferIndex - CellCount) + entityCount[bufferIndex];
                 entityIndexes[entity] = index;
                 buffer[index] = entity;
                 entityCount[bufferIndex]++;
@@ -194,6 +195,8 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         {
             for(Cell cellY = 0; cellY < CellCountY; ++cellY)
             {
+                Cell mainCell = cellY * CellCountX + cellX;
+
                 for(glm::ivec2 offset : CellOffsets)
                 {
                     Cell newX = cellX + offset.x;
@@ -202,66 +205,51 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
                     //Check if the new cell is within grid bounds
                     if (newX < CellCountX && newY < CellCountY)
                     {
-                        Cell cell = newY * CellCountX + newX;
+                        Cell otherCell = newY * CellCountX + newX;
 
-                        for (int i = 0; i < entityCount[cell]; i++)
+                        uint32_t currentBufferIndex1 = mainCell;
+                        uint8_t totalEntityCount1 = entityCount[mainCell];
+                        for (uint32_t i = 0; i < totalEntityCount1; i++)
                         {
-                            for(int j = i + 1; j < entityCount[cell]; j++)
+                            uint32_t index1 = (currentBufferIndex1 == mainCell)  ? mainCell * MainBufferSize + i : MainBufferSize * CellCount + ExtraBufferSize * (currentBufferIndex1 - CellCount) + i;
+
+                            if (i == entityCount[currentBufferIndex1] - 1 && extraBufferIndex[currentBufferIndex1] != IndexNull)
                             {
-                                int32_t index1 = 0;
-                                int32_t index2 = 0;
+                                currentBufferIndex1 = extraBufferIndex[currentBufferIndex1];
+                                totalEntityCount1 = entityCount[currentBufferIndex1];
+                                i = -1;
+                            }
 
-                                if (i < MainBufferSize)
+                            uint32_t currentBufferIndex2;
+                            uint32_t j = 0;
+
+                            if (mainCell == otherCell)
+                            {
+                                currentBufferIndex2 = currentBufferIndex1;
+                                j = i + 1;
+
+                                if (j == entityCount[currentBufferIndex2] - 1 && extraBufferIndex[currentBufferIndex2] != IndexNull)
                                 {
-                                    //Entity i in main buffer
-                                    index1 = cell * MainBufferSize + i;
-
+                                    currentBufferIndex2 = extraBufferIndex[currentBufferIndex2];
+                                    j = 0;
                                 }
-                                else
+                            }
+                            else
+                            {
+                                currentBufferIndex2 = otherCell;
+                            }
+
+                            uint8_t totalEntityCount2 = entityCount[currentBufferIndex2];
+
+                            for(; j < totalEntityCount2; j++)
+                            {
+                                uint32_t index2 = currentBufferIndex2 == otherCell ? otherCell * MainBufferSize + j : MainBufferSize * CellCount + ExtraBufferSize * (currentBufferIndex2 - CellCount) + j;
+
+                                if (j == entityCount[currentBufferIndex2] - 1 && extraBufferIndex[currentBufferIndex2] != IndexNull)
                                 {
-                                    //Entity i in extra buff
-                                    int32_t bufferIndex = extraBufferIndex[cell];
-                                    int32_t newI = i - MainBufferSize;
-
-                                    while(true)
-                                    {
-                                        if (newI < ExtraBufferSize)
-                                        {
-                                            //Entity is in this buffer
-                                            index1 = bufferIndex * ExtraBufferSize + newI;
-                                            break;
-                                        }
-
-                                        //Continue to next buffer
-                                        bufferIndex = extraBufferIndex[bufferIndex];
-                                        newI -= ExtraBufferSize;
-                                    }
-                                }
-
-                                if (j < MainBufferSize)
-                                {
-                                    //Entity j in main buffer
-                                    index2 = cell * MainBufferSize + j;
-                                }
-                                else
-                                {
-                                    //Entity j in extra buff
-                                    int32_t bufferIndex = extraBufferIndex[cell];
-                                    int32_t newJ = j - MainBufferSize;
-
-                                    while(true)
-                                    {
-                                        if (newJ < ExtraBufferSize)
-                                        {
-                                            //Entity is in this buffer
-                                            index2 = bufferIndex * ExtraBufferSize + newJ;
-                                            break;
-                                        }
-
-                                        //Continue to next buffer
-                                        bufferIndex = extraBufferIndex[bufferIndex];
-                                        newJ -= ExtraBufferSize;
-                                    }
+                                    currentBufferIndex2 = extraBufferIndex[currentBufferIndex2];
+                                    totalEntityCount2 = entityCount[currentBufferIndex2];
+                                    j = -1;
                                 }
 
                                 entityPairs.emplace_back(buffer[index1], buffer[index2]);
@@ -272,6 +260,7 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
             }
         }
 
+        //std::cout << "Extra buffers available: " << availableSecondaryBuffers.size() << std::endl;
         return entityPairs;
     }
 
@@ -285,9 +274,9 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         if (cell != CellNull && entityIndexes[entity] != IndexNull)
         {
             //Adjust bufferIndex
-            int32_t bufferIndex = cell;
-            int32_t nextBufferIndex = extraBufferIndex[cell];
-            int32_t startBufferIndex = bufferIndex * MainBufferSize;
+            uint32_t bufferIndex = cell;
+            uint32_t nextBufferIndex = extraBufferIndex[cell];
+            uint32_t startBufferIndex = bufferIndex * MainBufferSize;
 
             while(nextBufferIndex != IndexNull)
             {
@@ -325,12 +314,12 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 
 private:
     std::array<Rect, CellCount> cellAreas { };
-    std::array<int32_t, MAXENTITIES> entityIndexes { };
+    std::array<uint32_t, MAXENTITIES> entityIndexes { };
     std::array<Cell, MAXENTITIES> entityCells { };
 
     std::array<Entity, CellCount * MainBufferSize + ExtraBufferCount * ExtraBufferSize> buffer { };
-    std::array<std::int8_t, CellCount + ExtraBufferCount> entityCount { };
-    std::array<int32_t, CellCount + ExtraBufferCount> extraBufferIndex { };
-    std::array<int32_t, ExtraBufferCount> extraReverseBufferIndex { };
-    std::queue<int32_t> availableSecondaryBuffers;
+    std::array<std::uint8_t, CellCount + ExtraBufferCount> entityCount { };
+    std::array<uint32_t, CellCount + ExtraBufferCount> extraBufferIndex { };
+    std::array<uint32_t, ExtraBufferCount> extraReverseBufferIndex { };
+    std::queue<uint32_t> availableSecondaryBuffers;
 };

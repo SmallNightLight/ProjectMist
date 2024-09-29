@@ -45,6 +45,7 @@ public:
 
         int entityPairs = 0;
 
+        int misses = 0; int treffer = 0;
         for(auto entityPair : partitionGrid.GetEntityPairs())
         {
             auto& transform = transformCollection->GetComponent(entityPair.Entity1);
@@ -55,7 +56,7 @@ public:
 
             float distance = glm::length(transform.Position - otherTransform.Position);
 
-            if (distance > vision) continue;
+            if (distance > vision){misses++;continue;}treffer++;
 
             //Alignment
             float b = pow(bias, glm::dot(otherBoid.Velocity, boid.Velocity));
@@ -77,6 +78,7 @@ public:
             entityPairs++;
         }
 
+        //std::cout << "Misses: " << misses << "  Treffer: " << treffer << std::endl;
         //std::cout << entityPairs << std::endl;
 
         for (const Entity& entity : Entities)
@@ -256,6 +258,7 @@ public:
         separationDirections.fill(glm::vec2{0.0f, 0.0f});
         neighbourCounts.fill(0);
 
+        int misses = 0; int treffer = 0;
         for(auto entityPair : partitionGrid.GetEntityPairs())
         {
             auto& transform = EcsManager.GetComponent<Transform>(entityPair.Entity1, transformType);
@@ -267,7 +270,7 @@ public:
 
             float distance = glm::length(transform.Position - otherTransform.Position);
 
-            if (distance > vision) continue;
+            if (distance > vision){misses++;continue;}treffer++;
 
             //Alignment
             float b = pow(bias, glm::dot(otherBoid.Velocity, boid.Velocity));
@@ -286,6 +289,8 @@ public:
             neighbourCounts[entityPair.Entity1]++;
             neighbourCounts[entityPair.Entity2]++;
         }
+
+        std::cout << "Misses: " << misses << "  Treffer: " << treffer << std::endl;
 
         for (const Entity& entity : Entities)
         {
@@ -384,14 +389,14 @@ public:
 private:
     const float vision = 25.0;
     const float bias = 1.5;
-    const float alignment = 1.3f;
-    const float cohesion = 1.3;
-    const float separation = 1.4;
+    const float alignment = 1.5f;
+    const float cohesion = 1.4;
+    const float separation = 1.8;
     const float maxForce = 0.04;
     const float minSpeed = 0.4;
     const float maxSpeed = 0.7;
     const float drag = 0.007;
-    const float noise = 1.0;
+    const float noise = 2.0;
 
     std::default_random_engine random;
     PartitionGrid2 partitionGrid = PartitionGrid2();
