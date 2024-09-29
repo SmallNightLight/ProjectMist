@@ -21,7 +21,7 @@ constexpr int int_ceil(float f)
 
 
 using Cell = std::uint32_t;
-static constexpr std::int32_t BufferSize = 64;
+static constexpr std::int32_t MainBufferSize = 64;
 
 static constexpr Rect PartitionArea = Rect(glm::vec2(0, 0), glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
 static constexpr float MaxEntitySize = 50.0f;
@@ -35,7 +35,7 @@ static constexpr std::int32_t IndexNull = MAXENTITIES + 1; //?
 
 struct SecondaryBuffer
 {
-    std::array<Entity, BufferSize> entities { };
+    std::array<Entity, MainBufferSize> entities { };
     int32_t otherBufferIndex = IndexNull;
 };
 
@@ -117,9 +117,9 @@ struct PartitionGrid //assuming that all entities have the same size (or the giv
                 //Cell overlaps with entity
                 Cell cell = y * CellCountX + x;
 
-                if (entityCount[cell] < BufferSize)
+                if (entityCount[cell] < MainBufferSize)
                 {
-                    entities[cell * BufferSize + entityCount[cell]] = entity;
+                    entities[cell * MainBufferSize + entityCount[cell]] = entity;
                     entityCount[cell]++;
                 }
                 else
@@ -144,11 +144,11 @@ struct PartitionGrid //assuming that all entities have the same size (or the giv
 
         for(Cell cell = 0; cell < CellCount; cell++)
         {
-            for (int i = 0; i < entityCount[cell] && i < BufferSize; i++)
+            for (int i = 0; i < entityCount[cell] && i < MainBufferSize; i++)
             {
-                for(int j = i + 1; j < entityCount[cell] && j < BufferSize; j++)
+                for(int j = i + 1; j < entityCount[cell] && j < MainBufferSize; j++)
                 {
-                    EntityPair pair {entities[cell * BufferSize + i], entities[cell * BufferSize + j]};
+                    EntityPair pair {entities[cell * MainBufferSize + i], entities[cell * MainBufferSize + j]};
 
                     if (overlappingPairs.find(pair) == overlappingPairs.end())
                     {
@@ -162,7 +162,7 @@ struct PartitionGrid //assuming that all entities have the same size (or the giv
                 }
             }
 
-            if (entityCount[cell] > BufferSize && secondaryIndexes[cell] != IndexNull) //last statement most likely not needed
+            if (entityCount[cell] > MainBufferSize && secondaryIndexes[cell] != IndexNull) //last statement most likely not needed
             {
                 //More entities stored in additional buffers
                 //std::int8_t index = secondaryIndexes[]
@@ -209,10 +209,10 @@ struct PartitionGrid //assuming that all entities have the same size (or the giv
 
                 for(int i = 0; i < entityCount[cell]; i++)
                 {
-                    if (entities[cell * BufferSize + i] == entity)
+                    if (entities[cell * MainBufferSize + i] == entity)
                     {
                         //Replace this entity with the last entity in the buffer to keep the memory continuous
-                        entities[cell * BufferSize + i] = entities[cell * BufferSize + (BufferSize - 1)];
+                        entities[cell * MainBufferSize + i] = entities[cell * MainBufferSize + (MainBufferSize - 1)];
                         entityCount[cell]--;
                     }
                 }
@@ -229,7 +229,7 @@ private:
     std::array<Rect, MAXENTITIES> entityAreas { };
 
     //Primary buffer
-    std::array<Entity, CellCount * BufferSize> entities { };
+    std::array<Entity, CellCount * MainBufferSize> entities { };
     std::array<int32_t,  CellCount> secondaryIndexes { };
     std::array<std::int8_t, CellCount> entityCount { };
     std::bitset<MAXENTITIES> intersectingEntities;

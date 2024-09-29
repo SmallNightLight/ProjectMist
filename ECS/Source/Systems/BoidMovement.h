@@ -385,11 +385,11 @@ private:
     const float vision = 25.0;
     const float bias = 1.5;
     const float alignment = 1.3f;
-    const float cohesion = 1.15;
-    const float separation = 1.3;
-    const float maxForce = 0.07;
-    const float minSpeed = 0.7;
-    const float maxSpeed = 1.0;
+    const float cohesion = 1.3;
+    const float separation = 1.4;
+    const float maxForce = 0.04;
+    const float minSpeed = 0.4;
+    const float maxSpeed = 0.7;
     const float drag = 0.007;
     const float noise = 1.0;
 

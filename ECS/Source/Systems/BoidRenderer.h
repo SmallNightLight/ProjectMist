@@ -23,7 +23,7 @@ public:
         auto transformCollection = EcsManager.GetComponentCollection<Transform>();
         auto boidCollection = EcsManager.GetComponentCollection<Boid>();
 
-        float triangleSize = 7;
+        float triangleSize = 6;
 
         glBegin(GL_TRIANGLES);
         for (const Entity &entity: Entities)
@@ -42,8 +42,8 @@ public:
             glm::vec2 p3 = pos + perpendicular * (triangleSize / 2.0f);     //Right base vertex
 
             //Set the color based on speed
-            float speed = glm::length(boid.Velocity) / 2.0f;
-            glColor3f(0, 1, speed);
+            float speed = glm::length(boid.Velocity) * 10.0f - 6.0f * sin(entity);
+            glColor3f(0, boid.Velocity.x * 0.3f + 0.7f, boid.Velocity.y * 0.3f + 0.7f);// * 0.5f + 0.5f);
 
             //Render the triangle
             glVertex2f(p1.x, p1.y);
