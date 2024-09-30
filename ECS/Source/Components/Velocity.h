@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm.h>
+#include <glm/glm.hpp>
 
 struct Velocity
 {
