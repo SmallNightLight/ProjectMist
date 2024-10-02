@@ -69,9 +69,9 @@ public:
     //Removes all components that are associated to the given entity
 	void DestroyEntity(Entity entity)
 	{
-		for (auto const& componentCollection : _componentArrays)
+		for(int i = 0; i < 4; i++)
 		{
-            componentCollection->DestroyEntity(entity);
+			_componentArrays[i]->DestroyEntity(entity);
 		}
 	}
 

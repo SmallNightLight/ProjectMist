@@ -13,7 +13,7 @@
 using Entity = std::uint32_t;
 using ComponentType = std::uint8_t;
 
-static constexpr std::uint32_t MAXENTITIES = 2000;
+static constexpr std::uint32_t MAXENTITIES = 100000;
 static constexpr ComponentType MAXCOMPONENTS = 32;
 
 using Signature = std::bitset<MAXCOMPONENTS>;

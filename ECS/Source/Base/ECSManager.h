@@ -4,6 +4,8 @@
 #include "ComponentManager.h"
 #include "SystemManager.h"
 
+#include <vector>
+
 //Manages the different managers (EntityManager, ComponentManager and SystemManager)
 //Has functionality for modifying the components, systems and signatures of entities
 class ECSManager
@@ -26,8 +28,27 @@ public:
         return _entityManager->CreateEntity();
     }
 
-    //Destroys the entity and removes any components and systems that are related to it
-    void DestroyEntity(Entity entity)
+    //Marks the entity for destruction, destroy the marked entities later, when the component references have been dropped with DestroyMarkedEntities()
+    void MarkEntityForDestruction(Entity entity)
+    {
+        _entitiesToDestroy.push_back(entity);
+    }
+
+    //Destroys the entities that are marked and removes any components and systems that are related to the entities
+    void DestroyMarkedEntities()
+    {
+        for (const Entity entity : _entitiesToDestroy)
+        {
+            _entityManager->DestroyEntity(entity);
+            _componentManager->DestroyEntity(entity);
+            _systemManager->DestroyEntity(entity);
+        }
+
+        _entitiesToDestroy.clear();
+    }
+
+    //Unsafe method to instantly remove an entities with it components and systems
+    void ImmediatlyDestroyEntity(Entity entity)
     {
         _entityManager->DestroyEntity(entity);
         _componentManager->DestroyEntity(entity);
@@ -126,4 +147,11 @@ private:
     std::unique_ptr<EntityManager> _entityManager;
     std::unique_ptr<ComponentManager> _componentManager;
     std::unique_ptr<SystemManager> _systemManager;
+
+    std::vector<Entity> _entitiesToDestroy { };
 };
+
+//Ideas to improve:
+// - when adding entities only call EntitySignatureChanged() when finished adding all components
+// - don't always erase or insert into the system entity set in EntitySignatureChanged()
+// - Archetype ECS

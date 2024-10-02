@@ -66,34 +66,38 @@ int main()
     //Register components
     EcsManager.RegisterComponent<Transform>();
     EcsManager.RegisterComponent<Velocity>();
+    EcsManager.RegisterComponent<Lifetime>();
     EcsManager.RegisterComponent<Boid>();
 
     //Register systems
     auto movementSystem = EcsManager.RegisterSystem<Movement>();
     auto particleRenderer = EcsManager.RegisterSystem<ParticleRenderer>();
+    auto blinkingParticles = EcsManager.RegisterSystem<BlinkingParticles>();
     auto boidMovement = EcsManager.RegisterSystem<BoidMovement>();
     auto boidRenderer = EcsManager.RegisterSystem<BoidRenderer>();
 
     //Setup signatures
     EcsManager.SetSignature<Movement>(Movement::GetSignature());
     EcsManager.SetSignature<ParticleRenderer>(ParticleRenderer::GetSignature());
+    EcsManager.SetSignature<BlinkingParticles>(BlinkingParticles::GetSignature());
     EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
     EcsManager.SetSignature<BoidRenderer>(BoidRenderer::GetSignature());
 
     std::default_random_engine random;
+    std::uniform_real_distribution<float> randomPositionX(0.0, SCREEN_WIDTH);
+    std::uniform_real_distribution<float> randomPositionY(0.0, SCREEN_HEIGHT);
+    std::uniform_real_distribution<float> randomVelocity(-1.0, 1.0);
+    std::uniform_real_distribution<float> randomLifetime(0.0, 3.0);
 
     //Add entities
     for (Entity entity = 0; entity < MAXENTITIES; ++entity)
     {
         EcsManager.CreateEntity();
 
-        std::uniform_real_distribution<float> randomPositionX(0.0, SCREEN_WIDTH);
-        std::uniform_real_distribution<float> randomPositionY(0.0, SCREEN_HEIGHT);
-        std::uniform_real_distribution<float> randomVelocity(-1.0, 1.0);
-
         EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
-        EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
+        EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
+        EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
+        //EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
     }
 
     bool isPaused = false;
@@ -104,13 +108,13 @@ int main()
     {
         //Calculate delta time
         double currentTime = glfwGetTime();
-        double deltaTime = currentTime - lastTime;
+        auto deltaTime = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
 
         if (currentTime - lastTitleUpdateTime >= 1.0f)
         {
             std::ostringstream title;
-            title << "ECS Test - FPS: " << static_cast<int>(1.0 / deltaTime);
+            title << "ECS Test - FPS: " << static_cast<int>(1.0f / deltaTime);
             glfwSetWindowTitle(window, title.str().c_str());
             lastTitleUpdateTime = currentTime;
         }
@@ -132,8 +136,9 @@ int main()
 
         if (!isPaused)
         {
-            movementSystem->Update((float)deltaTime, GetMousePosition(window));
-            boidMovement->Update((float)deltaTime);
+            movementSystem->Update(deltaTime, GetMousePosition(window));
+            boidMovement->Update(deltaTime);
+            blinkingParticles->Update(deltaTime);
         }
 
         particleRenderer->Render();

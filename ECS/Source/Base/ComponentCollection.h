@@ -118,7 +118,7 @@ public:
         _components[indexOfRemovedEntity] = _components[lastEntityIndex];
         Entity entityOfLastIndex = _indexToEntity[lastEntityIndex];
 
-        //Render the sparse set
+        //Update the sparse set
         _entityToIndex[entityOfLastIndex] = indexOfRemovedEntity;
         _indexToEntity[indexOfRemovedEntity] = entityOfLastIndex;
 

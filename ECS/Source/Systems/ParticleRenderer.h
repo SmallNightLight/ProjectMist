@@ -5,8 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <random>
 
-extern ECSManager EcsManager;
-
 class ParticleRenderer : public System
 {
 public:

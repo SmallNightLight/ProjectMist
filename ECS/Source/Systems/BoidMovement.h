@@ -5,10 +5,6 @@
 
 #include <array>
 #include <iostream>
-#include <thread>
-//#include <mutex>
-
-extern ECSManager EcsManager;
 
 class BoidMovement : public System
 {
