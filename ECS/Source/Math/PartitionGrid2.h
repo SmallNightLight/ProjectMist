@@ -176,11 +176,12 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         }
     }
 
+    //Get the cell ID from a position. IMPORTANT: Clamps position to but at least 0, to prevent integer overflow
     [[nodiscard]] static Cell GetCell(glm::vec2 position)
     {
         //Calculate the cell base on the position
-        const Cell cellX = static_cast<Cell>(std::floor(position.x / CellSize));
-        const Cell cellY = static_cast<Cell>(std::floor(position.y / CellSize));
+        const Cell cellX = static_cast<Cell>(std::floor(std::max(position.x, 0.0f) / CellSize));
+        const Cell cellY = static_cast<Cell>(std::floor(std::max(position.y, 0.0f) / CellSize));
 
         return cellY * CellCountX + cellX;
     }

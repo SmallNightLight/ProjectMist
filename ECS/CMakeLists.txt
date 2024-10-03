@@ -38,6 +38,8 @@ add_executable(ECS Source/main.cpp
         Source/Math/PartitionGrid2.h
         Source/Components/Lifetime.h
         Source/Systems/BlinkingParticles.h
+        Source/Math/FixedTypes.h
+        Source/Math/TestMath.h
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/Includes)

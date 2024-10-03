@@ -8,6 +8,8 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+#include "Math/TestMath.h"
+
 ECSManager EcsManager;
 
 void SetFrameSize(GLFWwindow* window, int width, int height)
@@ -27,6 +29,8 @@ glm::vec2 GetMousePosition(GLFWwindow* window)
 
 int main()
 {
+    return TestMath::Test();
+
     //Initialize OpenGL
     if (!glfwInit())
     {
@@ -95,9 +99,9 @@ int main()
         EcsManager.CreateEntity();
 
         EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
-        EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
-        //EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
+        //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
+        //EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
+        EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
     }
 
     bool isPaused = false;

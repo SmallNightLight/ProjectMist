@@ -7,6 +7,8 @@
 #include <limits>
 #include <type_traits>
 
+#include "fixed.hpp"
+
 namespace fpm
 {
 
@@ -23,6 +25,8 @@ class fixed
     static_assert(FractionBits <= sizeof(BaseType) * 8 - 1, "BaseType must at least be able to contain entire fraction, with space for at least one integral bit");
     static_assert(sizeof(IntermediateType) > sizeof(BaseType), "IntermediateType must be larger than BaseType");
     static_assert(std::is_signed<IntermediateType>::value == std::is_signed<BaseType>::value, "IntermediateType must have same signedness as BaseType");
+    //static_assert(sizeof(FractionType) == FractionBits, "FractionType needs to be the same size as FractionBits");
+    //static_assert(std::is_signed<FractionType>::value == std::is_signed<BaseType>::value, "FractionType must have same signedness as BaseType");
 
     // Although this value fits in the BaseType in terms of bits, if there's only one integral bit, this value
     // is incorrect (flips from positive to negative), so we must extend the size to IntermediateType.
@@ -41,7 +45,7 @@ public:
         : m_value(static_cast<BaseType>(val * FRACTION_MULT))
     {}
 
-    // Converts an floating-point number to the fixed-point type.
+    // Converts a floating-point number to the fixed-point type.
     // Like static_cast, this truncates bits that don't fit.
     template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
     constexpr inline explicit fixed(T val) noexcept
@@ -107,6 +111,22 @@ public:
     static constexpr inline fixed from_raw_value(BaseType value) noexcept
     {
         return fixed(value, raw_construct_tag{});
+    }
+
+    //Custom implementation to create a fixed number from integers without floating point numbers
+    static constexpr inline fixed FromFixed(const BaseType integerPart, const BaseType fractionalPart)
+    {
+        const BaseType digits = GetDigits(fractionalPart);
+        const BaseType bound = 1 << FractionBits; //?????????????
+        const BaseType divisor = IntPow(10, digits);
+        const BaseType decimal = MultiplyFixed(fractionalPart, bound / divisor, bound % divisor);
+
+        return from_raw_value(integerPart < 0 ? integerPart * bound - decimal : integerPart * bound + decimal);
+    }
+
+    constexpr fixed FromFixed(const BaseType integerPart)
+    {
+        return from_raw_value(integerPart << FractionBits);
     }
 
     //
@@ -195,6 +215,42 @@ public:
     {
         m_value /= y;
         return *this;
+    }
+
+private:
+    static constexpr inline BaseType IntPow(BaseType x, BaseType p)
+    {
+        BaseType result = 1;
+        while (p > 0)
+        {
+            if (p % 2 == 1)
+            {
+                result *= x;
+            }
+
+            x *= x;
+            p /= 2;
+        }
+        return result;
+    }
+
+    static constexpr BaseType inline GetDigits(BaseType num)
+    {
+        if (num == 0) return 1;
+        BaseType digits = 0;
+        while (num != 0)
+        {
+            num /= 10;
+            ++digits;
+        }
+        return digits;
+    }
+
+    static constexpr inline int MultiplyFixed(const BaseType value1, const BaseType integerPart, const BaseType fractionalPart)
+    {
+        const BaseType scale = IntPow(10, GetDigits(fractionalPart));
+        const BaseType combined_value = integerPart * scale + fractionalPart;
+        return value1 * combined_value / scale;
     }
 
 private:

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Math/FPM/fixed.hpp"
-
 #include <bitset>
 #include <cstdint>
 
@@ -13,7 +11,7 @@
 using Entity = std::uint32_t;
 using ComponentType = std::uint8_t;
 
-static constexpr std::uint32_t MAXENTITIES = 100000;
+static constexpr std::uint32_t MAXENTITIES = 2000;
 static constexpr ComponentType MAXCOMPONENTS = 32;
 
 using Signature = std::bitset<MAXCOMPONENTS>;
@@ -25,10 +23,6 @@ static constexpr Entity ENTITYNULL = MAXENTITIES + 1;
 static constexpr int32_t QUADTREE_MAX_DEPTH = 8;
 using NodeID = std::uint32_t;
 static constexpr NodeID NODENULL (-1);
-
-//Physics
-using Fixed8_8 = fpm::fixed<std::int16_t, std::int32_t, 8>;
-using Fixed16_16 = fpm::fixed<std::int32_t, std::int64_t, 16>;
 
 
 static const unsigned char BitReverseTable256[] =
