@@ -47,6 +47,7 @@ public:
         : m_value(static_cast<BaseType>(val * FRACTION_MULT))
     {}
 
+    //Prevent any floating point numbers from ever being used
     // Converts a floating-point number to the fixed-point type.
     // Like static_cast, this truncates bits that don't fit.
     template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
@@ -61,6 +62,12 @@ public:
     template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
     constexpr inline explicit fixed(fixed<B,I,T1,T2,F,R> val) noexcept
         : m_value(from_fixed_point<F>(val.raw_value()).raw_value())
+    {}
+
+    //Custom constructor to create a fixed from an integer and decimal value
+    template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+    constexpr inline explicit fixed(T integerPart, T fractionalPart) noexcept
+        : m_value(FromFixed(integerPart, fractionalPart).raw_value())
     {}
 
     // Explicit conversion to a floating-point type

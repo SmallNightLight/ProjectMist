@@ -1,11 +1,16 @@
 if(WIN32)
     set(CMAKE_TOOLCHAIN_FILE "C:/Matthias/Study/VStudio/LibariesCPP/vcpkg/scripts/buildsystems/vcpkg.cmake")
 elseif(UNIX)
+    if(DEFINED ENV{VCPKG_DEFAULT_TRIPLET} AND NOT DEFINED VCPKG_TARGET_TRIPLET)
+        set(VCPKG_TARGET_TRIPLET "$ENV{VCPKG_DEFAULT_TRIPLET}" CACHE STRING "")
+    endif()
     include("/home/matthias/Applications/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif()
 
 cmake_minimum_required(VERSION 3.27)
 project(ECS)
+
+
 
 set(CMAKE_CXX_STANDARD 17)
 

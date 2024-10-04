@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FixedTypes.h"
+
 #include <iostream>
 #include <iomanip>
 #include <cassert>
@@ -12,6 +13,7 @@ public:
 
     static int Test()
     {
+        //Fixed numbers
         std::cout << "Testing TestMath" << std::endl;
 
         std::cout << std::setprecision(10) << "32767,32767: " << Fixed16_16::FromFixed(32767, 32767) << std::endl;
@@ -23,6 +25,12 @@ public:
         assert(fixed8 == Fixed16_16::FromFixed(180, 18) / Fixed16_16::FromFixed(120, 0));
         fixed8 += Fixed16_16::FromFixed(10, 76);
         assert(fixed8 == Fixed16_16::FromFixed(12, 2615));
+
+
+        //Vector2
+        Vector2 vecA = Vector2::Zero();
+        Vector2 vecB(0, 5, 1, 5);
+        std::cout << vecB << std::endl;
 
         std::cout << "All tests passed" << std::endl;
         return 0;
