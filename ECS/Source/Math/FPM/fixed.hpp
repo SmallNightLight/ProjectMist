@@ -17,7 +17,7 @@ namespace fpm
 //! \tparam IntermediateType the integer type used to store intermediate results during calculations.
 //! \tparam FractionBits     the number of bits of the BaseType used to store the fraction
 //! \tparam EnableRounding   enable rounding of LSB for multiplication, division, and type conversion
-template <typename BaseType, typename IntermediateType, unsigned int FractionBits, bool EnableRounding = true>
+template <typename BaseType, typename IntermediateType, typename IntegerType, typename FractionType, unsigned int FractionBits, bool EnableRounding = true>
 class fixed
 {
     static_assert(std::is_integral<BaseType>::value, "BaseType must be an integral type");
@@ -25,8 +25,10 @@ class fixed
     static_assert(FractionBits <= sizeof(BaseType) * 8 - 1, "BaseType must at least be able to contain entire fraction, with space for at least one integral bit");
     static_assert(sizeof(IntermediateType) > sizeof(BaseType), "IntermediateType must be larger than BaseType");
     static_assert(std::is_signed<IntermediateType>::value == std::is_signed<BaseType>::value, "IntermediateType must have same signedness as BaseType");
-    //static_assert(sizeof(FractionType) == FractionBits, "FractionType needs to be the same size as FractionBits");
-    //static_assert(std::is_signed<FractionType>::value == std::is_signed<BaseType>::value, "FractionType must have same signedness as BaseType");
+    static_assert(sizeof(FractionType) * 8 == FractionBits, "FractionType needs to be the same size as FractionBits");
+    static_assert(std::is_signed<FractionType>::value == std::is_signed<BaseType>::value, "FractionType must have same signedness as BaseType");
+    static_assert(sizeof(IntegerType) * 8 == sizeof(BaseType) * 8 - FractionBits, "FractionType needs to be the same size as the size of the integer bits");
+    static_assert(std::is_signed<IntegerType>::value == std::is_signed<BaseType>::value, "IntegerType must have same signedness as BaseType");
 
     // Although this value fits in the BaseType in terms of bits, if there's only one integral bit, this value
     // is incorrect (flips from positive to negative), so we must extend the size to IntermediateType.
@@ -56,8 +58,8 @@ public:
 
     // Constructs from another fixed-point type with possibly different underlying representation.
     // Like static_cast, this truncates bits that don't fit.
-    template <typename B, typename I, unsigned int F, bool R>
-    constexpr inline explicit fixed(fixed<B,I,F,R> val) noexcept
+    template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+    constexpr inline explicit fixed(fixed<B,I,T1,T2,F,R> val) noexcept
         : m_value(from_fixed_point<F>(val.raw_value()).raw_value())
     {}
 
@@ -114,7 +116,7 @@ public:
     }
 
     //Custom implementation to create a fixed number from integers without floating point numbers
-    static constexpr inline fixed FromFixed(const BaseType integerPart, const BaseType fractionalPart)
+    static constexpr inline fixed FromFixed(const IntegerType integerPart, const FractionType fractionalPart)
     {
         const BaseType digits = GetDigits(fractionalPart);
         const BaseType bound = 1 << FractionBits; //?????????????
@@ -258,137 +260,129 @@ private:
 };
 
 //
-// Convenience typedefs
-//
-
-using fixed_16_16 = fixed<std::int32_t, std::int64_t, 16>;
-using fixed_24_8 = fixed<std::int32_t, std::int64_t, 8>;
-using fixed_8_24 = fixed<std::int32_t, std::int64_t, 24>;
-
-//
 // Addition
 //
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> operator+(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> operator+(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(x) += y;
+    return fixed<B,I,T1,T2,F,R>(x) += y;
 }
 
-template <typename B, typename I, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator+(const fixed<B, I, F, R>& x, T y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator+(const fixed<B,I,T1,T2,F,R>& x, T y) noexcept
 {
-    return fixed<B, I, F, R>(x) += y;
+    return fixed<B,I,T1,T2,F,R>(x) += y;
 }
 
-template <typename B, typename I, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator+(T x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator+(T x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(y) += x;
+    return fixed<B,I,T1,T2,F,R>(y) += x;
 }
 
 //
 // Subtraction
 //
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> operator-(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> operator-(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(x) -= y;
+    return fixed<B,I,T1,T2,F,R>(x) -= y;
 }
 
-template <typename B, typename I, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator-(const fixed<B, I, F, R>& x, T y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator-(const fixed<B,I,T1,T2,F,R>& x, T y) noexcept
 {
-    return fixed<B, I, F, R>(x) -= y;
+    return fixed<B,I,T1,T2,F,R>(x) -= y;
 }
 
-template <typename B, typename I, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator-(T x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator-(T x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(x) -= y;
+    return fixed<B,I,T1,T2,F,R>(x) -= y;
 }
 
 //
 // Multiplication
 //
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> operator*(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> operator*(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(x) *= y;
+    return fixed<B,I,T1,T2,F,R>(x) *= y;
 }
 
-template <typename B, typename I, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator*(const fixed<B, I, F, R>& x, T y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator*(const fixed<B,I,T1,T2,F,R>& x, T y) noexcept
 {
-    return fixed<B, I, F, R>(x) *= y;
+    return fixed<B,I,T1,T2,F,R>(x) *= y;
 }
 
-template <typename B, typename I, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator*(T x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator*(T x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(y) *= x;
+    return fixed<B,I,T1,T2,F,R>(y) *= x;
 }
 
 //
 // Division
 //
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> operator/(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> operator/(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(x) /= y;
+    return fixed<B,I,T1,T2,F,R>(x) /= y;
 }
 
-template <typename B, typename I, unsigned int F, typename T, bool R, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator/(const fixed<B, I, F, R>& x, T y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, typename T, bool R, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator/(const fixed<B,I,T1,T2,F,R>& x, T y) noexcept
 {
-    return fixed<B, I, F, R>(x) /= y;
+    return fixed<B,I,T1,T2,F,R>(x) /= y;
 }
 
-template <typename B, typename I, unsigned int F, typename T, bool R, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-constexpr inline fixed<B, I, F, R> operator/(T x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, typename T, bool R, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline fixed<B,I,T1,T2,F,R> operator/(T x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
-    return fixed<B, I, F, R>(x) /= y;
+    return fixed<B,I,T1,T2,F,R>(x) /= y;
 }
 
 //
 // Comparison operators
 //
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool operator==(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool operator==(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
     return x.raw_value() == y.raw_value();
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool operator!=(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool operator!=(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
     return x.raw_value() != y.raw_value();
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool operator<(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool operator<(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
     return x.raw_value() < y.raw_value();
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool operator>(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool operator>(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
     return x.raw_value() > y.raw_value();
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool operator<=(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool operator<=(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
     return x.raw_value() <= y.raw_value();
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool operator>=(const fixed<B, I, F, R>& x, const fixed<B, I, F, R>& y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool operator>=(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
     return x.raw_value() >= y.raw_value();
 }
@@ -418,10 +412,10 @@ static constexpr int digits10(int bits)
 namespace std
 {
 
-template <typename B, typename I, unsigned int F, bool R>
-struct hash<fpm::fixed<B,I,F,R>>
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+struct hash<fpm::fixed<B,I,T1,T2,F,R>>
 {
-    using argument_type = fpm::fixed<B, I, F, R>;
+    using argument_type = fpm::fixed<B,I,T1,T2,F,R>;
     using result_type = std::size_t;
 
     result_type operator()(argument_type arg) const noexcept(noexcept(std::declval<std::hash<B>>()(arg.raw_value()))) {
@@ -432,8 +426,8 @@ private:
     std::hash<B> m_hash;
 };
 
-template <typename B, typename I, unsigned int F, bool R>
-struct numeric_limits<fpm::fixed<B,I,F,R>>
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+struct numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>
 {
     static constexpr bool is_specialized = true;
     static constexpr bool is_signed = std::numeric_limits<B>::is_signed;
@@ -468,76 +462,76 @@ struct numeric_limits<fpm::fixed<B,I,F,R>>
     static constexpr bool traps = true;
     static constexpr bool tinyness_before = false;
 
-    static constexpr fpm::fixed<B,I,F,R> lowest() noexcept {
-        return fpm::fixed<B,I,F,R>::from_raw_value(std::numeric_limits<B>::lowest());
+    static constexpr fpm::fixed<B,I,T1,T2,F,R> lowest() noexcept {
+        return fpm::fixed<B,I,T1,T2,F,R>::from_raw_value(std::numeric_limits<B>::lowest());
     };
 
-    static constexpr fpm::fixed<B,I,F,R> min() noexcept {
+    static constexpr fpm::fixed<B,I,T1,T2,F,R> min() noexcept {
         return lowest();
     }
 
-    static constexpr fpm::fixed<B,I,F,R> max() noexcept {
-        return fpm::fixed<B,I,F,R>::from_raw_value(std::numeric_limits<B>::max());
+    static constexpr fpm::fixed<B,I,T1,T2,F,R> max() noexcept {
+        return fpm::fixed<B,I,T1,T2,F,R>::from_raw_value(std::numeric_limits<B>::max());
     };
 
-    static constexpr fpm::fixed<B,I,F,R> epsilon() noexcept {
-        return fpm::fixed<B,I,F,R>::from_raw_value(1);
+    static constexpr fpm::fixed<B,I,T1,T2,F,R> epsilon() noexcept {
+        return fpm::fixed<B,I,T1,T2,F,R>::from_raw_value(1);
     };
 
-    static constexpr fpm::fixed<B,I,F,R> round_error() noexcept {
-        return fpm::fixed<B,I,F,R>(1) / 2;
+    static constexpr fpm::fixed<B,I,T1,T2,F,R> round_error() noexcept {
+        return fpm::fixed<B,I,T1,T2,F,R>(1) / 2;
     };
 
-    static constexpr fpm::fixed<B,I,F,R> denorm_min() noexcept {
+    static constexpr fpm::fixed<B,I,T1,T2,F,R> denorm_min() noexcept {
         return min();
     }
 };
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::is_specialized;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::is_signed;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::is_integer;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::is_exact;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::has_infinity;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::has_quiet_NaN;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::has_signaling_NaN;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr std::float_denorm_style numeric_limits<fpm::fixed<B,I,F,R>>::has_denorm;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::has_denorm_loss;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr std::float_round_style numeric_limits<fpm::fixed<B,I,F,R>>::round_style;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::is_iec_559;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::is_bounded;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::is_modulo;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::digits;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::digits10;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::max_digits10;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::radix;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::min_exponent;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::min_exponent10;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::max_exponent;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr int numeric_limits<fpm::fixed<B,I,F,R>>::max_exponent10;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::traps;
-template <typename B, typename I, unsigned int F, bool R>
-constexpr bool numeric_limits<fpm::fixed<B,I,F,R>>::tinyness_before;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::is_specialized;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::is_signed;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::is_integer;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::is_exact;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::has_infinity;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::has_quiet_NaN;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::has_signaling_NaN;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr std::float_denorm_style numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::has_denorm;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::has_denorm_loss;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr std::float_round_style numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::round_style;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::is_iec_559;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::is_bounded;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::is_modulo;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::digits;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::digits10;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::max_digits10;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::radix;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::min_exponent;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::min_exponent10;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::max_exponent;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr int numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::max_exponent10;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::traps;
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr bool numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>::tinyness_before;
 
 }

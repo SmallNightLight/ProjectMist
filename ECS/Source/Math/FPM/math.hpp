@@ -45,74 +45,74 @@ inline long find_highest_bit(unsigned long long value) noexcept
 // Classification methods
 //
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline int fpclassify(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline int fpclassify(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     return (x.raw_value() == 0) ? FP_ZERO : FP_NORMAL;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isfinite(fixed<B, I, F, R>) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isfinite(fixed<B,I,T1,T2,F,R>) noexcept
 {
     return true;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isinf(fixed<B, I, F, R>) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isinf(fixed<B,I,T1,T2,F,R>) noexcept
 {
     return false;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isnan(fixed<B, I, F, R>) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isnan(fixed<B,I,T1,T2,F,R>) noexcept
 {
     return false;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isnormal(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isnormal(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     return x.raw_value() != 0;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool signbit(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool signbit(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     return x.raw_value() < 0;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isgreater(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isgreater(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return x > y;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isgreaterequal(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isgreaterequal(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return x >= y;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isless(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isless(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return x < y;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool islessequal(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool islessequal(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return x <= y;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool islessgreater(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool islessgreater(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return x != y;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline bool isunordered(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool isunordered(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return false;
 }
@@ -120,41 +120,41 @@ constexpr inline bool isunordered(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noex
 //
 // Nearest integer operations
 //
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> ceil(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> ceil(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
     auto value = x.raw_value();
     if (value > 0) value += FRAC - 1;
-    return fixed<B, I, F, R>::from_raw_value(value / FRAC * FRAC);
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(value / FRAC * FRAC);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> floor(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> floor(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
     auto value = x.raw_value();
     if (value < 0) value -= FRAC - 1;
-    return fixed<B, I, F, R>::from_raw_value(value / FRAC * FRAC);
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(value / FRAC * FRAC);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> trunc(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> trunc(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
-    return fixed<B, I, F, R>::from_raw_value(x.raw_value() / FRAC * FRAC);
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(x.raw_value() / FRAC * FRAC);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> round(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> round(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
     auto value = x.raw_value() / (FRAC / 2);
-    return fixed<B, I, F, R>::from_raw_value(((value / 2) + (value % 2)) * FRAC);
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(((value / 2) + (value % 2)) * FRAC);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> nearbyint(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> nearbyint(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     // Rounding mode is assumed to be FE_TONEAREST
     constexpr auto FRAC = B(1) << F;
@@ -163,11 +163,11 @@ fixed<B, I, F, R> nearbyint(fixed<B, I, F, R> x) noexcept
     value /= FRAC / 2;
     value = (value / 2) + (value % 2);
     value -= (value % 2) * is_half;
-    return fixed<B, I, F, R>::from_raw_value(value * FRAC);
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(value * FRAC);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> rint(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> rint(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     // Rounding mode is assumed to be FE_TONEAREST
     return nearbyint(x);
@@ -176,70 +176,70 @@ constexpr inline fixed<B, I, F, R> rint(fixed<B, I, F, R> x) noexcept
 //
 // Mathematical functions
 //
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> abs(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> abs(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    return (x >= fixed<B, I, F, R>{0}) ? x : -x;
+    return (x >= fixed<B,I,T1,T2,F,R>{0}) ? x : -x;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> fmod(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> fmod(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return
         assert(y.raw_value() != 0),
-        fixed<B, I, F, R>::from_raw_value(x.raw_value() % y.raw_value());
+        fixed<B,I,T1,T2,F,R>::from_raw_value(x.raw_value() % y.raw_value());
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> remainder(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> remainder(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     return
         assert(y.raw_value() != 0),
         x - nearbyint(x / y) * y;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> remquo(fixed<B, I, F, R> x, fixed<B, I, F, R> y, int* quo) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> remquo(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y, int* quo) noexcept
 {
     assert(y.raw_value() != 0);
     assert(quo != nullptr);
     *quo = x.raw_value() / y.raw_value();
-    return fixed<B, I, F, R>::from_raw_value(x.raw_value() % y.raw_value());
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(x.raw_value() % y.raw_value());
 }
 
 //
 // Manipulation functions
 //
 
-template <typename B, typename I, unsigned int F, bool R, typename C, typename J, unsigned int G, bool S>
-constexpr inline fixed<B, I, F, R> copysign(fixed<B, I, F, R> x, fixed<C, J, G, S> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename C, typename J, typename T3, typename T4, unsigned int G, bool S>
+constexpr inline fixed<B,I,T1,T2,F,R> copysign(fixed<B,I,T1,T2,F,R> x, fixed<C, J, T3, T4, G, S> y) noexcept
 {
     return
         x = abs(x),
-        (y >= fixed<C, J, G, S>{0}) ? x : -x;
+        (y >= fixed<C, J, T3, T4, G, S>{0}) ? x : -x;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> nextafter(fixed<B, I, F, R> from, fixed<B, I, F, R> to) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> nextafter(fixed<B,I,T1,T2,F,R> from, fixed<B,I,T1,T2,F,R> to) noexcept
 {
     return from == to ? to :
-           to > from ? fixed<B, I, F, R>::from_raw_value(from.raw_value() + 1)
-                     : fixed<B, I, F, R>::from_raw_value(from.raw_value() - 1);
+           to > from ? fixed<B,I,T1,T2,F,R>::from_raw_value(from.raw_value() + 1)
+                     : fixed<B,I,T1,T2,F,R>::from_raw_value(from.raw_value() - 1);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-constexpr inline fixed<B, I, F, R> nexttoward(fixed<B, I, F, R> from, fixed<B, I, F, R> to) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> nexttoward(fixed<B,I,T1,T2,F,R> from, fixed<B,I,T1,T2,F,R> to) noexcept
 {
     return nextafter(from, to);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> modf(fixed<B, I, F, R> x, fixed<B, I, F, R>* iptr) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> modf(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R>* iptr) noexcept
 {
     const auto raw = x.raw_value();
     constexpr auto FRAC = B{1} << F;
-    *iptr = fixed<B, I, F, R>::from_raw_value(raw / FRAC * FRAC);
-    return fixed<B, I, F, R>::from_raw_value(raw % FRAC);
+    *iptr = fixed<B,I,T1,T2,F,R>::from_raw_value(raw / FRAC * FRAC);
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(raw % FRAC);
 }
 
 
@@ -247,10 +247,10 @@ inline fixed<B, I, F, R> modf(fixed<B, I, F, R> x, fixed<B, I, F, R>* iptr) noex
 // Power functions
 //
 
-template <typename B, typename I, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-fixed<B, I, F, R> pow(fixed<B, I, F, R> base, T exp) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, T exp) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
 
     if (base == Fixed(0)) {
         assert(exp > 0);
@@ -281,10 +281,10 @@ fixed<B, I, F, R> pow(fixed<B, I, F, R> base, T exp) noexcept
     return result;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> pow(fixed<B, I, F, R> base, fixed<B, I, F, R> exp) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, fixed<B,I,T1,T2,F,R> exp) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
 
     if (base == Fixed(0)) {
         assert(exp > Fixed(0));
@@ -310,10 +310,10 @@ fixed<B, I, F, R> pow(fixed<B, I, F, R> base, fixed<B, I, F, R> exp) noexcept
     return exp2(log2(base) * exp);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> exp(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> exp(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     if (x < Fixed(0)) {
         return 1 / exp(-x);
     }
@@ -331,10 +331,10 @@ fixed<B, I, F, R> exp(fixed<B, I, F, R> x) noexcept
     return pow(Fixed::e(), x_int) * (((((fA * x + fB) * x + fC) * x + fD) * x + fE) * x + fF);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> exp2(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> exp2(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     if (x < Fixed(0)) {
         return 1 / exp2(-x);
     }
@@ -352,16 +352,16 @@ fixed<B, I, F, R> exp2(fixed<B, I, F, R> x) noexcept
     return Fixed(1 << x_int) * (((((fA * x + fB) * x + fC) * x + fD) * x + fE) * x + fF);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> expm1(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> expm1(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     return exp(x) - 1;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> log2(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> log2(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     assert(x > Fixed(0));
 
     // Normalize input to the [1:2] domain
@@ -384,30 +384,30 @@ fixed<B, I, F, R> log2(fixed<B, I, F, R> x) noexcept
     return Fixed(highest - F) + (((((fA * x + fB) * x + fC) * x + fD) * x + fE) * x + fF);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> log(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> log(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     return log2(x) / log2(Fixed::e());
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> log10(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> log10(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     return log2(x) / log2(Fixed(10));
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> log1p(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> log1p(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     return log(1 + x);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> cbrt(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> cbrt(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
 
     if (x == Fixed(0))
     {
@@ -456,10 +456,10 @@ fixed<B, I, F, R> cbrt(fixed<B, I, F, R> x) noexcept
     return Fixed::from_raw_value(static_cast<B>(res));
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> sqrt(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> sqrt(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
 
     assert(x >= Fixed(0));
     if (x == Fixed(0))
@@ -495,8 +495,8 @@ fixed<B, I, F, R> sqrt(fixed<B, I, F, R> x) noexcept
     return Fixed::from_raw_value(static_cast<B>(res));
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> hypot(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> hypot(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
 {
     assert(x != 0 || y != 0);
     return sqrt(x*x + y*y);
@@ -506,13 +506,13 @@ fixed<B, I, F, R> hypot(fixed<B, I, F, R> x, fixed<B, I, F, R> y) noexcept
 // Trigonometry functions
 //
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> sin(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> sin(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     // This sine uses a fifth-order curve-fitting approximation originally
     // described by Jasper Vijn on coranac.com which has a worst-case
     // relative error of 0.07% (over [-pi:pi]).
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
 
     // Turn x from [0..2*PI] domain into [0..4] domain
     x = fmod(x, Fixed::two_pi());
@@ -539,10 +539,10 @@ fixed<B, I, F, R> sin(fixed<B, I, F, R> x) noexcept
     return sign * x * (Fixed::pi() - x2*(Fixed::two_pi() - 5 - x2*(Fixed::pi() - 3)))/2;
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> cos(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> cos(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     if (x > Fixed(0)) {  // Prevent an overflow due to the addition of π/2
         return sin(x - (Fixed::two_pi() - Fixed::half_pi()));
     } else {
@@ -550,8 +550,8 @@ inline fixed<B, I, F, R> cos(fixed<B, I, F, R> x) noexcept
     }    
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-inline fixed<B, I, F, R> tan(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+inline fixed<B,I,T1,T2,F,R> tan(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     auto cx = cos(x);
 
@@ -565,10 +565,10 @@ inline fixed<B, I, F, R> tan(fixed<B, I, F, R> x) noexcept
 namespace detail {
 
 // Calculates atan(x) assuming that x is in the range [0,1]
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> atan_sanitized(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> atan_sanitized(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     assert(x >= Fixed(0) && x <= Fixed(1));
 
     constexpr auto fA = Fixed::template from_fixed_point<63>(  716203666280654660ll); //  0.0776509570923569
@@ -585,10 +585,10 @@ fixed<B, I, F, R> atan_sanitized(fixed<B, I, F, R> x) noexcept
 // If q = y/x and q > 1, atan(q) would calculate atan(1/q) as intermediate step
 // anyway. We can shortcut that here and avoid the loss of information, thus
 // improving the accuracy of atan(y/x) for very small x.
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> atan_div(fixed<B, I, F, R> y, fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> atan_div(fixed<B,I,T1,T2,F,R> y, fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     assert(x != Fixed(0));
 
     // Make sure y and x are positive.
@@ -614,10 +614,10 @@ fixed<B, I, F, R> atan_div(fixed<B, I, F, R> y, fixed<B, I, F, R> x) noexcept
 
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> atan(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> atan(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     if (x < Fixed(0))
     {
         return -atan(-x);
@@ -631,10 +631,10 @@ fixed<B, I, F, R> atan(fixed<B, I, F, R> x) noexcept
     return detail::atan_sanitized(x);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> asin(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> asin(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     assert(x >= Fixed(-1) && x <= Fixed(+1));
 
     const auto yy = Fixed(1) - x * x;
@@ -645,10 +645,10 @@ fixed<B, I, F, R> asin(fixed<B, I, F, R> x) noexcept
     return detail::atan_div(x, sqrt(yy));
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> acos(fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> acos(fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     assert(x >= Fixed(-1) && x <= Fixed(+1));
 
     if (x == Fixed(-1))
@@ -659,10 +659,10 @@ fixed<B, I, F, R> acos(fixed<B, I, F, R> x) noexcept
     return Fixed(2)*detail::atan_div(sqrt(yy), Fixed(1) + x);
 }
 
-template <typename B, typename I, unsigned int F, bool R>
-fixed<B, I, F, R> atan2(fixed<B, I, F, R> y, fixed<B, I, F, R> x) noexcept
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+fixed<B,I,T1,T2,F,R> atan2(fixed<B,I,T1,T2,F,R> y, fixed<B,I,T1,T2,F,R> x) noexcept
 {
-    using Fixed = fixed<B, I, F, R>;
+    using Fixed = fixed<B,I,T1,T2,F,R>;
     if (x == Fixed(0))
     {
         assert(y != Fixed(0));
