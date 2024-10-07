@@ -50,18 +50,23 @@ public:
     //Prevent any floating point numbers from ever being used
     // Converts a floating-point number to the fixed-point type.
     // Like static_cast, this truncates bits that don't fit.
-    template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
-    constexpr inline explicit fixed(T val) noexcept
-        : m_value(static_cast<BaseType>((EnableRounding) ?
-		       (val >= 0.0) ? (val * FRACTION_MULT + T{0.5}) : (val * FRACTION_MULT - T{0.5})
-		      : (val * FRACTION_MULT)))
-    {}
+    //template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type* = nullptr>
+    //constexpr inline explicit fixed(T val) noexcept
+    //    : m_value(static_cast<BaseType>((EnableRounding) ?
+	//	       (val >= 0.0) ? (val * FRACTION_MULT + T{0.5}) : (val * FRACTION_MULT - T{0.5})
+	//	      : (val * FRACTION_MULT)))
+    //{}
 
     // Constructs from another fixed-point type with possibly different underlying representation.
     // Like static_cast, this truncates bits that don't fit.
     template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
     constexpr inline explicit fixed(fixed<B,I,T1,T2,F,R> val) noexcept
         : m_value(from_fixed_point<F>(val.raw_value()).raw_value())
+    {}
+
+    template <typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+    constexpr inline explicit fixed(IntegerType integerPart) noexcept
+        : m_value(static_cast<BaseType>(integerPart * FRACTION_MULT))
     {}
 
     //Custom constructor to create a fixed from an integer and decimal value
@@ -89,6 +94,11 @@ public:
     constexpr inline BaseType raw_value() const noexcept
     {
         return m_value;
+    }
+
+    constexpr inline IntermediateType GetFRACTION_MULT() const noexcept
+    {
+        return FRACTION_MULT;
     }
 
     //! Constructs a fixed-point number from another fixed-point number.
@@ -358,6 +368,7 @@ constexpr inline fixed<B,I,T1,T2,F,R> operator/(T x, const fixed<B,I,T1,T2,F,R>&
 // Comparison operators
 //
 
+//Operator for comparisons with other fixed numbers
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
 constexpr inline bool operator==(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
@@ -392,6 +403,49 @@ template <typename B, typename I, typename T1, typename T2, unsigned int F, bool
 constexpr inline bool operator>=(const fixed<B,I,T1,T2,F,R>& x, const fixed<B,I,T1,T2,F,R>& y) noexcept
 {
     return x.raw_value() >= y.raw_value();
+}
+
+//Operators for comparisons with integers
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+    constexpr inline bool operator==(const fixed<B,I,T1,T2,F,R>& x, const T y) noexcept
+{
+    I rawY = y * x.GetFRACTION_MULT();
+    return x.raw_value() == static_cast<B>(rawY);
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline bool operator!=(const fixed<B,I,T1,T2,F,R>& x, const T y) noexcept
+{
+    I rawY = y * x.GetFRACTION_MULT();
+    return x.raw_value() != static_cast<B>(rawY);
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline bool operator>(const fixed<B,I,T1,T2,F,R>& x, const T y) noexcept
+{
+    I rawY = y * x.GetFRACTION_MULT();
+    return x.raw_value() > static_cast<B>(rawY);
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline bool operator<(const fixed<B,I,T1,T2,F,R>& x, const T y) noexcept
+{
+    I rawY = y * x.GetFRACTION_MULT();
+    return x.raw_value() < static_cast<B>(rawY);
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline bool operator>=(const fixed<B,I,T1,T2,F,R>& x, const T y) noexcept
+{
+    I rawY = y * x.GetFRACTION_MULT();
+    return x.raw_value() >= static_cast<B>(rawY);
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+constexpr inline bool operator<=(const fixed<B,I,T1,T2,F,R>& x, const T y) noexcept
+{
+    I rawY = y * x.GetFRACTION_MULT();
+    return x.raw_value() <= static_cast<B>(rawY);
 }
 
 namespace detail
