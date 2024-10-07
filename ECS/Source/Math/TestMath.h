@@ -61,10 +61,19 @@ public:
         assert(vecF.X == Fixed16_16::FromFixed(-9, 6));
         assert(vecF.Y == Fixed16_16::FromFixed(4, 4));
 
-        Vector2 vecG = vecC / vecD;
-        std::cout << "(-9.6, 4.4):" << vecF << std::endl;
-        assert(vecF.X == Fixed16_16::FromFixed(-9, 6));
-        assert(vecF.Y == Fixed16_16::FromFixed(4, 4));
+        Vector2 vecG = vecF / 2;
+        std::cout << "(-4.8, 2.2):" << vecG << std::endl;
+        assert(vecG.X == Fixed16_16::FromFixed(-4, 8));
+        assert(vecG.Y == Fixed16_16::FromFixed(2, 2));
+
+        Vector2 vecU (5, 2);
+        Vector2 vecI (6, 3);
+
+        vecU += vecI;
+        assert(vecU == Vector2(11, 5));
+        vecU -= Vector2(3, 3);
+        assert(vecU == Vector2(8, 2));
+
 
         std::cout << "All tests passed" << std::endl;
         return 0;

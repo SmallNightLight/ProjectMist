@@ -12,37 +12,47 @@ struct  FixedVector2
       T Y;
 
       constexpr inline FixedVector2() : X(T(0)), Y(T(0)) { }
-      constexpr inline FixedVector2(const T& x, const T& y) : X(x), Y(y) { }
-      constexpr inline FixedVector2(IntegerType x, IntegerType y) : X(x), Y(y) { }
-      constexpr inline FixedVector2(IntegerType integer1, FractionType fraction1, IntegerType integer2, FractionType fraction2) : X(T(integer1, fraction1)), Y(T(integer2, fraction2)) { }
+      constexpr inline FixedVector2(const T x, const T y) : X(x), Y(y) { }
+      constexpr inline FixedVector2(const IntegerType x, const IntegerType y) : X(x), Y(y) { }
+      constexpr inline FixedVector2(const IntegerType integer1, const FractionType fraction1, const IntegerType integer2, const FractionType fraction2) : X(T(integer1, fraction1)), Y(T(integer2, fraction2)) { }
 
-      //Basic math operations
-      FixedVector2 operator+(const FixedVector2& other) const
+      //Basic math operations (with Fi
+      FixedVector2 operator+(const FixedVector2 other) const
       {
             return FixedVector2(X + other.X, Y + other.Y);
       }
 
-      FixedVector2 operator-(const FixedVector2& other) const
+      FixedVector2 operator-(const FixedVector2 other) const
       {
             return FixedVector2(X - other.X, Y - other.Y);
       }
 
-      FixedVector2 operator*(const T& scalar) const
+      FixedVector2 operator*(const T scalar) const
       {
             return FixedVector2(X * scalar, Y * scalar);
       }
 
-      FixedVector2 operator/(const T& scalar) const
+      FixedVector2 operator*(const IntegerType scalar) const
       {
-            if (scalar == T(0))
+            return FixedVector2(X * scalar, Y * scalar);
+      }
+
+      FixedVector2 operator/(const T scalar) const
+      {
+            return FixedVector2(X / scalar, Y / scalar);
+      }
+
+      FixedVector2 operator/(const IntegerType scalar) const
+      {
+            if (scalar == 0)
             {
                   throw std::runtime_error("Division by zero");
             }
             return FixedVector2(X / scalar, Y / scalar);
       }
 
-      //Prefix operators
-      FixedVector2& operator++()
+      //Prefix / Postfix operators
+      FixedVector2 operator++()
       {
             ++X;
             ++Y;
@@ -56,8 +66,7 @@ struct  FixedVector2
             return temp;
       }
 
-      // Decrement (Prefix and Postfix)
-      FixedVector2& operator--()
+      FixedVector2 operator--()
       {
             --X;
             --Y;
@@ -72,27 +81,55 @@ struct  FixedVector2
       }
 
       //Compound assignment operators
-      FixedVector2& operator+=(const FixedVector2& other)
+      FixedVector2 operator+=(const FixedVector2 other)
       {
             X += other.X;
             Y += other.Y;
             return *this;
       }
 
-      FixedVector2& operator-=(const FixedVector2& other)
+      FixedVector2 operator-=(const FixedVector2 other)
       {
             X -= other.X;
             Y -= other.Y;
             return *this;
       }
 
+      FixedVector2 operator*=(const T scalar)
+      {
+            X *= scalar;
+            Y *= scalar;
+            return *this;
+      }
+
+      FixedVector2 operator*=(const IntegerType scalar)
+      {
+            X *= scalar;
+            Y *= scalar;
+            return *this;
+      }
+
+      FixedVector2 operator/=(const T scalar)
+      {
+            X /= scalar;
+            Y /= scalar;
+            return *this;
+      }
+
+      FixedVector2 operator/=(const IntegerType scalar)
+      {
+            X /= scalar;
+            Y /= scalar;
+            return *this;
+      }
+
       //Math functions
-      T Dot(const FixedVector2& other) const
+      T Dot(const FixedVector2 other) const
       {
             return X * other.X + Y * other.Y;
       }
 
-      T Cross(const FixedVector2& other) const
+      T Cross(const FixedVector2 other) const
       {
             return X * other.Y - Y * other.X;
       }
@@ -112,14 +149,14 @@ struct  FixedVector2
             return FixedVector2(X / magnitude, Y / magnitude);
       }
 
-      T Distance(const FixedVector2& other) const
+      T Distance(const FixedVector2 other) const
       {
             T dx = X - other.X;
             T dy = Y - other.Y;
             return fpm::sqrt(dx * dx + dy * dy);
       }
 
-      FixedVector2 ProjectOnto(const FixedVector2& other) const
+      FixedVector2 ProjectOnto(const FixedVector2 other) const
       {
             T dotProduct = this->Dot(other);
             T otherMagnitudeSquared = other.X * other.X + other.Y * other.Y;
@@ -131,26 +168,26 @@ struct  FixedVector2
             return FixedVector2(-Y, X);
       }
 
-      FixedVector2 Rotate(T angle) const
+      FixedVector2 Rotate(const T angle) const
       {
             T cosAngle = fpm::cos(angle);
             T sinAngle = fpm::sin(angle);
             return FixedVector2(X * cosAngle - Y * sinAngle, X * sinAngle + Y * cosAngle);
       }
 
-      T AngleBetween(const FixedVector2& other) const
+      T AngleBetween(const FixedVector2 other) const
       {
             T dotProduct = this->Dot(other);
             T magnitudes = this->Magnitude() * other.Magnitude();
             return fpm::acos(dotProduct / magnitudes);
       }
 
-      FixedVector2 Reflect(const FixedVector2& normal) const
+      FixedVector2 Reflect(const FixedVector2 normal) const
       {
             return *this - normal * (2 * this->Dot(normal));
       }
 
-      FixedVector2 ClampMagnitude(T maxMagnitude) const
+      FixedVector2 ClampMagnitude(const T maxMagnitude) const
       {
             T magnitude = Magnitude();
             if (magnitude > maxMagnitude)
@@ -160,7 +197,7 @@ struct  FixedVector2
             return *this;
       }
 
-      FixedVector2 ClampMagnitudeMin(T minMagnitude) const
+      FixedVector2 ClampMagnitudeMin(const T minMagnitude) const
       {
             T magnitude = Magnitude();
             if (magnitude < minMagnitude)
@@ -170,7 +207,7 @@ struct  FixedVector2
             return *this;
       }
 
-      FixedVector2 Lerp(const FixedVector2& other, T t) const
+      FixedVector2 Lerp(const FixedVector2 other, const T t) const
       {
             return *this + (other - *this) * t;
       }
@@ -183,32 +220,32 @@ struct  FixedVector2
       }
 
       //Comparison operators
-      bool operator==(const FixedVector2& other) const
+      bool operator==(const FixedVector2 other) const
       {
             return X == other.X && Y == other.Y;
       }
 
-      bool operator!=(const FixedVector2& other) const
+      bool operator!=(const FixedVector2 other) const
       {
             return !(*this == other);
       }
 
-      bool operator<(const FixedVector2& other) const
+      bool operator<(const FixedVector2 other) const
       {
             return Magnitude() < other.Magnitude();
       }
 
-      bool operator>(const FixedVector2& other) const
+      bool operator>(const FixedVector2 other) const
       {
             return Magnitude() > other.Magnitude();
       }
 
-      bool operator<=(const FixedVector2& other) const
+      bool operator<=(const FixedVector2 other) const
       {
             return Magnitude() <= other.Magnitude();
       }
 
-      bool operator>=(const FixedVector2& other) const
+      bool operator>=(const FixedVector2 other) const
       {
             return Magnitude() >= other.Magnitude();
       }
