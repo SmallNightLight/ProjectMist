@@ -1,0 +1,35 @@
+Vector
+Results & &:
+Time to add 1.000.000 fixed numbers (with rounding): 0.001639 seconds, Offset: 7.080078125
+Time to add 1.000.000 fixed numbers (no rounding): 0.0014925 seconds, Offset: 8.178710938
+Time to add 1.000.000 floating point numbers: 0.0031282 seconds, Offset: 8.858459473
+Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.001354 seconds, Offset: 0
+
+
+Results n &:
+Time to add 1.000.000 fixed numbers (with rounding): 0.0016883 seconds, Offset: 7.080078125
+Time to add 1.000.000 fixed numbers (no rounding): 0.0012392 seconds, Offset: 8.178710938
+Time to add 1.000.000 floating point numbers: 0.0031961 seconds, Offset: 8.858459473
+Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.0017401 seconds, Offset: 0
+
+Results n n:
+Time to add 1.000.000 fixed numbers (with rounding): 0.0016883 seconds, Offset: 7.080078125
+Time to add 1.000.000 fixed numbers (no rounding): 0.0012383 seconds, Offset: 8.178710938
+Time to add 1.000.000 floating point numbers: 0.0029732 seconds, Offset: 8.858459473
+Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.0016918 seconds, Offset: 0
+
+Result & n:
+Time to add 1.000.000 fixed numbers (with rounding): 0.0017259 seconds, Offset: 7.080078125
+Time to add 1.000.000 fixed numbers (no rounding): 0.0014859 seconds, Offset: 8.178710938
+Time to add 1.000.000 floating point numbers: 0.0031961 seconds, Offset: 8.858459473
+Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.0013701 seconds, Offset: 0
+
+
+Numbers
+Results &&: Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.0012391 seconds, Offset: 0
+Results n&: Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.0049858 seconds, Offset: 0
+Results nn: Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.0049758 seconds, Offset: 0
+Results &n: Time to add 1.000.000 fixed number vector2s (no rounding - default): 0.0013338 seconds, Offset: 0
+
+
+Winner: && is faster for vectors (for vec and fixed), only for numbers only is pass by value faster

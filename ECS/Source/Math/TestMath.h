@@ -29,7 +29,6 @@ public:
         fixed8 += Fixed16_16::FromFixed(10, 76);
         assert(fixed8 == Fixed16_16::FromFixed(12, 2615));
 
-
         //Vector2
         const Vector2 vecA = Vector2::Zero();
         assert(vecA.X == 0 && vecA.Y == 0);
@@ -75,7 +74,9 @@ public:
         vecU += vecI;
         assert(vecU == Vector2(11, 5));
         vecU -= Vector2(3, 3);
-        assert(vecU == Vector2(8, 2));
+        ++vecU;
+        vecU++;
+        assert(vecU == Vector2(10, 4));
 
         std::cout << "All tests passed" << std::endl;
 
@@ -170,6 +171,23 @@ public:
         end = std::chrono::high_resolution_clock::now();
         elapsed_seconds = end - start;
         std::cout << std::setprecision(10) << "Time to multiply and divide 1.000.000 floating point numbers: " << elapsed_seconds.count() << " seconds, Offset: " << std::abs(c1 - c2) << std::endl;
+
+
+        std::cout << "\nTesting fixed point vector2 addition speed" << std::endl;
+
+        //Fixed point vector2
+        start = std::chrono::high_resolution_clock::now();
+
+        Vector2 v1 (0, 0);
+        Vector2 v2 = Vector2(Fixed16_16(1) / Fixed16_16(1000), Fixed16_16(1) / Fixed16_16(1000));
+        for (int i = 0; i < 1000000; ++i)
+        {
+            v1 += v2;
+        }
+
+        end = std::chrono::high_resolution_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << std::setprecision(10) << "Time to add 1.000.000 fixed number vector2s (no rounding - default): " << elapsed_seconds.count() << " seconds, Offset: " << (v1 - Vector2(1000, 1000)).Positive() << std::endl;
 
 
         return 0;

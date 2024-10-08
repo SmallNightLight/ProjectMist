@@ -206,6 +206,33 @@ public:
 	return *this;
     }
 
+    //Custom Prefix / Postfix operators
+    fixed& operator++()
+    {
+        m_value += FRACTION_MULT;
+        return *this;
+    }
+
+    fixed operator++(int)
+    {
+        fixed tmp(*this);
+        operator++();
+        return tmp;
+    }
+
+    fixed& operator--()
+    {
+        m_value -= FRACTION_MULT;
+        return *this;
+    }
+
+    fixed operator--(int)
+    {
+        fixed tmp(*this);
+        operator--();
+        return tmp;
+    }
+
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
     inline fixed& operator*=(I y) noexcept
     {
