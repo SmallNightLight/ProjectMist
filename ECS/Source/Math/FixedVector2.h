@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 
 #include "FPM/math.hpp"
 #include "FPM/fixed.hpp"

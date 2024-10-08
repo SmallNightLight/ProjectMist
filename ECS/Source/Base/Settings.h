@@ -4,8 +4,8 @@
 #include <cstdint>
 
 //Window
-#define SCREEN_WIDTH 1680
-#define SCREEN_HEIGHT 945
+static constexpr int32_t SCREEN_WIDTH = 1680;
+static constexpr int32_t SCREEN_HEIGHT = 945; //TODO: Bug - needs to be divisble by a specific number
 
 //ECS
 using Entity = std::uint32_t;

@@ -1,15 +1,18 @@
 #pragma once
+#pragma optimize("", off)
 
 #include "FixedTypes.h"
 
 #include <iostream>
 #include <iomanip>
 #include <cassert>
+#include <chrono>
 
 class TestMath
 {
 public:
     TestMath() = default;
+
 
     static int Test()
     {
@@ -74,8 +77,102 @@ public:
         vecU -= Vector2(3, 3);
         assert(vecU == Vector2(8, 2));
 
-
         std::cout << "All tests passed" << std::endl;
+
+        std::cout << "\nTesting number addition speed" << std::endl;
+
+        //Fixed point with rounding
+        auto start = std::chrono::high_resolution_clock::now();
+
+        Fixed16_16Rounding x1(0);
+        Fixed16_16Rounding x2 = Fixed16_16Rounding(1) / Fixed16_16Rounding(1000);
+        for (int i = 0; i < 1000000; ++i)
+        {
+            x1 += x2;
+        }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - start;
+        std::cout << std::setprecision(10) << "Time to add 1.000.000 fixed numbers (with rounding): " << elapsed_seconds.count() << " seconds, Offset: " << fpm::abs(x1 - 1000) << std::endl;
+
+        //Fixed point - No rounding
+        start = std::chrono::high_resolution_clock::now();
+
+        Fixed16_16NoRounding y1(0);
+        Fixed16_16NoRounding y2 = Fixed16_16NoRounding(1) / Fixed16_16NoRounding(1000);
+        for (int i = 0; i < 1000000; ++i)
+        {
+            y1 += y2;
+        }
+
+        end = std::chrono::high_resolution_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << std::setprecision(10) << "Time to add 1.000.000 fixed numbers (no rounding): " << elapsed_seconds.count() << " seconds, Offset: " << fpm::abs(y1 - 1000) << std::endl;
+
+        //Floating point
+        start = std::chrono::high_resolution_clock::now();
+
+        float z1(0);
+        float z2 = 0.001f;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            z1 += z2;
+        }
+
+        end = std::chrono::high_resolution_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << std::setprecision(10) << "Time to add 1.000.000 floating point numbers: " << elapsed_seconds.count() << " seconds, Offset: " << std::abs(z1 - 1000) << std::endl;
+
+
+        std::cout << "\nTesting number multiplication / division speed" << std::endl;
+
+        //Fixed point with rounding
+        start = std::chrono::high_resolution_clock::now();
+
+        Fixed16_16Rounding a1 = Fixed16_16Rounding(1, 2);
+        Fixed16_16Rounding a2 = Fixed16_16Rounding(1, 2);
+        for (int i = 0; i < 1000000; ++i)
+        {
+            a1 *= a2;
+            a1 /= a2;
+        }
+
+        end = std::chrono::high_resolution_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << std::setprecision(10) << "Time to multiply and divide 1.000.000 fixed numbers (with rounding): " << elapsed_seconds.count() << " seconds, Offset: " << fpm::abs(a1 - a2) << std::endl;
+
+        //Fixed point - No rounding
+        start = std::chrono::high_resolution_clock::now();
+
+        Fixed16_16NoRounding b1 = Fixed16_16NoRounding(1, 2);
+        Fixed16_16NoRounding b2 = Fixed16_16NoRounding(1, 2);
+        for (int i = 0; i < 1000000; ++i)
+        {
+            b1 *= b2;
+            b1 /= b2;
+        }
+
+        end = std::chrono::high_resolution_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << std::setprecision(10) << "Time to multiply and divide 1.000.000 fixed numbers (no rounding): " << elapsed_seconds.count() << " seconds, Offset: " << fpm::abs(b1 - b2) << std::endl;
+
+        //Floating point
+        start = std::chrono::high_resolution_clock::now();
+
+        float c1(1.2);
+        float c2 = 1.2f;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            c1 *= c2;
+            c1 /= c2;
+        }
+
+        end = std::chrono::high_resolution_clock::now();
+        elapsed_seconds = end - start;
+        std::cout << std::setprecision(10) << "Time to multiply and divide 1.000.000 floating point numbers: " << elapsed_seconds.count() << " seconds, Offset: " << std::abs(c1 - c2) << std::endl;
+
+
         return 0;
     }
 };
+#pragma optimize("", on)
