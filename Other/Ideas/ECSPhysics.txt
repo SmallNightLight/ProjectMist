@@ -1,0 +1,31 @@
+Components
+ColliderTransform: Position, Rotation, IsStatic, IsKinemetic, IsDynamic, ColliderType(Box, Circle, Convex)
+Rigidbody: Velocity, RotationalVelocity, Density, Mass, Restitution, Area
+
+Box Collider: Width, Height
+Circle Collider: Radius
+Convex Collider: Shape Data
+
+
+Systems
+SpatialPartition(Entites with ColliderTransform): The spatitial partitioning pairs up entites that are close together. It avoids adding them when they have a Kinetic, or Dynamic rigidody.
+
+CollisionDetectionAndResolve: With the pairs from the PhysicsWorld, it determines the correct ColliderType and RigidBody and gets the needed Components. Handles the narrow collision detection to determine which pairs need be resolved. Directly resolves when needed and updates the entity properties. 
+
+
+Worlds
+PhysicsWorld: Get pairs of entities from the SpatialPartition and passes them to the CollisionDetectionAndResolve
+
+
+
+
+
+
+
+
+
+
+
+
+
+
