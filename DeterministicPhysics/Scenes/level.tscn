@@ -1,0 +1,192 @@
+[gd_scene load_steps=4 format=3 uid="uid://q65wl1qhjspw"]
+
+[ext_resource type="Script" path="res://Scripts/Test.gd" id="1_k5f4k"]
+[ext_resource type="PackedScene" uid="uid://hhqopfb17sth" path="res://Scenes/box2.tscn" id="1_tumq0"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tumq0"]
+size = Vector2(1291, 121)
+
+[node name="Level" type="Node2D"]
+script = ExtResource("1_k5f4k")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+position = Vector2(568.5, 605.5)
+rotation = 0.359538
+shape = SubResource("RectangleShape2D_tumq0")
+
+[node name="ColorRect" type="ColorRect" parent="StaticBody2D/CollisionShape2D"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -648.5
+offset_top = -60.5
+offset_right = 648.5
+offset_bottom = 60.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box2" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(242, -77)
+
+[node name="Box3" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box4" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box5" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box6" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box7" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box8" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box9" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box10" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box11" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box12" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box13" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box14" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box15" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box16" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box17" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box18" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box19" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box20" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box21" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box22" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box23" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box24" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box25" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box26" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box27" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box28" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box29" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box30" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box31" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box32" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box33" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box34" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box35" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box36" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box37" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box38" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box39" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box40" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box41" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box42" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box43" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box44" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box45" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box46" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box47" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box48" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box49" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box50" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box51" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box52" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box53" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box54" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)
+
+[node name="Box55" parent="." instance=ExtResource("1_tumq0")]
+position = Vector2(283, 158)

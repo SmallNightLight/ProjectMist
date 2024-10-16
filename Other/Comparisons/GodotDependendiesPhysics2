@@ -1,0 +1,77 @@
+core/templates/self_list.h >
+servers/physics_server_2d.h >
+core/templates/list.h >
+core/templates/pair.h >
+core/templates/vset.h >
+servers/physics_server_2d.h >
+core/math/math_funcs.h >
+core/math/rect2.h >
+core/math/bvh.h >
+core/math/rect2.h >
+core/math/vector2.h >
+core/templates/self_list.h >
+servers/physics_server_2d.h >
+core/math/geometry_2d.h >
+core/config/project_settings.h >
+core/debugger/engine_debugger.h >
+core/os/os.h
+core/templates/rid_owner.h
+servers/physics_server_2d.h
+core/math/geometry_2d.h
+core/templates/sort_array.h
+servers/physics_server_2d.h
+core/os/os.h
+core/templates/pair.h
+core/config/project_settings.h
+core/templates/hash_map.h
+core/typedefs.h
+core/object/worker_thread_pool.h
+core/os/os.h
+core/templates/local_vector.h
+servers/physics_server_2d.h
+servers/physics_server_2d_wrap_mt.h
+modules/register_module_types.h
+
+
+core/templates/self_list.h
+-> use from godot
+
+servers/physics_server_2d.h
+-> create new class
+
+core/templates/list.h
+core/templates/pair.h
+core/templates/vset.h
+-> use from godot
+
+core/math/math_funcs.h
+-> not needed ( in first file)
+
+core/math/rect2.h
+-> create new rect class
+
+tranaform2D
+-> create new class
+
+core/math/vector2.h
+-> use custom vec2 class
+
+core/math/bvh.h
+-> uses one float?
+
+core/math/geometry_2d.h
+-> creae new class with the needed functions
+
+core/debugger/engine_debugger.h
+-> use from godot
+
+core/os/os.h
+-> ?
+
+RID / RID owner
+-> use entity instead
+
+core/templates/sort_array.h
+-> use from godot
+
+
