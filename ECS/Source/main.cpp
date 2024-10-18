@@ -98,9 +98,9 @@ int main()
         EcsManager.CreateEntity();
 
         EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
+        //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
         //EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
-        //EcsManager.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
+        EcsManager.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
     }
 
     bool isPaused = false;
@@ -141,7 +141,7 @@ int main()
         if (!isPaused)
         {
             movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
-            boidMovement->Update(deltaTime);
+            boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
             blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
         }
 

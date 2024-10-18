@@ -17,7 +17,7 @@ public:
         return signature;
     }
 
-    void Update(float deltaTime)
+    void Update(Fixed16_16 deltaTime)
     {
         auto transformCollection = EcsManager.GetComponentCollection<Transform>();
         auto boidCollection = EcsManager.GetComponentCollection<Boid>();
@@ -34,7 +34,7 @@ public:
         auto alignmentDirections = std::vector(MAXENTITIES, Vector2 (0, 0));
         auto cohesionDirections = std::vector(MAXENTITIES, Vector2 (0, 0));
         auto separationDirections = std::vector(MAXENTITIES, Vector2 (0, 0));
-        auto neighbourCounts = std::vector<std::uint32_t>(MAXENTITIES, 0);
+        auto neighbourCounts = std::vector<std::int32_t>(MAXENTITIES, 0);
 
         int entityPairs = 0;
 
@@ -61,7 +61,7 @@ public:
             cohesionDirections[entityPair.Entity2] += transform.Position;
 
             //Separation
-            float d = distance != 0 ? 1.0f/ (float)distance : 0.00001f;
+            Fixed16_16 d = distance != Fixed16_16(0) ? Fixed16_16(1) / distance : Fixed16_16(1) / 10000;
             separationDirections[entityPair.Entity1] += (transform.Position - otherTransform.Position) * d;
             separationDirections[entityPair.Entity2] += (otherTransform.Position - transform.Position) * d;
 
@@ -85,7 +85,7 @@ public:
             if (neighbourCounts[entity] > 0)
             {
                 alignmentDirections[entity] = LimitMagnitudeMax(ChangeMagnitude(alignmentDirections[entity], maxSpeed) - boid.Velocity, maxForce);
-                cohesionDirections[entity] = LimitMagnitudeMax(ChangeMagnitude((cohesionDirections[entity] / (float) neighbourCounts[entity]++) - transform.Position, maxSpeed) - boid.Velocity, maxForce);
+                cohesionDirections[entity] = LimitMagnitudeMax(ChangeMagnitude((cohesionDirections[entity] / neighbourCounts[entity]++) - transform.Position, maxSpeed) - boid.Velocity, maxForce);
                 separationDirections[entity] = LimitMagnitudeMax(ChangeMagnitude(separationDirections[entity], maxSpeed) - boid.Velocity, maxForce);
             }
 
