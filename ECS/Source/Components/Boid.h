@@ -1,12 +1,14 @@
 #pragma once
 
+#include "../Math/FixedTypes.h"
+
 struct Boid
 {
-    glm::vec2 Velocity;
-    glm::vec2 Acceleration;
+    Vector2 Velocity;
+    Vector2 Acceleration;
 
-    Boid(): Velocity(0.0f, 0.0f), Acceleration(0.0f, 0.0f) { }
+    Boid(): Velocity(0, 0), Acceleration(0, 0) { }
 
-    Boid(const glm::vec2& velocity, const glm::vec2& acceleration) : Velocity(velocity), Acceleration(acceleration) { }
+    Boid(const Vector2& velocity, const Vector2& acceleration) : Velocity(velocity), Acceleration(acceleration) { }
 
 };

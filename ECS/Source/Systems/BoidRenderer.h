@@ -21,7 +21,7 @@ public:
         auto transformCollection = EcsManager.GetComponentCollection<Transform>();
         auto boidCollection = EcsManager.GetComponentCollection<Boid>();
 
-        float triangleSize = 6;
+        auto triangleSize = Fixed16_16(6);
 
         glBegin(GL_TRIANGLES);
         for (const Entity &entity: Entities)
@@ -29,24 +29,24 @@ public:
             auto& transform = transformCollection->GetComponent(entity);
             auto& boid = boidCollection->GetComponent(entity);
 
-            glm::vec2 pos = transform.Position;
-            glm::vec2 vel = glm::normalize(boid.Velocity);
+            Vector2 pos = transform.Position;
+            Vector2 vel = boid.Velocity.Normalize();
 
-            glm::vec2 perpendicular(-vel.y, vel.x);
+            Vector2 perpendicular(-vel.Y, vel.X);
 
             //Define the vertices of the triangle
-            glm::vec2 p1 = pos + vel * triangleSize;                        //Tip of the triangle (facing velocity direction)
-            glm::vec2 p2 = pos - perpendicular * (triangleSize / 2.0f);     //Left base vertex
-            glm::vec2 p3 = pos + perpendicular * (triangleSize / 2.0f);     //Right base vertex
+            Vector2 p1 = pos + vel * triangleSize;                        //Tip of the triangle (facing velocity direction)
+            Vector2 p2 = pos - perpendicular * (triangleSize / 2);     //Left base vertex
+            Vector2 p3 = pos + perpendicular * (triangleSize / 2);     //Right base vertex
 
             //Set the color based on speed
-            float speed = glm::length(boid.Velocity) * 10.0f - 6.0f * sin(entity);
-            glColor3f(0, boid.Velocity.x * 0.3f + 0.7f, boid.Velocity.y * 0.3f + 0.7f);// * 0.5f + 0.5f);
+            Fixed16_16 speed = boid.Velocity.Magnitude() * 10;
+            glColor3f(0, (boid.Velocity.X * Fixed16_16(0, 3) + Fixed16_16(0, 7)).ToFloating<float>(), (boid.Velocity.Y * Fixed16_16(0, 3) + Fixed16_16(0, 7)).ToFloating<float>());
 
             //Render the triangle
-            glVertex2f(p1.x, p1.y);
-            glVertex2f(p2.x, p2.y);
-            glVertex2f(p3.x, p3.y);
+            glVertex2f(p1.X.ToFloating<float>(), p1.Y.ToFloating<float>());
+            glVertex2f(p2.X.ToFloating<float>(), p2.Y.ToFloating<float>());
+            glVertex2f(p3.X.ToFloating<float>(), p3.Y.ToFloating<float>());
         }
         glEnd();
     }

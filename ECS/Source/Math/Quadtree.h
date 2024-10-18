@@ -21,13 +21,13 @@ public:
     {
         Clear();
         area = pArea;
-        glm::vec2 childArea = area.Size / 2.0f;
+        Vector2 childArea = area.Size / 2.0f;
 
         childrenRects =
         {
             Rect(area.Position, childArea),
-            Rect({area.Position.x + childArea.x, area.Position.y}, childArea),
-            Rect({area.Position.x, area.Position.y + childArea.y}, childArea),
+            Rect({area.Position.X + childArea.X, area.Position.Y}, childArea),
+            Rect({area.Position.X, area.Position.Y + childArea.Y}, childArea),
             Rect(area.Position + childArea, childArea)
         };
     }

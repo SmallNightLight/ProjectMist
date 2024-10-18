@@ -136,25 +136,51 @@ public:
     static constexpr inline fixed FromFixed(const IntegerType integerPart, const FractionType fractionalPart)
     {
         const BaseType digits = GetDigits(fractionalPart);
-        const BaseType bound = 1 << FractionBits; //?????????????
+        const BaseType bound = 1 << FractionBits;
         const BaseType divisor = IntPow(10, digits);
         const BaseType decimal = MultiplyFixed(fractionalPart, bound / divisor, bound % divisor);
 
         return from_raw_value(integerPart < 0 ? integerPart * bound - decimal : integerPart * bound + decimal);
     }
 
-    constexpr fixed FromFixed(const BaseType integerPart)
+    static constexpr fixed inline FromFixed(const BaseType integerPart)
     {
         return from_raw_value(integerPart << FractionBits);
+    }
+
+    //DANGER ZONE
+
+    //Custom constructor to create a fixed from a floating point number (ONLY USE THIS FOR TESTING PURPOSES!)
+    template <typename FloatType, typename std::enable_if<std::is_floating_point<FloatType>::value>::type* = nullptr>
+    static constexpr fixed inline FromFloat(FloatType val) noexcept
+    {
+        return from_raw_value(static_cast<BaseType>((EnableRounding) ?
+                                             (val >= 0.0) ? (val * FRACTION_MULT + FloatType{0.5}) : (val * FRACTION_MULT - FloatType{0.5})
+                                                              : (val * FRACTION_MULT)));
+    }
+
+    //Get float (for rendering ONLY!!!!)
+    template <typename FloatType, typename std::enable_if<std::is_floating_point<FloatType>::value>::type* = nullptr>
+    FloatType ToFloating() const noexcept
+    {
+        return static_cast<FloatType>(m_value) / GetFRACTION_MULT();
     }
 
     //
     // Constants
     //
-    static constexpr fixed e() { return from_fixed_point<61>(6267931151224907085ll); }
-    static constexpr fixed pi() { return from_fixed_point<61>(7244019458077122842ll); }
-    static constexpr fixed half_pi() { return from_fixed_point<62>(7244019458077122842ll); }
-    static constexpr fixed two_pi() { return from_fixed_point<60>(7244019458077122842ll); }
+    static constexpr inline fixed e() { return from_fixed_point<61>(6267931151224907085ll); }
+    static constexpr inline fixed pi() { return from_fixed_point<61>(7244019458077122842ll); }
+    static constexpr inline fixed half_pi() { return from_fixed_point<62>(7244019458077122842ll); }
+    static constexpr inline fixed two_pi() { return from_fixed_point<60>(7244019458077122842ll); }
+
+    //Assignment operators
+    constexpr inline fixed& operator=(const BaseType& b) noexcept
+    {
+        m_value = b * FRACTION_MULT;
+        return *this;
+    }
+
 
     //
     // Arithmetic member operators
@@ -165,33 +191,33 @@ public:
         return fixed::from_raw_value(-m_value);
     }
 
-    inline fixed& operator+=(const fixed& y) noexcept
+    constexpr inline fixed& operator+=(const fixed& y) noexcept
     {
         m_value += y.m_value;
         return *this;
     }
 
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-    inline fixed& operator+=(I y) noexcept
+    constexpr inline fixed& operator+=(I y) noexcept
     {
         m_value += y * FRACTION_MULT;
         return *this;
     }
 
-    inline fixed& operator-=(const fixed& y) noexcept
+    constexpr inline fixed& operator-=(const fixed& y) noexcept
     {
         m_value -= y.m_value;
         return *this;
     }
 
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-    inline fixed& operator-=(I y) noexcept
+    constexpr inline fixed& operator-=(I y) noexcept
     {
         m_value -= y * FRACTION_MULT;
         return *this;
     }
 
-    inline fixed& operator*=(const fixed& y) noexcept
+    constexpr inline fixed& operator*=(const fixed& y) noexcept
     {
 	if (EnableRounding){
 	    // Normal fixed-point multiplication is: x * y / 2**FractionBits.
@@ -234,13 +260,13 @@ public:
     }
 
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-    inline fixed& operator*=(I y) noexcept
+    constexpr inline fixed& operator*=(I y) noexcept
     {
         m_value *= y;
         return *this;
     }
 
-    inline fixed& operator/=(const fixed& y) noexcept
+    constexpr inline fixed& operator/=(const fixed& y) noexcept
     {
         assert(y.m_value != 0);
 	if (EnableRounding){
@@ -257,7 +283,7 @@ public:
     }
 
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-    inline fixed& operator/=(I y) noexcept
+    constexpr inline fixed& operator/=(I y) noexcept
     {
         m_value /= y;
         return *this;
@@ -280,7 +306,7 @@ private:
         return result;
     }
 
-    static constexpr BaseType inline GetDigits(BaseType num)
+    static constexpr inline BaseType GetDigits(BaseType num)
     {
         if (num == 0) return 1;
         BaseType digits = 0;

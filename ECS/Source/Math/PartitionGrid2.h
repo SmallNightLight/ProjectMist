@@ -7,36 +7,28 @@
 #include <array>
 #include <vector>
 #include <queue>
-#include <cmath>
-
-constexpr int int_ceil(float f)
-{
-    const int i = static_cast<int>(f);
-    return f > static_cast<float>(i) ? i + 1 : i;
-}
-
 
 using Cell = std::uint32_t;
 static constexpr std::uint32_t MainBufferSize = 64;
 static constexpr std::uint32_t ExtraBufferSize = 32;
 static constexpr std::uint32_t ExtraBufferCount = MAXENTITIES / ExtraBufferSize;
 
-static constexpr Rect PartitionArea = Rect(glm::vec2(0, 0), glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
-static constexpr float MaxEntitySize = 50.0f;
-static constexpr float CellSize = MaxEntitySize;
+static constexpr Rect PartitionArea = Rect(Vector2 (0, 0), Vector2(SCREEN_WIDTH, SCREEN_HEIGHT));
+static constexpr Fixed16_16 MaxEntitySize = Fixed16_16::FromFixed(50, 0);
+static constexpr Fixed16_16 CellSize = MaxEntitySize;
 
-static constexpr Cell CellCountX = int_ceil(PartitionArea.Size.x / CellSize);
-static constexpr Cell CellCountY = int_ceil(PartitionArea.Size.y / CellSize);
+static constexpr Cell CellCountX = static_cast<Cell>(fpm::ceilInt(PartitionArea.Size.X / CellSize));
+static constexpr Cell CellCountY = static_cast<Cell>(fpm::ceilInt(PartitionArea.Size.Y / CellSize));
 static constexpr Cell CellCount = CellCountX * CellCountY;
 static constexpr std::uint32_t IndexNull = MAXENTITIES + 1;
 static constexpr std::uint32_t CellNull = CellCount + 1;
 static constexpr std::uint32_t SecondaryIndexNull = ExtraBufferCount + 1;
-static constexpr glm::ivec2 CellOffsets[4] =
+static constexpr Vector2uI CellOffsets[4] =
 {
-    glm::ivec2(0, 0),  //Self
-    glm::ivec2(1, 0),  //Right
-    glm::ivec2(0, 1),  //Below
-    glm::ivec2(1, 1)   //Right-Below
+    Vector2uI(0, 0),  //Self
+    Vector2uI(1, 0),  //Right
+    Vector2uI(0, 1),  //Below
+    Vector2uI(1, 1)   //Right-Below
 };
 
 struct EntityPair
@@ -75,18 +67,18 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
 
     void CreateGrid()
     {
-        glm::vec2 cellSize(CellSize, CellSize);
+        Vector2 cellSize(CellSize, CellSize);
 
         for (Cell y = 0; y < CellCountY; ++y)
         {
             for (Cell x = 0; x < CellCountX; ++x)
             {
-                cellAreas[y * CellCountX + x] = Rect(glm::vec2(static_cast<float>(x) * CellSize, static_cast<float>(y) * CellSize), cellSize);
+                cellAreas[y * CellCountX + x] = Rect(Vector2(x * CellSize, y * CellSize), cellSize);
             }
         }
     }
 
-    void InsertEntity(Entity entity, glm::vec2 position) //Does not handle out of bounds position
+    void InsertEntity(Entity entity, Vector2 position) //Does not handle out of bounds position
     {
         InsertEntity(entity, GetCell(position));
     }
@@ -177,11 +169,11 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
     }
 
     //Get the cell ID from a position. IMPORTANT: Clamps position to but at least 0, to prevent integer overflow
-    [[nodiscard]] static Cell GetCell(glm::vec2 position)
+    [[nodiscard]] static Cell GetCell(Vector2 position)
     {
         //Calculate the cell base on the position
-        const Cell cellX = static_cast<Cell>(std::floor(std::max(position.x, 0.0f) / CellSize));
-        const Cell cellY = static_cast<Cell>(std::floor(std::max(position.y, 0.0f) / CellSize));
+        const Cell cellX = static_cast<Cell>(fpm::floor(fpm::max(position.X, Fixed16_16(0) ) / CellSize));
+        const Cell cellY = static_cast<Cell>(fpm::floor(fpm::max(position.Y, Fixed16_16(0)) / CellSize));
 
         return cellY * CellCountX + cellX;
     }
@@ -197,10 +189,10 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
             {
                 Cell mainCell = cellY * CellCountX + cellX;
 
-                for(const glm::ivec2 offset : CellOffsets)
+                for(const Vector2uI offset : CellOffsets)
                 {
-                    const Cell newX = cellX + offset.x;
-                    const Cell newY = cellY + offset.y;
+                    const Cell newX = cellX + offset.X;
+                    const Cell newY = cellY + offset.Y;
 
                     //Check if the new cell is within grid bounds
                     if (newX < CellCountX && newY < CellCountY)
@@ -258,10 +250,11 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
             }
         }
 
+        //std::cout << entityPairs.size() << std::endl;
         return entityPairs;
     }
 
-    void MoveEntity(const Entity entity, const glm::vec2 newPosition)
+    void MoveEntity(const Entity entity, const Vector2 newPosition)
     {
         const Cell cell = entityCells[entity];
         const Cell newCell = GetCell(newPosition);

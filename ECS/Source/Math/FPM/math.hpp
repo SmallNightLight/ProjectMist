@@ -117,11 +117,25 @@ constexpr inline bool isunordered(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y
     return false;
 }
 
+//Max and min
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> max(fixed<B,I,T1,T2,F,R> a, fixed<B,I,T1,T2,F,R> b) noexcept
+{
+    return (a.raw_value() > b.raw_value()) ? a : b;
+
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> min(fixed<B,I,T1,T2,F,R> a, fixed<B,I,T1,T2,F,R> b) noexcept
+{
+    return (a.raw_value() < b.raw_value()) ? a : b;
+}
+
 //
 // Nearest integer operations
 //
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-inline fixed<B,I,T1,T2,F,R> ceil(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr inline fixed<B,I,T1,T2,F,R> ceil(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
     auto value = x.raw_value();
@@ -130,23 +144,41 @@ inline fixed<B,I,T1,T2,F,R> ceil(fixed<B,I,T1,T2,F,R> x) noexcept
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-inline fixed<B,I,T1,T2,F,R> floor(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr inline B ceilInt(fixed<B,I,T1,T2,F,R> x) noexcept
+{
+    constexpr auto FRAC = B(1) << F;
+    auto value = x.raw_value();
+    if (value > 0) value += FRAC - 1;
+    return static_cast<B>(value / FRAC);
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> floor(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
     auto value = x.raw_value();
     if (value < 0) value -= FRAC - 1;
-    return fixed<B,I,T1,T2,F,R>::from_raw_value(value / FRAC * FRAC);
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(value / FRAC * FRAC); //TODO: REMOVE FRAC????
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-inline fixed<B,I,T1,T2,F,R> trunc(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr inline B floorInt(fixed<B,I,T1,T2,F,R> x) noexcept
+{
+    constexpr auto FRAC = B(1) << F;
+    auto value = x.raw_value();
+    if (value < 0) value -= FRAC - 1;
+    return static_cast<B>(value / FRAC);
+}
+
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline fixed<B,I,T1,T2,F,R> trunc(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
     return fixed<B,I,T1,T2,F,R>::from_raw_value(x.raw_value() / FRAC * FRAC);
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-inline fixed<B,I,T1,T2,F,R> round(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr inline fixed<B,I,T1,T2,F,R> round(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     constexpr auto FRAC = B(1) << F;
     auto value = x.raw_value() / (FRAC / 2);
@@ -154,7 +186,7 @@ inline fixed<B,I,T1,T2,F,R> round(fixed<B,I,T1,T2,F,R> x) noexcept
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-fixed<B,I,T1,T2,F,R> nearbyint(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr fixed<B,I,T1,T2,F,R> nearbyint(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     // Rounding mode is assumed to be FE_TONEAREST
     constexpr auto FRAC = B(1) << F;
@@ -199,7 +231,7 @@ constexpr inline fixed<B,I,T1,T2,F,R> remainder(fixed<B,I,T1,T2,F,R> x, fixed<B,
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-inline fixed<B,I,T1,T2,F,R> remquo(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y, int* quo) noexcept
+constexpr inline fixed<B,I,T1,T2,F,R> remquo(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y, int* quo) noexcept
 {
     assert(y.raw_value() != 0);
     assert(quo != nullptr);
@@ -234,7 +266,7 @@ constexpr inline fixed<B,I,T1,T2,F,R> nexttoward(fixed<B,I,T1,T2,F,R> from, fixe
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-inline fixed<B,I,T1,T2,F,R> modf(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R>* iptr) noexcept
+constexpr inline fixed<B,I,T1,T2,F,R> modf(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R>* iptr) noexcept
 {
     const auto raw = x.raw_value();
     constexpr auto FRAC = B{1} << F;
@@ -248,7 +280,7 @@ inline fixed<B,I,T1,T2,F,R> modf(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R>* i
 //
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R, typename T, typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
-fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, T exp) noexcept
+constexpr fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, T exp) noexcept
 {
     using Fixed = fixed<B,I,T1,T2,F,R>;
 
@@ -282,7 +314,7 @@ fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, T exp) noexcept
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, fixed<B,I,T1,T2,F,R> exp) noexcept
+constexpr fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, fixed<B,I,T1,T2,F,R> exp) noexcept
 {
     using Fixed = fixed<B,I,T1,T2,F,R>;
 
@@ -311,7 +343,7 @@ fixed<B,I,T1,T2,F,R> pow(fixed<B,I,T1,T2,F,R> base, fixed<B,I,T1,T2,F,R> exp) no
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-fixed<B,I,T1,T2,F,R> exp(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr fixed<B,I,T1,T2,F,R> exp(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     using Fixed = fixed<B,I,T1,T2,F,R>;
     if (x < Fixed(0)) {
@@ -332,7 +364,7 @@ fixed<B,I,T1,T2,F,R> exp(fixed<B,I,T1,T2,F,R> x) noexcept
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-fixed<B,I,T1,T2,F,R> exp2(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr fixed<B,I,T1,T2,F,R> exp2(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     using Fixed = fixed<B,I,T1,T2,F,R>;
     if (x < Fixed(0)) {
@@ -353,13 +385,13 @@ fixed<B,I,T1,T2,F,R> exp2(fixed<B,I,T1,T2,F,R> x) noexcept
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-fixed<B,I,T1,T2,F,R> expm1(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr fixed<B,I,T1,T2,F,R> expm1(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     return exp(x) - 1;
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
-fixed<B,I,T1,T2,F,R> log2(fixed<B,I,T1,T2,F,R> x) noexcept
+constexpr fixed<B,I,T1,T2,F,R> log2(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     using Fixed = fixed<B,I,T1,T2,F,R>;
     assert(x > Fixed(0));
@@ -461,6 +493,9 @@ fixed<B,I,T1,T2,F,R> sqrt(fixed<B,I,T1,T2,F,R> x) noexcept
 {
     using Fixed = fixed<B,I,T1,T2,F,R>;
 
+    if (x < Fixed(0))
+    {int a = 0;}
+
     assert(x >= Fixed(0));
     if (x == Fixed(0))
     {
@@ -494,6 +529,40 @@ fixed<B,I,T1,T2,F,R> sqrt(fixed<B,I,T1,T2,F,R> x) noexcept
 
     return Fixed::from_raw_value(static_cast<B>(res));
 }
+
+    template <typename I>
+    I sqrt(I value) noexcept
+    {
+        assert(value >= 0 && "Can't take square root from negative number");
+        if (value == 0)
+        {
+            return value;
+        }
+
+        //Finding the square root of an integer in base-2, from:
+        //https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Binary_numeral_system_.28base_2.29
+
+        I x = value;
+        I c = 0;
+        I d = I(1) << (sizeof(I) * 8 - 2);
+
+        while (d > value) {
+            d >>= 2;
+        }
+
+        // Perform the square root approximation
+        while (d != 0) {
+            if (x >= c + d) {
+                x -= c + d;
+                c = (c >> 1) + d;
+            } else {
+                c >>= 1;
+            }
+            d >>= 2;
+        }
+
+        return c;
+    }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
 fixed<B,I,T1,T2,F,R> hypot(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept

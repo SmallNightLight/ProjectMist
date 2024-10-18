@@ -34,8 +34,9 @@ public:
             auto& transform = transformCollection->GetComponent(entity);
             auto& velocity = velocityCollection->GetComponent(entity);
 
-            glColor3ub(velocity.Value.x, 0, velocity.Value.y);
-            glVertex2f(transform.Position.x, transform.Position.y);
+            //glColor3ub(fpm::ceilInt(velocity.Value.X), 0, fpm::ceilInt(velocity.Value.Y));
+            glColor3ub(255, 0, 0);
+            glVertex2f(transform.Position.X.ToFloating<float>(), transform.Position.Y.ToFloating<float>());
         }
         glEnd();
     }

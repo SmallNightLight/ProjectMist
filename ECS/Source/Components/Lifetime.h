@@ -1,10 +1,11 @@
 #pragma once
 
+#include "../Math/FixedVector2.h"
 
 struct Lifetime
 {
-    float CurrentLifetime;
+    Fixed16_16 CurrentLifetime;
 
-    Lifetime() : CurrentLifetime(0.0f) { }
-    explicit Lifetime(const float lifetime) : CurrentLifetime(lifetime) { }
+    Lifetime() : CurrentLifetime(0) { }
+    explicit Lifetime(const Fixed16_16 lifetime) : CurrentLifetime(lifetime) { }
 };

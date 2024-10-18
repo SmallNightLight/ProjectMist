@@ -10,25 +10,17 @@
 #include <bitset>
 
 #include <iostream>
-#include <cmath>
 #include <algorithm>
-
-constexpr int int_ceil(float f)
-{
-    const int i = static_cast<int>(f);
-    return f > (float)i ? i + 1 : i;
-}
-
 
 using Cell = std::uint32_t;
 static constexpr std::int32_t MainBufferSize = 64;
 
-static constexpr Rect PartitionArea = Rect(glm::vec2(0, 0), glm::vec2(SCREEN_WIDTH, SCREEN_HEIGHT));
-static constexpr float MaxEntitySize = 50.0f;
-static constexpr float CellSize = MaxEntitySize * 2.0f;
+static constexpr Rect PartitionArea = Rect(Vector2(0, 0), Vector2(SCREEN_WIDTH, SCREEN_HEIGHT));
+static constexpr Fixed16_16 MaxEntitySize = Fixed16_16::FromFixed(50, 0);
+static constexpr Fixed16_16 CellSize = MaxEntitySize * 2;
 
-static constexpr Cell CellCountX = int_ceil(PartitionArea.Size.x / CellSize);
-static constexpr Cell CellCountY = int_ceil(PartitionArea.Size.y / CellSize);
+static constexpr Cell CellCountX = static_cast<Cell>(fpm::ceilInt(PartitionArea.Size.X / CellSize));
+static constexpr Cell CellCountY = static_cast<Cell>(fpm::ceilInt(PartitionArea.Size.Y / CellSize));
 static constexpr Cell CellCount = CellCountX * CellCountY;
 static constexpr std::int32_t IndexNull = MAXENTITIES + 1; //?
 
@@ -80,13 +72,13 @@ struct PartitionGrid //assuming that all entities have the same size (or the giv
 
     void CreateGrid()
     {
-        glm::vec2 cellSize(CellSize, CellSize);
+        Vector2 cellSize(CellSize, CellSize);
 
         for (Cell y = 0; y < CellCountY; ++y)
         {
             for (Cell x = 0; x < CellCountX; ++x)
             {
-                cellAreas[y * CellCountX + x] = Rect(glm::vec2((float)x * CellSize, (float)y * CellSize), cellSize);
+                cellAreas[y * CellCountX + x] = Rect(Vector2(x * CellSize, y * CellSize), cellSize);
             }
         }
     }
@@ -96,10 +88,10 @@ struct PartitionGrid //assuming that all entities have the same size (or the giv
         entityAreas[entity] = entityArea;
 
         //Calculate the min and max cell indices that the entity rect may overlap
-        Cell minCellX = static_cast<Cell>(std::floor(entityArea.Position.x / CellSize));
-        Cell maxCellX = static_cast<Cell>(std::floor((entityArea.Position.x + entityArea.Size.x) / CellSize));
-        Cell minCellY = static_cast<Cell>(std::floor(entityArea.Position.y / CellSize));
-        Cell maxCellY = static_cast<Cell>(std::floor((entityArea.Position.y + entityArea.Size.y) / CellSize));
+        Cell minCellX = static_cast<Cell>(fpm::floorInt(entityArea.Position.X / CellSize));
+        Cell maxCellX = static_cast<Cell>(fpm::floorInt((entityArea.Position.X + entityArea.Size.X) / CellSize));
+        Cell minCellY = static_cast<Cell>(fpm::floorInt(entityArea.Position.Y / CellSize));
+        Cell maxCellY = static_cast<Cell>(fpm::floorInt((entityArea.Position.Y + entityArea.Size.Y) / CellSize));
 
         //Clamp the indices to be within the grid bounds
         minCellX = std::max(Cell(0), minCellX);
@@ -190,10 +182,10 @@ struct PartitionGrid //assuming that all entities have the same size (or the giv
         Rect oldArea = entityAreas[entity];
 
         //Remove the entity from the cells by first checking which cell the entity is still registered in
-        Cell minCellX = static_cast<Cell>(std::floor(oldArea.Position.x / CellSize));
-        Cell maxCellX = static_cast<Cell>(std::floor((oldArea.Position.x + oldArea.Size.x) / CellSize));
-        Cell minCellY = static_cast<Cell>(std::floor(oldArea.Position.y / CellSize));
-        Cell maxCellY = static_cast<Cell>(std::floor((oldArea.Position.y + oldArea.Size.y) / CellSize));
+        Cell minCellX = static_cast<Cell>(fpm::floorInt(oldArea.Position.X / CellSize));
+        Cell maxCellX = static_cast<Cell>(fpm::floorInt((oldArea.Position.X + oldArea.Size.X) / CellSize));
+        Cell minCellY = static_cast<Cell>(fpm::floorInt(oldArea.Position.Y / CellSize));
+        Cell maxCellY = static_cast<Cell>(fpm::floorInt((oldArea.Position.Y + oldArea.Size.Y) / CellSize));
 
         minCellX = std::max(Cell(0), minCellX);
         maxCellX = std::min(CellCountX - 1, maxCellX);

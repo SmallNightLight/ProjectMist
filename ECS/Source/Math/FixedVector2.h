@@ -5,8 +5,8 @@
 #include "FixedTypes.h"
 #include <type_traits>
 
-template<class T, typename IntegerType, typename FractionType>
-struct  FixedVector2
+template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType>
+struct FixedVector2
 {
       T X;
       T Y;
@@ -136,7 +136,13 @@ struct  FixedVector2
 
       T Magnitude() const
       {
-            return fpm::sqrt(X * X + Y * Y);
+          auto xRaw = static_cast<IntermediateType>(X.raw_value());
+          auto yRaw = static_cast<IntermediateType>(Y.raw_value());
+
+          IntermediateType mul = xRaw * xRaw + yRaw * yRaw;
+          IntermediateType result = fpm::sqrt<IntermediateType>(mul);
+
+          return T::from_raw_value(static_cast<BaseTType>(result));
       }
 
       FixedVector2 Normalize() const

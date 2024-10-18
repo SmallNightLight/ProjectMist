@@ -37,7 +37,6 @@ add_executable(ECS Source/main.cpp
         Source/Systems/BoidMovement.h
         Source/Systems/BoidRenderer.h
         Source/Math/Quadtree.h
-        Source/Math/Box.h
         Source/Math/Rect.h
         Source/Math/PartitionGrid.h
         Source/Math/PartitionGrid2.h
@@ -45,6 +44,8 @@ add_executable(ECS Source/main.cpp
         Source/Systems/BlinkingParticles.h
         Source/Math/FixedTypes.h
         Source/Math/TestMath.h
+        Source/Math/IntVector2.h
+        Source/Math/FixedRandom.h
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/Includes)

@@ -189,6 +189,13 @@ public:
         elapsed_seconds = end - start;
         std::cout << std::setprecision(10) << "Time to add 1.000.000 fixed number vector2s (no rounding - default): " << elapsed_seconds.count() << " seconds, Offset: " << (v1 - Vector2(1000, 1000)).Positive() << std::endl;
 
+        Vector2 v(-1000, 1000);
+        std::cout << v.Magnitude() << std::endl;
+
+        Fixed8_8 f8 = Fixed8_8(30, 6);
+        std::cout << f8 << std::endl;
+        Fixed16_16 f16 = Fixed16_16(f8);
+        std::cout << f16 << std::endl;
 
         return 0;
     }

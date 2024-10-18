@@ -6,7 +6,6 @@
 #include <sstream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
 
 #include "Math/TestMath.h"
 
@@ -17,19 +16,19 @@ void SetFrameSize(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-glm::vec2 GetMousePosition(GLFWwindow* window)
+Vector2 GetMousePosition(GLFWwindow* window)
 {
     //Get the mouse position in pixel coordinates
     double mouseX, mouseY;
     glfwGetCursorPos(window, &mouseX, &mouseY);
 
     //Convert mouse X and Y to normalized screen coordinates [-1, 1]
-    return glm::vec2 {(float)mouseX, SCREEN_HEIGHT - (float)mouseY };
+    return Vector2 {Fixed16_16::FromFloat<double>(mouseX), Fixed16_16::FromFloat<float>(SCREEN_HEIGHT - (float)mouseY) };
 }
 
 int main()
 {
-    return TestMath::Test();
+    //return TestMath::Test();
 
     //Initialize OpenGL
     if (!glfwInit())
@@ -88,10 +87,10 @@ int main()
     EcsManager.SetSignature<BoidRenderer>(BoidRenderer::GetSignature());
 
     std::default_random_engine random;
-    std::uniform_real_distribution<float> randomPositionX(0.0, SCREEN_WIDTH);
-    std::uniform_real_distribution<float> randomPositionY(0.0, SCREEN_HEIGHT);
-    std::uniform_real_distribution<float> randomVelocity(-1.0, 1.0);
-    std::uniform_real_distribution<float> randomLifetime(0.0, 3.0);
+    FixedRandom16_16 randomPositionX(Fixed16_16(0), Fixed16_16(SCREEN_WIDTH));
+    FixedRandom16_16 randomPositionY(Fixed16_16(0), Fixed16_16(SCREEN_HEIGHT));
+    FixedRandom16_16 randomVelocity(Fixed16_16(-1), Fixed16_16(1));
+    FixedRandom16_16 randomLifetime(Fixed16_16(0), Fixed16_16(3));
 
     //Add entities
     for (Entity entity = 0; entity < MAXENTITIES; ++entity)
@@ -99,9 +98,9 @@ int main()
         EcsManager.CreateEntity();
 
         EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
+        EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
         //EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
-        EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
+        //EcsManager.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
     }
 
     bool isPaused = false;
@@ -138,11 +137,12 @@ int main()
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
 
+        //Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
         if (!isPaused)
         {
-            movementSystem->Update(deltaTime, GetMousePosition(window));
+            movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
             boidMovement->Update(deltaTime);
-            blinkingParticles->Update(deltaTime);
+            blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
         }
 
         particleRenderer->Render();
