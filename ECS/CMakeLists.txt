@@ -46,6 +46,10 @@ add_executable(ECS Source/main.cpp
         Source/Math/TestMath.h
         Source/Math/IntVector2.h
         Source/Math/FixedRandom.h
+        Source/Physics/Components/ColliderTransform.h
+        Source/Physics/Components/Rigidbody.h
+        Source/Physics/Components/BoxCollider.h
+        Source/Physics/Components/CircleCollider.h
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/Includes)
