@@ -47,7 +47,7 @@ add_executable(ECS Source/main.cpp
         Source/Math/IntVector2.h
         Source/Math/FixedRandom.h
         Source/Physics/Components/ColliderTransform.h
-        Source/Physics/Components/Rigidbody.h
+        Source/Physics/Components/RigidBody.h
         Source/Physics/Components/BoxCollider.h
         Source/Physics/Components/CircleCollider.h
 )
