@@ -52,6 +52,8 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Components/CircleCollider.h
 )
 
+add_subdirectory(Source/Math/FixedLib)
+
 include_directories(${CMAKE_SOURCE_DIR}/Includes)
 
 if (WIN32)

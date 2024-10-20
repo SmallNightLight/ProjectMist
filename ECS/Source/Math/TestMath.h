@@ -3,16 +3,21 @@
 
 #include "FixedTypes.h"
 
+
+#include "FixedLib/include/fixedmath/fixed_math.hpp"
+#include "FixedLib/include/fixedmath/iostream.h"
+
 #include <iostream>
 #include <iomanip>
 #include <cassert>
 #include <chrono>
+#define FIXEDMATH_ENABLE_SQRT_ABACUS_ALGO
+using fixedmath::operator""_fix;
 
 class TestMath
 {
 public:
     TestMath() = default;
-
 
     static int Test()
     {
@@ -190,12 +195,98 @@ public:
         std::cout << std::setprecision(10) << "Time to add 1.000.000 fixed number vector2s (no rounding - default): " << elapsed_seconds.count() << " seconds, Offset: " << (v1 - Vector2(1000, 1000)).Positive() << std::endl;
 
         Vector2 v(-1000, 1000);
-        std::cout << v.Magnitude() << std::endl;
+        std::cout << "Magnitude (1414,2135): " << v.Magnitude() << std::endl;
 
         Fixed8_8 f8 = Fixed8_8(30, 6);
         std::cout << f8 << std::endl;
         Fixed16_16 f16 = Fixed16_16(f8);
         std::cout << f16 << std::endl;
+
+        fixedmath::fixed_t n1 = fixedmath::fixed_t(10000000) + fixedmath::fixed_t(0.00001f);
+        std::cout << n1 << std::endl;
+        std::cout << fixedmath::sqrt(n1) << std::endl;
+
+
+
+
+        ///////////////
+        //Comparison with fixedmath lib
+        //Fixed numbers
+        std::cout << "Testing TestMath" << std::endl;
+
+        Fixed vvv = 65537_fix;
+
+        Fixed fixed81 = 1.5015_fix;
+        assert(fixed81 == 180.18_fix / 120.0_fix);
+        fixed81 += 10.76_fix;
+        //assert(fixed81 == 12.2615_fix);
+
+        std::cout << "\nTesting number addition speed" << std::endl;
+
+        //Fixed point with rounding
+        auto start1 = std::chrono::high_resolution_clock::now();
+
+        Fixed x11(0);
+        Fixed x21 = 1.0_fix / 1000.0_fix;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            x11 += x21;
+        }
+
+        auto end1 = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed_seconds1 = end1 - start1;
+        std::cout << std::setprecision(10) << "Time to add 1.000.000 fixed lib: " << elapsed_seconds1.count() << " seconds, Offset: " << fixedmath::abs(x11 - 1000.0_fix) << std::endl;
+
+
+        std::cout << "\nTesting number multiplication / division speed" << std::endl;
+
+        //Fixed point with rounding
+        start1 = std::chrono::high_resolution_clock::now();
+
+        Fixed a11 = 1.2_fix;
+        Fixed a21 = 1.2_fix;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            a11 *= a21;
+            a11 /= a21;
+        }
+
+        end1 = std::chrono::high_resolution_clock::now();
+        elapsed_seconds1 = end1 - start1;
+        std::cout << std::setprecision(10) << "Time to multiply and divide 1.000.000 fixed lib: " << elapsed_seconds1.count() << " seconds, Offset: " << fixedmath::abs(a11 - a21) << std::endl;
+
+
+        //Comparing square root
+        std::cout << "\nTesting square root" << std::endl;
+
+        //Fixed lib
+        start1 = std::chrono::high_resolution_clock::now();
+
+        Fixed g = 1000.5498_fix;
+        Fixed h;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            h = fixedmath::detail::sqrt_std_math(g);
+        }
+
+        end1 = std::chrono::high_resolution_clock::now();
+        elapsed_seconds1 = end1 - start1;
+        std::cout << std::setprecision(10) << "Time to square root 1.000.000 fixed lib: " << elapsed_seconds1.count() << " seconds, Result: " << h << std::endl;
+
+        //FPM
+        start1 = std::chrono::high_resolution_clock::now();
+
+        Fixed16_16 u = Fixed16_16::FromFixed(1000, 5498);
+        Fixed16_16 o;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            o = Fixed16_16::from_raw_value(fpm::sqrt(u.raw_value()));
+        }
+
+        end1 = std::chrono::high_resolution_clock::now();
+        elapsed_seconds1 = end1 - start1;
+        std::cout << std::setprecision(10) << "Time to square root 1.000.000 fpm: " << elapsed_seconds1.count() << " seconds, Result: " << o << std::endl;
+
 
         return 0;
     }
