@@ -28,12 +28,17 @@ struct ColliderTransform
     bool IsKinematic;
     bool IsDynamic;
 
-    ColliderTransform(Vector2 position, Fixed16_16 rotation, ColliderType shape, RigidBodyType type) : Position(position), Rotation(rotation), Shape(shape)
+    ColliderTransform() : Position(0, 0), Rotation(0), Shape(ColliderType::Box), IsStatic(true), IsKinematic(false), IsDynamic(false) { }
+
+    constexpr ColliderTransform(Vector2 position, Fixed16_16 rotation, ColliderType shape, RigidBodyType type) : Position(position), Rotation(rotation), Shape(shape), IsStatic(type == RigidBodyType::Static),
+      IsKinematic(type == RigidBodyType::Kinematic),
+      IsDynamic(type == RigidBodyType::Dynamic)
+    { }
+
+    constexpr inline void SetRigidBodyType(RigidBodyType type)
     {
         IsStatic = type == RigidBodyType::Static;
         IsKinematic = type == RigidBodyType::Kinematic;
         IsDynamic = type == RigidBodyType::Dynamic;
-
-        std::cout << sizeof(RigidBodyType) << std::endl;
     }
 };

@@ -329,6 +329,20 @@ private:
     BaseType m_value;
 };
 
+    //User define literals - error
+/*
+    template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+    constexpr inline fixed<B,I,T1,T2,F,R> operator ""_fixed ( const long double value ) noexcept
+    {
+        return fixed<B,I,T1,T2,F,R>::FromFloat( static_cast<double>( value ));
+    }
+
+    template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+    constexpr inline fixed<B,I,T1,T2,F,R> operator ""_fixed ( const unsigned long long value ) noexcept
+    {
+        return fixed<B,I,T1,T2,F,R>(value);
+    }*/
+
 //
 // Addition
 //

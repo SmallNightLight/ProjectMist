@@ -46,10 +46,16 @@ add_executable(ECS Source/main.cpp
         Source/Math/TestMath.h
         Source/Math/IntVector2.h
         Source/Math/FixedRandom.h
+        Source/Physics/Physics.h
         Source/Physics/Components/ColliderTransform.h
         Source/Physics/Components/RigidBody.h
         Source/Physics/Components/BoxCollider.h
         Source/Physics/Components/CircleCollider.h
+        Source/Physics/PhysicsSettings.h
+        Source/Physics/Components/ColliderRenderData.h
+        Source/Physics/Systems/BoxColliderRenderer.h
+        Source/Physics/Systems/CircleColliderRenderer.h
+
 )
 
 add_subdirectory(Source/Math/FixedLib)

@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Math/TestMath.h"
+#include "Physics/Physics.h"
 
 ECSManager EcsManager;
 
@@ -72,12 +73,21 @@ int main()
     EcsManager.RegisterComponent<Lifetime>();
     EcsManager.RegisterComponent<Boid>();
 
+    EcsManager.RegisterComponent<ColliderTransform>();
+    EcsManager.RegisterComponent<RigidBody>();
+    EcsManager.RegisterComponent<ColliderRenderData>();
+    EcsManager.RegisterComponent<BoxCollider>();
+    EcsManager.RegisterComponent<CircleCollider>();
+
     //Register systems
     auto movementSystem = EcsManager.RegisterSystem<Movement>();
     auto particleRenderer = EcsManager.RegisterSystem<ParticleRenderer>();
     auto blinkingParticles = EcsManager.RegisterSystem<BlinkingParticles>();
     auto boidMovement = EcsManager.RegisterSystem<BoidMovement>();
     auto boidRenderer = EcsManager.RegisterSystem<BoidRenderer>();
+
+    auto boxColliderRenderer = EcsManager.RegisterSystem<BoxColliderRenderer>();
+    auto circleColliderRenderer = EcsManager.RegisterSystem<CircleColliderRenderer>();
 
     //Setup signatures
     EcsManager.SetSignature<Movement>(Movement::GetSignature());
@@ -86,6 +96,9 @@ int main()
     EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
     EcsManager.SetSignature<BoidRenderer>(BoidRenderer::GetSignature());
 
+    EcsManager.SetSignature<BoxColliderRenderer>(BoxColliderRenderer::GetSignature());
+    EcsManager.SetSignature<CircleColliderRenderer>(CircleColliderRenderer::GetSignature());
+
     std::default_random_engine random;
     FixedRandom16_16 randomPositionX(Fixed16_16(0), Fixed16_16(SCREEN_WIDTH));
     FixedRandom16_16 randomPositionY(Fixed16_16(0), Fixed16_16(SCREEN_HEIGHT));
@@ -93,14 +106,19 @@ int main()
     FixedRandom16_16 randomLifetime(Fixed16_16(0), Fixed16_16(3));
 
     //Add entities
-    for (Entity entity = 0; entity < MAXENTITIES; ++entity)
+    for (Entity entity = 0; entity < 20; ++entity)
     {
         EcsManager.CreateEntity();
 
-        EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
+        EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
+        //EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(10)));
+        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(100), Fixed16_16(100)));
+        EcsManager.AddComponent(entity, ColliderRenderData(0.5, 0.5, 0.5));
+
+        //EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
         //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
         //EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
-        EcsManager.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
+        //EcsManager.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
     }
 
     bool isPaused = false;
@@ -145,8 +163,12 @@ int main()
             blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
         }
 
+        //Rendering
         particleRenderer->Render();
         boidRenderer->Render();
+
+        boxColliderRenderer->Render();
+        circleColliderRenderer->Render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -158,63 +180,3 @@ int main()
 
     return 0;
 }
-
-
-//Main function to run with no window
-/*
-int main()
-{
-    //ECS setup
-    EcsManager.Setup();
-
-    //Register components
-    EcsManager.RegisterComponent<Transform>();
-    EcsManager.RegisterComponent<Velocity>();
-    EcsManager.RegisterComponent<Boid>();
-
-    //Register systems
-    auto movementSystem = EcsManager.RegisterSystem<Movement>();
-    auto boidMovement = EcsManager.RegisterSystem<BoidMovement>();
-
-    //Setup signatures
-    EcsManager.SetSignature<Movement>(Movement::GetSignature());
-    EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
-
-    std::default_random_engine random;
-
-    //Add entities
-    for (Entity entity = 0; entity < MAXENTITIES; ++entity)
-    {
-        EcsManager.CreateEntity();
-
-        std::uniform_real_distribution<float> randomPositionX(0.0, SCREEN_WIDTH);
-        std::uniform_real_distribution<float> randomPositionY(0.0, SCREEN_HEIGHT);
-        std::uniform_real_distribution<float> randomVelocity(-1.0, 1.0);
-
-        EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        EcsManager.AddComponent(entity, Boid {glm::vec2{randomVelocity(random), randomVelocity(random)}, glm::vec2{0, 0} });
-    }
-
-    bool isPaused = false;
-    double lastTime = 0.0;
-    double lastTitleUpdateTime = 0.0;
-
-    int i = 0;
-    while (i < 1000)
-    {
-        //Calculate delta time
-        double currentTime = glfwGetTime();
-        double deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
-
-        if (!isPaused)
-        {
-            movementSystem->Update((float)deltaTime, glm::vec2{0, 0});
-            boidMovement->Update((float)deltaTime, glm::vec2{0, 0});
-        }
-
-        i++;
-    }
-
-    return 0;
-}*/
