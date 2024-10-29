@@ -14,7 +14,7 @@ public:
 	{
 		const char* typeName = typeid(T).name();
 
-		assert(_componentTypes.find(typeName) == _componentTypes.end());
+		assert(_componentTypes.find(typeName) == _componentTypes.end() && "Component already registered");
 
 		//Add the component type to the component map
 		_componentTypes.insert({ typeName, _nextComponentType });

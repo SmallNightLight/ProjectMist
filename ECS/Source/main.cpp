@@ -72,6 +72,7 @@ int main()
     EcsManager.RegisterComponent<Velocity>();
     EcsManager.RegisterComponent<Lifetime>();
     EcsManager.RegisterComponent<Boid>();
+    EcsManager.RegisterComponent<Camera>();
 
     EcsManager.RegisterComponent<ColliderTransform>();
     EcsManager.RegisterComponent<RigidBodyData>();
@@ -85,6 +86,7 @@ int main()
     auto blinkingParticles = EcsManager.RegisterSystem<BlinkingParticles>();
     auto boidMovement = EcsManager.RegisterSystem<BoidMovement>();
     auto boidRenderer = EcsManager.RegisterSystem<BoidRenderer>();
+    auto cameraSystem = EcsManager.RegisterSystem<CameraSystem>();
 
     auto boxColliderRenderer = EcsManager.RegisterSystem<BoxColliderRenderer>();
     auto circleColliderRenderer = EcsManager.RegisterSystem<CircleColliderRenderer>();
@@ -95,13 +97,22 @@ int main()
     EcsManager.SetSignature<BlinkingParticles>(BlinkingParticles::GetSignature());
     EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
     EcsManager.SetSignature<BoidRenderer>(BoidRenderer::GetSignature());
+    EcsManager.SetSignature<CameraSystem>(CameraSystem::GetSignature());
 
     EcsManager.SetSignature<BoxColliderRenderer>(BoxColliderRenderer::GetSignature());
     EcsManager.SetSignature<CircleColliderRenderer>(CircleColliderRenderer::GetSignature());
 
+
+    //Add camera
+    Entity cameraEntity = EcsManager.CreateEntity();
+    EcsManager.AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
+
+
+    //Add physics objects
+    Camera camera = EcsManager.GetComponent<Camera>(cameraEntity);
     std::default_random_engine random;
-    FixedRandom16_16 randomPositionX(Fixed16_16(0), Fixed16_16(SCREEN_WIDTH));
-    FixedRandom16_16 randomPositionY(Fixed16_16(0), Fixed16_16(SCREEN_HEIGHT));
+    FixedRandom16_16 randomPositionX(camera.Left, camera.Right);
+    FixedRandom16_16 randomPositionY(camera.Bottom, camera.Top);
     FixedRandom16_16 randomVelocity(Fixed16_16(-1), Fixed16_16(1));
     FixedRandom16_16 randomLifetime(Fixed16_16(0), Fixed16_16(3));
     std::uniform_real_distribution<float> randomColor(0.0, 1.0);
@@ -112,7 +123,7 @@ int main()
         Entity entity = EcsManager.CreateEntity();
 
         EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
-        EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(30)));
+        EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(1)));
         EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
     }
 
@@ -122,7 +133,7 @@ int main()
         Entity entity = EcsManager.CreateEntity();
 
         EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
-        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(50), Fixed16_16(50)));
+        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(1), Fixed16_16(1)));
         EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
     }
 
@@ -184,6 +195,7 @@ int main()
         }
 
         //Rendering
+        cameraSystem->Apply();
         particleRenderer->Render();
         boidRenderer->Render();
 

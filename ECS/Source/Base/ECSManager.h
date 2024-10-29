@@ -96,9 +96,9 @@ public:
 
     //Gets a reference to the component of type T for the given entity
     template<typename T>
-    T& GetComponent(Entity entity, ComponentType componentType)
+    T& GetComponent(Entity entity)
     {
-        return _componentManager->GetComponent<T>(entity, componentType);
+        return _componentManager->GetComponent<T>(entity, GetComponentType<T>());
     }
 
     template<typename T>

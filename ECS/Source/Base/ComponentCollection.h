@@ -79,6 +79,8 @@ private:
 template<typename T>
 class ComponentCollection : public IComponentCollection
 {
+	static_assert(std::is_default_constructible<T>::value, "ComponentCollection requires that T is default-constructible.");
+
 public:
     //Initializes the sparse set with null entities, to indicate that all entities have no components
     ComponentCollection()
@@ -162,3 +164,6 @@ private:
     std::uint32_t _entityCount = 0;
 };
 /**/
+
+//Fix for <brace-enclosed initializer list>:
+//Missing default constructor with no parameters

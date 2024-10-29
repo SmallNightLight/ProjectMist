@@ -56,6 +56,8 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Systems/BoxColliderRenderer.h
         Source/Physics/Systems/CircleColliderRenderer.h
         Source/Physics/Systems/RigidBody.h
+        Source/Components/Camera.h
+        Source/Systems/CameraSystem.h
 
 )
 

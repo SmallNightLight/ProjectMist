@@ -4,3 +4,4 @@
 #include "Velocity.h"
 #include "Boid.h"
 #include "Lifetime.h"
+#include "Camera.h"
