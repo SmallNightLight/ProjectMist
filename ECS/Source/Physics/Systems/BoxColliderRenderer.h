@@ -24,13 +24,23 @@ public:
             BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
-            glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
-
             auto x = transform.Position.X.ToFloating<float>();
             auto y = transform.Position.Y.ToFloating<float>();
             auto width = boxCollider.Width.ToFloating<float>();
             auto height = boxCollider.Height.ToFloating<float>();
 
+            //Draw filled rectangle
+            glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
+            glBegin(GL_QUADS);
+            glVertex2f(x, y);                   //Bottom left corner
+            glVertex2f(x + width, y);           //Bottom right corner
+            glVertex2f(x + width, y + height);  //Top right corner
+            glVertex2f(x, y + height);          //Top left corner
+            glEnd();
+
+            //Draw white outline
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
             glVertex2f(x, y);                   //Bottom left corner
             glVertex2f(x + width, y);           //Bottom right corner

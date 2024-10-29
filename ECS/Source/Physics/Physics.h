@@ -6,11 +6,13 @@
 
 //Includes - Components
 #include "Components/ColliderTransform.h"
-#include "Components/RigidBody.h"
+#include "Components/RigidBodyData.h"
 #include "Components/BoxCollider.h"
 #include "Components/CircleCollider.h"
 #include "Components/ColliderRenderData.h"
 
 //Includes - Systems
+#include "Systems/RigidBody.h"
+
 #include "Systems/BoxColliderRenderer.h"
 #include "Systems/CircleColliderRenderer.h"

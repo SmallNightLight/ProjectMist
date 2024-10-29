@@ -41,4 +41,15 @@ struct ColliderTransform
         IsKinematic = type == RigidBodyType::Kinematic;
         IsDynamic = type == RigidBodyType::Dynamic;
     }
+
+
+    void Move(Vector2 direction)
+    {
+        Position += direction;
+    }
+
+    void SetPosition(Vector2 position)
+    {
+        Position = position;
+    }
 };

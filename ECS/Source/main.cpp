@@ -74,7 +74,7 @@ int main()
     EcsManager.RegisterComponent<Boid>();
 
     EcsManager.RegisterComponent<ColliderTransform>();
-    EcsManager.RegisterComponent<RigidBody>();
+    EcsManager.RegisterComponent<RigidBodyData>();
     EcsManager.RegisterComponent<ColliderRenderData>();
     EcsManager.RegisterComponent<BoxCollider>();
     EcsManager.RegisterComponent<CircleCollider>();
@@ -104,22 +104,42 @@ int main()
     FixedRandom16_16 randomPositionY(Fixed16_16(0), Fixed16_16(SCREEN_HEIGHT));
     FixedRandom16_16 randomVelocity(Fixed16_16(-1), Fixed16_16(1));
     FixedRandom16_16 randomLifetime(Fixed16_16(0), Fixed16_16(3));
+    std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
-    //Add entities
-    for (Entity entity = 0; entity < 20; ++entity)
+    //Add circles
+    for (int i = 0; i < 20; ++i)
+    {
+        Entity entity = EcsManager.CreateEntity();
+
+        EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
+        EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(30)));
+        EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
+    }
+
+    //Add boxes
+    for (int i = 0; i < 20; ++i)
+    {
+        Entity entity = EcsManager.CreateEntity();
+
+        EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
+        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(50), Fixed16_16(50)));
+        EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
+    }
+
+    /*for (Entity entity = 0; entity < 20; ++entity)
     {
         EcsManager.CreateEntity();
 
         EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
-        //EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(10)));
-        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(100), Fixed16_16(100)));
+        EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(30)));
+        //EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(100), Fixed16_16(100)));
         EcsManager.AddComponent(entity, ColliderRenderData(0.5, 0.5, 0.5));
 
         //EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
         //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
         //EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
         //EcsManager.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
-    }
+    }*/
 
     bool isPaused = false;
     double lastTime = 0.0;
