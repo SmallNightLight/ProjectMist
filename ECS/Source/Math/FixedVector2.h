@@ -157,7 +157,8 @@ struct FixedVector2
             T magnitude = Magnitude();
             if (magnitude == T(0))
             {
-                  throw std::runtime_error("Cannot normalize a zero vector");
+                  return Zero();
+                  //throw std::runtime_error("Cannot normalize a zero vector");
             }
             return FixedVector2(X / magnitude, Y / magnitude);
       }
@@ -245,7 +246,7 @@ struct FixedVector2
 
       bool operator!=(const FixedVector2& other) const
       {
-            return *this != other;
+            return this->X != other.X || this->Y != other.Y;
       }
 
       bool operator<(const FixedVector2& other) const

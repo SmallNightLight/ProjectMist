@@ -58,6 +58,10 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Systems/RigidBody.h
         Source/Components/Camera.h
         Source/Systems/CameraSystem.h
+        Source/Physics/Components/Movable.h
+        Source/Physics/Systems/MovingSystem.h
+        Source/Physics/Collision/CollisionDetection.h
+        Source/Physics/Collision/CollisionInfo.h
 
 )
 

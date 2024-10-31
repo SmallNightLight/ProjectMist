@@ -76,6 +76,7 @@ int main()
 
     EcsManager.RegisterComponent<ColliderTransform>();
     EcsManager.RegisterComponent<RigidBodyData>();
+    EcsManager.RegisterComponent<Movable>();
     EcsManager.RegisterComponent<ColliderRenderData>();
     EcsManager.RegisterComponent<BoxCollider>();
     EcsManager.RegisterComponent<CircleCollider>();
@@ -88,6 +89,9 @@ int main()
     auto boidRenderer = EcsManager.RegisterSystem<BoidRenderer>();
     auto cameraSystem = EcsManager.RegisterSystem<CameraSystem>();
 
+    auto rigidBodySystem = EcsManager.RegisterSystem<RigidBody>();
+    auto movingSystem = EcsManager.RegisterSystem<MovingSystem>();
+
     auto boxColliderRenderer = EcsManager.RegisterSystem<BoxColliderRenderer>();
     auto circleColliderRenderer = EcsManager.RegisterSystem<CircleColliderRenderer>();
 
@@ -98,6 +102,9 @@ int main()
     EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
     EcsManager.SetSignature<BoidRenderer>(BoidRenderer::GetSignature());
     EcsManager.SetSignature<CameraSystem>(CameraSystem::GetSignature());
+
+    EcsManager.SetSignature<RigidBody>(RigidBody::GetSignature());
+    EcsManager.SetSignature<MovingSystem>(MovingSystem::GetSignature());
 
     EcsManager.SetSignature<BoxColliderRenderer>(BoxColliderRenderer::GetSignature());
     EcsManager.SetSignature<CircleColliderRenderer>(CircleColliderRenderer::GetSignature());
@@ -124,8 +131,11 @@ int main()
 
         EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
         EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(1)));
+        EcsManager.AddComponent(entity, RigidBodyData());
         EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
     }
+
+    EcsManager.AddComponent(10, Movable(Fixed16_16(0, 1)));
 
     //Add boxes
     for (int i = 0; i < 20; ++i)
@@ -186,12 +196,15 @@ int main()
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
 
-        //Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
+        Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
         if (!isPaused)
         {
             movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
             boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
             blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
+
+            movingSystem->Update(window, fixedDelta);
+            rigidBodySystem->Update();
         }
 
         //Rendering
