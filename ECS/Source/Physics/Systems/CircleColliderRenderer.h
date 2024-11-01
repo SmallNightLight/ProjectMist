@@ -46,17 +46,20 @@ public:
             glEnd();
 
             //Draw white outline
-            glColor3f(1.0f, 1.0f, 1.0f);
-            glLineWidth(2.0f);
-            glBegin(GL_LINE_LOOP);
-            for (int i = 0; i < numSegments; ++i)
+            if (colliderRenderData.Outline)
             {
-                float theta = 2.0f * 3.1415926f * static_cast<float>(i) / static_cast<float>(numSegments);
-                float dx = radius * cosf(theta);
-                float dy = radius * sinf(theta);
-                glVertex2f(x + dx, y + dy);
+                glColor3f(1.0f, 1.0f, 1.0f);
+                glLineWidth(2.0f);
+                glBegin(GL_LINE_LOOP);
+                for (int i = 0; i < numSegments; ++i)
+                {
+                    float theta = 2.0f * 3.1415926f * static_cast<float>(i) / static_cast<float>(numSegments);
+                    float dx = radius * cosf(theta);
+                    float dy = radius * sinf(theta);
+                    glVertex2f(x + dx, y + dy);
+                }
+                glEnd();
             }
-            glEnd();
         }
 
         glDisable(GL_POLYGON_SMOOTH);

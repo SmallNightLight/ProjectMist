@@ -55,7 +55,12 @@ public:
                     }
                     else if (colliderTransform2.Shape == Box)
                     {
-                        std::cout << "Collision type not defined (Circle - Box)" << std::endl;
+                        if (collisionDetection.CircleBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, collisionInfo))
+                        {
+                            MovePosition(entity1, -collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform1);
+                            MovePosition(entity2, collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform2);
+                            renderDataCollection->GetComponent(entity1).Outline = true;
+                        }
                     }
                     else if (colliderTransform2.Shape == Convex)
                     {
@@ -66,7 +71,12 @@ public:
                 {
                     if (colliderTransform2.Shape == Circle)
                     {
-                        std::cout << "Collision type not defined (Circle - Box)" << std::endl;
+                        if (collisionDetection.CircleBoxCollisionDetection(entity2, entity1, colliderTransform2, colliderTransform1, collisionInfo))
+                        {
+                            MovePosition(entity1, collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform1);
+                            MovePosition(entity2, -collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform2);
+                            renderDataCollection->GetComponent(entity1).Outline = true;
+                        }
                     }
                     else if (colliderTransform2.Shape == Box)
                     {
@@ -74,7 +84,6 @@ public:
                         {
                             MovePosition(entity1, -collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform1);
                             MovePosition(entity2, collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform2);
-                            renderDataCollection->GetComponent(entity1).Outline = true;
                         }
                     }
                     else if (colliderTransform2.Shape == Convex)

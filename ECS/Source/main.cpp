@@ -125,7 +125,7 @@ int main()
     std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
     //Add circles
-    /*for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 20; ++i)
     {
         Entity entity = EcsManager.CreateEntity();
 
@@ -133,7 +133,7 @@ int main()
         EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(1)));
         EcsManager.AddComponent(entity, RigidBodyData());
         EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
-    }*/
+    }
 
     EcsManager.AddComponent(10, Movable(Fixed16_16(0, 1)));
 

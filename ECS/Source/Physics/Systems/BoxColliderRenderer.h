@@ -48,6 +48,22 @@ public:
                 }
                 glEnd();
             }
+
+
+
+            //TEST
+            //Draw filled circle
+            glColor3f(0.1f, 0.1f, 0.1f);
+            glBegin(GL_TRIANGLE_FAN);
+            glVertex2f(colliderRenderData.p.X.ToFloating<float>(), colliderRenderData.p.Y.ToFloating<float>()); // Center point
+            for (int i = 0; i <= 20; ++i)
+            {
+                float theta = 2.0f * 3.1415926f * static_cast<float>(i) / static_cast<float>(20);
+                float dx = 0.5f * cosf(theta);
+                float dy = 0.5f * sinf(theta);
+                glVertex2f(colliderRenderData.p.X.ToFloating<float>() + dx, colliderRenderData.p.Y.ToFloating<float>() + dy);
+            }
+            glEnd();
         }
     }
 };
