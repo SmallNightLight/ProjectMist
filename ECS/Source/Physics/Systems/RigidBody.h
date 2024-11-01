@@ -48,7 +48,7 @@ public:
                     }
                     else if (colliderTransform2.Shape == Box)
                     {
-                        std::cout << "Collision type not defined" << std::endl;
+                        std::cout << "Collision type not defined (Circle - Box)" << std::endl;
                     }
                     else if (colliderTransform2.Shape == Convex)
                     {
@@ -59,11 +59,11 @@ public:
                 {
                     if (colliderTransform2.Shape == Circle)
                     {
-                        std::cout << "Collision type not defined" << std::endl;
+                        std::cout << "Collision type not defined (Circle - Box)" << std::endl;
                     }
                     else if (colliderTransform2.Shape == Box)
                     {
-                        std::cout << "Collision type not defined" << std::endl;
+                        std::cout << "Collision type not defined (Box - Box)" << std::endl;
                     }
                     else if (colliderTransform2.Shape == Convex)
                     {
@@ -89,7 +89,14 @@ public:
         }
     }
 
-private:
+    void RotateAllEntities(Fixed16_16 delta)
+    {
+        for (const Entity& entity : Entities)
+        {
+            Rotate(entity, Fixed16_16::pi() / 2 * delta /100, colliderTransformCollection->GetComponent(entity));
+        }
+    }
+
     static std::array<Vector2, 4> GetTransformedVertices(ColliderTransform& colliderTransform, BoxCollider& boxCollider)
     {
         if (boxCollider.TransformUpdateRequired)
@@ -105,6 +112,7 @@ private:
         return boxCollider.TransformedVertices;
     }
 
+private:
     inline void MovePosition(Entity entity, const Vector2& direction, ColliderTransform& colliderTransform) const
     {
         colliderTransform.MovePosition(direction);
