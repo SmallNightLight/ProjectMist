@@ -3,6 +3,14 @@
 class RigidBody : public System
 {
 public:
+    RigidBody()
+    {
+        colliderTransformCollection = EcsManager.GetComponentCollection<ColliderTransform>();
+        rigidBodyDataCollection = EcsManager.GetComponentCollection<RigidBodyData>();
+        circleColliderCollection = EcsManager.GetComponentCollection<CircleCollider>();
+        boxColliderCollection = EcsManager.GetComponentCollection<BoxCollider>();
+    }
+
     static Signature GetSignature()
     {
         Signature signature;
@@ -13,8 +21,6 @@ public:
 
     void Update()
     {
-        auto colliderTransformCollection = EcsManager.GetComponentCollection<ColliderTransform>();
-
         CollisionDetection collisionDetection = CollisionDetection();
         CollisionInfo collisionInfo(Vector2::Zero(), 0, 0, Fixed16_16(0));
 
@@ -36,8 +42,8 @@ public:
                     {
                         if (collisionDetection.CircleCircleCollision(entity1, entity2, colliderTransform1, colliderTransform2, collisionInfo))
                         {
-                            colliderTransform1.MovePosition(collisionInfo.Normal  * collisionInfo.Depth / 2);
-                            colliderTransform2.MovePosition(collisionInfo.Normal * - 1* collisionInfo.Depth / 2);
+                            MovePosition(entity1, collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform1);
+                            MovePosition(entity2, -collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform2);
                         }
                     }
                     else if (colliderTransform2.Shape == Box)
@@ -84,6 +90,52 @@ public:
     }
 
 private:
+    static std::array<Vector2, 4> GetTransformedVertices(ColliderTransform& colliderTransform, BoxCollider& boxCollider)
+    {
+        if (boxCollider.TransformUpdateRequired)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                boxCollider.TransformedVertices[i] = colliderTransform.Transform(boxCollider.Vertices[i]);
+            }
+
+            boxCollider.TransformUpdateRequired = false;
+        }
+
+        return boxCollider.TransformedVertices;
+    }
+
+    inline void MovePosition(Entity entity, const Vector2& direction, ColliderTransform& colliderTransform) const
+    {
+        colliderTransform.MovePosition(direction);
+
+        if (colliderTransform.Shape == Box)
+        {
+            boxColliderCollection->GetComponent(entity).TransformUpdateRequired = true;
+        }
+    }
+
+    inline void SetPosition(Entity entity, const Vector2& newPosition, ColliderTransform& colliderTransform) const
+    {
+        colliderTransform.SetPosition(newPosition);
+
+        if (colliderTransform.Shape == Box)
+        {
+            boxColliderCollection->GetComponent(entity).TransformUpdateRequired = true;
+        }
+    }
+
+    inline void Rotate(Entity entity, const Fixed16_16& amount, ColliderTransform& colliderTransform) const
+    {
+        colliderTransform.Rotate(amount);
+
+        if (colliderTransform.Shape == Box)
+        {
+            boxColliderCollection->GetComponent(entity).TransformUpdateRequired = true;
+        }
+    }
+
+private:
     template <typename T>
     inline void swap(T& x, T& y)
     {
@@ -91,4 +143,10 @@ private:
         x = y;
         y = temp;
     }
+
+private:
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
+    ComponentCollection<CircleCollider>* circleColliderCollection;
+    ComponentCollection<BoxCollider>* boxColliderCollection;
 };

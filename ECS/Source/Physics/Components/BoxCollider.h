@@ -7,13 +7,14 @@ struct BoxCollider
     Fixed16_16 Width;
     Fixed16_16 Height;
 
-    std::array<Vector2, 4> Vertices;
+    std::array<Vector2, 4> Vertices { };
+    std::array<Vector2, 4> TransformedVertices { };
+    std::array<std::uint8_t, 6> BoxTriangles { };
 
-    BoxCollider() : Width(0), Height(0) { }
-    BoxCollider(Fixed16_16 width, Fixed16_16 height) : Width(width), Height(height)
-    {
-        Vertices = GetBoxVertices();
-    }
+    bool TransformUpdateRequired;
+
+    BoxCollider() : Width(0), Height(0), TransformUpdateRequired(false) { }
+    BoxCollider(Fixed16_16 width, Fixed16_16 height) : Width(width), Height(height), Vertices(GetBoxVertices()), BoxTriangles(GetBoxTriangles()), TransformUpdateRequired(true) { }
 
 private:
     [[nodiscard]] std::array<Vector2, 4> GetBoxVertices() const
@@ -32,5 +33,8 @@ private:
         };
     }
 
-    inline static std::array<int, 6> BoxTriangles = {0, 1, 2, 0, 2, 3};
+    static std::array<std::uint8_t, 6> GetBoxTriangles()
+    {
+        return std::array<std::uint8_t, 6> {0, 1, 2, 0, 2, 3};
+    }
 };

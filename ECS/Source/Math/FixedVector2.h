@@ -83,6 +83,11 @@ struct FixedVector2
       }
 
       //Compound assignment operators
+      FixedVector2 operator-() const noexcept
+      {
+            return FixedVector2(-X, -Y);
+      }
+
       FixedVector2& operator+=(const FixedVector2& other)
       {
             X += other.X;

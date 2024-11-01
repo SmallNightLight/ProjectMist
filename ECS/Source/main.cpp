@@ -143,7 +143,8 @@ int main()
         Entity entity = EcsManager.CreateEntity();
 
         EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
-        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(1), Fixed16_16(1)));
+        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(2), Fixed16_16(2)));
+        EcsManager.AddComponent(entity, RigidBodyData());
         EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
     }
 
