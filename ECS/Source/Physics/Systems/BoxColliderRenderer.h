@@ -27,8 +27,8 @@ public:
             //Draw filled rectangle
             glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
 
-            std::array<Vector2, 4> vertices = RigidBody::GetTransformedVertices(transform, boxCollider);
-            
+            std::vector<Vector2> vertices = CollisionDetection::GetTransformedVertices(transform, boxCollider);
+
             glBegin(GL_QUADS);
             for (const auto& vertex : vertices)
             {
@@ -37,14 +37,17 @@ public:
             glEnd();
 
             //Draw white outline
-            glColor3f(1.0f, 1.0f, 1.0f);
-            glLineWidth(2.0f);
-            glBegin(GL_LINE_LOOP);
-            for (const auto& vertex : vertices)
+            if (colliderRenderData.Outline)
             {
-                glVertex2f(vertex.X.ToFloating<float>(), vertex.Y.ToFloating<float>());
+                glColor3f(1.0f, 1.0f, 1.0f);
+                glLineWidth(2.0f);
+                glBegin(GL_LINE_LOOP);
+                for (const auto& vertex : vertices)
+                {
+                    glVertex2f(vertex.X.ToFloating<float>(), vertex.Y.ToFloating<float>());
+                }
+                glEnd();
             }
-            glEnd();
         }
     }
 };

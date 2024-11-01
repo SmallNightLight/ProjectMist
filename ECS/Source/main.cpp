@@ -205,7 +205,7 @@ int main()
             blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
 
             movingSystem->Update(window, fixedDelta);
-            //rigidBodySystem->Update();
+            rigidBodySystem->Update();
             rigidBodySystem->RotateAllEntities(fixedDelta);
         }
 

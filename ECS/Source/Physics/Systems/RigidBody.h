@@ -9,6 +9,8 @@ public:
         rigidBodyDataCollection = EcsManager.GetComponentCollection<RigidBodyData>();
         circleColliderCollection = EcsManager.GetComponentCollection<CircleCollider>();
         boxColliderCollection = EcsManager.GetComponentCollection<BoxCollider>();
+
+        renderDataCollection = EcsManager.GetComponentCollection<ColliderRenderData>();
     }
 
     static Signature GetSignature()
@@ -21,6 +23,11 @@ public:
 
     void Update()
     {
+        for (const Entity& entity : Entities)
+        {
+            renderDataCollection->GetComponent(entity).Outline = false;
+        }
+
         CollisionDetection collisionDetection = CollisionDetection();
         CollisionInfo collisionInfo(Vector2::Zero(), 0, 0, Fixed16_16(0));
 
@@ -63,7 +70,12 @@ public:
                     }
                     else if (colliderTransform2.Shape == Box)
                     {
-                        std::cout << "Collision type not defined (Box - Box)" << std::endl;
+                        if (collisionDetection.BoxBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, collisionInfo))
+                        {
+                            MovePosition(entity1, -collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform1);
+                            MovePosition(entity2, collisionInfo.Normal * collisionInfo.Depth / 2, colliderTransform2);
+                            renderDataCollection->GetComponent(entity1).Outline = true;
+                        }
                     }
                     else if (colliderTransform2.Shape == Convex)
                     {
@@ -95,21 +107,6 @@ public:
         {
             Rotate(entity, Fixed16_16::pi() / 2 * delta /100, colliderTransformCollection->GetComponent(entity));
         }
-    }
-
-    static std::array<Vector2, 4> GetTransformedVertices(ColliderTransform& colliderTransform, BoxCollider& boxCollider)
-    {
-        if (boxCollider.TransformUpdateRequired)
-        {
-            for (int i = 0; i < 4; ++i)
-            {
-                boxCollider.TransformedVertices[i] = colliderTransform.Transform(boxCollider.Vertices[i]);
-            }
-
-            boxCollider.TransformUpdateRequired = false;
-        }
-
-        return boxCollider.TransformedVertices;
     }
 
 private:
@@ -157,4 +154,6 @@ private:
     ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;
+
+    ComponentCollection<ColliderRenderData>* renderDataCollection;
 };

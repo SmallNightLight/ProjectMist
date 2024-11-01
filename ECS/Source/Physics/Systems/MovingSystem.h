@@ -39,7 +39,14 @@ public:
             Vector2 direction = input * movable.Speed * delta;
 
             if (direction != Vector2::Zero())
+            {
                 colliderTransform.MovePosition(direction);
+                if (colliderTransform.Shape == Box)
+                {
+                    EcsManager.GetComponent<BoxCollider>(entity).TransformUpdateRequired = true;
+                }
+            }
+
         }
     }
 };
