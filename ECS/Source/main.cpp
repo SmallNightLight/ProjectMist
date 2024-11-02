@@ -105,7 +105,7 @@ int main()
         physicsWorld.CreateRandomCircle();
     }
 
-    physicsWorld.AddComponent(10, Movable(Fixed16_16(0, 4)));
+    physicsWorld.AddComponent(10, Movable(Fixed16_16(8)));
 
     //Add boxes
     for (int i = 0; i < 20; ++i)
@@ -162,7 +162,7 @@ int main()
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
 
-        Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
+        Fixed16_16 fixedDelta = Fixed16_16::FromFloat(deltaTime); //Fixed16_16(1) / Fixed16_16(60);
         if (!isPaused)
         {
             movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));

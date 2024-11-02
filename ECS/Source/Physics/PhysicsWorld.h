@@ -86,8 +86,10 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
+        rigidBodySystem-> ApplyVelocity(deltaTime);
+
         movingSystem->Update(window, deltaTime);
-        rigidBodySystem->Update();
+        rigidBodySystem->DetectCollisions();
         rigidBodySystem->RotateAllEntities(deltaTime);
     }
 

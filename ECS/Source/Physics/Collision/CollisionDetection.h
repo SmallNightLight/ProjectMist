@@ -10,15 +10,12 @@ public:
             boxColliderCollection = world->GetComponentCollection<BoxCollider>();
       }
 
-      bool CircleCircleCollision(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, CollisionInfo& resultInfo)
+      bool CircleCircleCollision(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(circleColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
 
             //Get the components
-            RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
-            RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
-
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             CircleCollider& circleCollider2 = circleColliderCollection->GetComponent(entity2);
 
@@ -35,11 +32,13 @@ public:
             resultInfo.Normal = (colliderTransform1.Position - colliderTransform2.Position).Normalize();
             resultInfo.Depth = totalRadius - distance;
 
+            resultInfo.Normal *= swap ? -1 : 1;
+
             return true;
       }
 
       //SAP - optimized for polygons
-      bool BoxBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, CollisionInfo& resultInfo)
+      bool BoxBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
       {
             assert(boxColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Box) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
@@ -48,9 +47,6 @@ public:
             resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
 
             //Get the components
-            RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
-            RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
-
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
@@ -122,10 +118,11 @@ public:
                   resultInfo.Normal = -resultInfo.Normal;
             }
 
+            resultInfo.Normal *= swap ? -1 : 1;
             return true;
       }
 
-      bool CircleBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, CollisionInfo& resultInfo)
+      bool CircleBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
@@ -134,9 +131,6 @@ public:
             resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
 
             //Get the components
-            RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
-            RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
-
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
@@ -195,6 +189,8 @@ public:
             {
                   resultInfo.Normal = -resultInfo.Normal;
             }
+
+            resultInfo.Normal *= swap ? -1 : 1;
 
             return true;
       }
@@ -293,5 +289,5 @@ private:
 private:
       ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
       ComponentCollection<CircleCollider>* circleColliderCollection;
-      ComponentCollection<BoxCollider>* boxColliderCollection; //TODO: Can't make multiple ECS worlds with only one static collection
+      ComponentCollection<BoxCollider>* boxColliderCollection;
 };
