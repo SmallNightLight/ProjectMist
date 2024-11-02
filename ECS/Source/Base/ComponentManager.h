@@ -37,10 +37,9 @@ public:
 
     //Adds the component of type T to the given entity
 	template<typename T>
-	void AddComponent(Entity entity, T component)
+	T* AddComponent(Entity entity, T component)
 	{
-        int componentType = GetComponentType<T>();
-        GetComponentCollection<T>(componentType)->AddComponent(entity, component);
+        return GetComponentCollection<T>(GetComponentType<T>())->AddComponent(entity, component);
 	}
 
     //Removes the component of type T from the given entity

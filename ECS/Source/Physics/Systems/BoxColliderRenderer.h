@@ -40,17 +40,14 @@ public:
             glEnd();
 
             //Draw white outline
-            if (colliderRenderData.Outline)
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glLineWidth(2.0f);
+            glBegin(GL_LINE_LOOP);
+            for (const auto& vertex : vertices)
             {
-                glColor3f(1.0f, 1.0f, 1.0f);
-                glLineWidth(2.0f);
-                glBegin(GL_LINE_LOOP);
-                for (const auto& vertex : vertices)
-                {
-                    glVertex2f(vertex.X.ToFloating<float>(), vertex.Y.ToFloating<float>());
-                }
-                glEnd();
+                glVertex2f(vertex.X.ToFloating<float>(), vertex.Y.ToFloating<float>());
             }
+            glEnd();
         }
     }
 

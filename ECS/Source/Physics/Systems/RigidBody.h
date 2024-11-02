@@ -9,8 +9,6 @@ public:
         rigidBodyDataCollection = World->GetComponentCollection<RigidBodyData>();
         circleColliderCollection = World->GetComponentCollection<CircleCollider>();
         boxColliderCollection = World->GetComponentCollection<BoxCollider>();
-
-        renderDataCollection = World->GetComponentCollection<ColliderRenderData>();
     }
 
     [[nodiscard]] Signature GetSignature() const
@@ -23,11 +21,6 @@ public:
 
     void DetectCollisions()
     {
-        for (const Entity& entity : Entities)
-        {
-            renderDataCollection->GetComponent(entity).Outline = false;
-        }
-
         CollisionInfo resultInfo(Vector2::Zero(), 0, 0, Fixed16_16(0));
 
         for (auto it1 = Entities.begin(); it1 != Entities.end(); ++it1)
@@ -43,14 +36,21 @@ public:
 
                 if (DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo)) //SWAPPING
                 {
-                    colliderTransform1.MovePosition(-resultInfo.Normal * resultInfo.Depth / 2);
-                    colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth / 2);
+                    if (!colliderTransform1.IsDynamic)
+                    {
+                        colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth);
+                    }
+                    else if (!colliderTransform2.IsDynamic)
+                    {
+                        colliderTransform1.MovePosition(-resultInfo.Normal * resultInfo.Depth);
+                    }
+                    else
+                    {
+                        colliderTransform1.MovePosition(-resultInfo.Normal * resultInfo.Depth / 2);
+                        colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth / 2);
+                    }
 
-                    ResolveCollision(entity1, entity2, resultInfo);
-
-                    //Show indication when colliding
-                    renderDataCollection->GetComponent(entity1).Outline = true;
-                    renderDataCollection->GetComponent(entity2).Outline = true;
+                    ResolveCollision(entity1, entity2, colliderTransform1.IsDynamic, colliderTransform2.IsDynamic, resultInfo);
                 }
             }
         }
@@ -61,9 +61,17 @@ public:
         for (const Entity& entity : Entities)
         {
             ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+
+            if (colliderTransform.IsStatic) continue;
+
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
 
-            rigidBodyData.Velocity += rigidBodyData.Force / rigidBodyData.Mass * deltaTime;
+            rigidBodyData.Velocity += rigidBodyData.Force * rigidBodyData.InverseMass * deltaTime;
+
+            if (colliderTransform.IsDynamic)
+            {
+                rigidBodyData.Velocity += Gravity * deltaTime;
+            }
 
             colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
             colliderTransform.Rotate(rigidBodyData.RotationalVelocity * deltaTime);
@@ -97,6 +105,12 @@ public:
 private:
     bool DetectCollision(Entity entity1, Entity entity2, ColliderTransform colliderTransform1, ColliderTransform colliderTransform2, CollisionInfo& resultInfo)
     {
+        //Skip if none of the objects are dynamic
+        if (!colliderTransform1.IsDynamic && !colliderTransform2.IsDynamic)
+        {
+            return false;
+        }
+
         //Check for different shape types and do the correct collision detection
         if (colliderTransform1.Shape == Circle)
         {
@@ -147,18 +161,24 @@ private:
         return false;
     }
 
-    void ResolveCollision(Entity entity1, Entity entity2, CollisionInfo collisionInfo) //TODO: use owner and other in collisioninfo
+    void ResolveCollision(Entity entity1, Entity entity2, bool isDynamic1, bool isDynamic2, const CollisionInfo& collisionInfo) //TODO: use owner and other in collisioninfo
     {
         RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(entity1);
         RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
 
         Vector2 relativeVelocity = rigidBodyData2.Velocity - rigidBodyData1.Velocity;
+
+        if (relativeVelocity.Dot(collisionInfo.Normal) > 0) return;
+
+        Fixed16_16 inverseMass1 = isDynamic1 ? rigidBodyData1.InverseMass : Fixed16_16(0);
+        Fixed16_16 inverseMass2 = isDynamic2 ? rigidBodyData2.InverseMass : Fixed16_16(0);
+
         Fixed16_16 restitution = min(rigidBodyData1.Restitution, rigidBodyData2.Restitution);
+        Fixed16_16 j = (-(Fixed16_16(1) + restitution) * relativeVelocity.Dot(collisionInfo.Normal)) / (inverseMass1 + inverseMass2);
+        Vector2 impulse = collisionInfo.Normal * j;
 
-        Fixed16_16 j = (-(Fixed16_16(1) + restitution) * relativeVelocity.Dot(collisionInfo.Normal)) / ((Fixed16_16(1) / rigidBodyData1.Mass) + (Fixed16_16(1) / rigidBodyData2.Mass));
-
-        rigidBodyData1.Velocity -= collisionInfo.Normal * (j / rigidBodyData1.Mass);
-        rigidBodyData2.Velocity += collisionInfo.Normal * (j / rigidBodyData2.Mass);
+        rigidBodyData1.Velocity -= impulse * inverseMass1;
+        rigidBodyData2.Velocity += impulse * inverseMass2;
     }
 
 
@@ -178,6 +198,4 @@ private:
     ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;
-
-    ComponentCollection<ColliderRenderData>* renderDataCollection;
 };

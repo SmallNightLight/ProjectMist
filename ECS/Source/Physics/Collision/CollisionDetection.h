@@ -226,7 +226,7 @@ private:
             }
       }
 
-      static Vector2 GetCenter(const std::vector<Vector2>& vertices)
+      static Vector2 GetCenter(const std::vector<Vector2>& vertices) //TODO: can be avoided
       {
             Vector2 sum = Vector2::Zero();
             short vertexCount = 0;

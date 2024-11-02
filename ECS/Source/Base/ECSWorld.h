@@ -66,10 +66,8 @@ public:
 
     //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
     template<typename T>
-    void AddComponent(Entity entity, T component)
+    T* AddComponent(Entity entity, T component)
     {
-        _componentManager->AddComponent<T>(entity, component);
-
         //Render the signature of the entity by including the new component
         Signature signature = _entityManager->GetSignature(entity);
         signature.set(_componentManager->GetComponentType<T>(), true);
@@ -77,6 +75,8 @@ public:
 
         //Notify the system manager about the new signature
         _systemManager->EntitySignatureChanged(entity, signature);
+
+        return _componentManager->AddComponent<T>(entity, component);;
     }
 
     //Removes the component of type T from the entity, updates the signature and updates on which systems the entity is registered based on the signature

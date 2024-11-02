@@ -90,7 +90,7 @@ public:
     }
 
     //Adds the component of type T to the given entity
-    void AddComponent(Entity entity, T component)
+    T* AddComponent(Entity entity, T component)
     {
         assert(entity < MAXENTITIES && "Entity out of range");
         assert(_entityToIndex[entity] == ENTITYNULL&& "Component added to the same entity more than once. Use MultiComponentArray instead");
@@ -105,6 +105,8 @@ public:
         //Store the component
         _components[entityIndex] = component;
         _entityCount++;
+
+    	return &_components[entityIndex];
     }
 
     //Removes the component from the given entity
