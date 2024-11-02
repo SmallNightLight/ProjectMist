@@ -13,7 +13,7 @@ struct RigidBodyData
     Fixed16_16 Restitution;
     Fixed16_16 Area;
 
-    RigidBodyData() : Velocity(0, 0), RotationalVelocity(0, 0), Density(0), Mass(0), Restitution(0), Area(0) { }
+    RigidBodyData() : Velocity(0, 0), RotationalVelocity(0, 0), Density(1), Mass(1), Restitution(0), Area(0) { }
 
     constexpr RigidBodyData(const Fixed16_16& density, const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area)
         : Velocity(0, 0),

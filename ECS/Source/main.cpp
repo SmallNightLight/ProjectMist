@@ -63,6 +63,8 @@ int main()
     glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, -1, 1);
 
     //ECS setup
+    PhysicsWorld physicsWorld = PhysicsWorld();
+
     ECSWorld EcsWorld;
     EcsWorld.Setup();
 
@@ -73,12 +75,6 @@ int main()
     EcsWorld.RegisterComponent<Boid>();
     EcsWorld.RegisterComponent<Camera>();
 
-    EcsWorld.RegisterComponent<ColliderTransform>();
-    EcsWorld.RegisterComponent<RigidBodyData>();
-    EcsWorld.RegisterComponent<Movable>();
-    EcsWorld.RegisterComponent<ColliderRenderData>();
-    EcsWorld.RegisterComponent<BoxCollider>();
-    EcsWorld.RegisterComponent<CircleCollider>();
 
     //Register systems
     auto movementSystem = EcsWorld.RegisterSystem<Movement>();
@@ -88,12 +84,6 @@ int main()
     auto boidRenderer = EcsWorld.RegisterSystem<BoidRenderer>();
     auto cameraSystem = EcsWorld.RegisterSystem<CameraSystem>();
 
-    auto rigidBodySystem = EcsWorld.RegisterSystem<RigidBody>();
-    auto movingSystem = EcsWorld.RegisterSystem<MovingSystem>();
-
-    auto boxColliderRenderer = EcsWorld.RegisterSystem<BoxColliderRenderer>();
-    auto circleColliderRenderer = EcsWorld.RegisterSystem<CircleColliderRenderer>();
-
     //Setup signatures
     EcsWorld.SetSignature<Movement>(movementSystem->GetSignature());
     EcsWorld.SetSignature<ParticleRenderer>(particleRenderer->GetSignature());
@@ -102,49 +92,25 @@ int main()
     EcsWorld.SetSignature<BoidRenderer>(boidRenderer->GetSignature());
     EcsWorld.SetSignature<CameraSystem>(cameraSystem->GetSignature());
 
-    EcsWorld.SetSignature<RigidBody>(rigidBodySystem->GetSignature());
-    EcsWorld.SetSignature<MovingSystem>(movingSystem->GetSignature());
-
-    EcsWorld.SetSignature<BoxColliderRenderer>(boxColliderRenderer->GetSignature());
-    EcsWorld.SetSignature<CircleColliderRenderer>(circleColliderRenderer->GetSignature());
-
 
     //Add camera
-    Entity cameraEntity = EcsWorld.CreateEntity();
-    EcsWorld.AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
+    //Entity cameraEntity = EcsWorld.CreateEntity();
+    //EcsWorld.AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
 
 
     //Add physics objects
-    Camera camera = EcsWorld.GetComponent<Camera>(cameraEntity);
-    std::default_random_engine random;
-    FixedRandom16_16 randomPositionX(camera.Left, camera.Right);
-    FixedRandom16_16 randomPositionY(camera.Bottom, camera.Top);
-    FixedRandom16_16 randomVelocity(Fixed16_16(-1), Fixed16_16(1));
-    FixedRandom16_16 randomLifetime(Fixed16_16(0), Fixed16_16(3));
-    std::uniform_real_distribution<float> randomColor(0.0, 1.0);
-
     //Add circles
     for (int i = 0; i < 20; ++i)
     {
-        Entity entity = EcsWorld.CreateEntity();
-
-        EcsWorld.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
-        EcsWorld.AddComponent(entity, CircleCollider(Fixed16_16(1)));
-        EcsWorld.AddComponent(entity, RigidBodyData());
-        EcsWorld.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
+        physicsWorld.CreateRandomCircle();
     }
 
-    EcsWorld.AddComponent(10, Movable(Fixed16_16(0, 1)));
+    physicsWorld.AddComponent(10, Movable(Fixed16_16(0, 4)));
 
     //Add boxes
     for (int i = 0; i < 20; ++i)
     {
-        Entity entity = EcsWorld.CreateEntity();
-
-        EcsWorld.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Box, RigidBodyType::Static));
-        EcsWorld.AddComponent(entity, BoxCollider(Fixed16_16(2), Fixed16_16(2)));
-        EcsWorld.AddComponent(entity, RigidBodyData());
-        EcsWorld.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
+        physicsWorld.CreateRandomBox();
     }
 
     /*for (Entity entity = 0; entity < 20; ++entity)
@@ -202,19 +168,14 @@ int main()
             movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
             boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
             blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
-
-            movingSystem->Update(window, fixedDelta);
-            rigidBodySystem->Update();
-            rigidBodySystem->RotateAllEntities(fixedDelta);
+            physicsWorld.Update(window, fixedDelta);
         }
 
         //Rendering
-        cameraSystem->Apply();
+        //cameraSystem->Apply();
         particleRenderer->Render();
         boidRenderer->Render();
-
-        boxColliderRenderer->Render();
-        circleColliderRenderer->Render();
+        physicsWorld.Render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
