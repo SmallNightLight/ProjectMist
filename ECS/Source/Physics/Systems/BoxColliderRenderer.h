@@ -30,7 +30,7 @@ public:
             //Draw filled rectangle
             glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
 
-            std::vector<Vector2> vertices = CollisionDetection::GetTransformedVertices(transform, boxCollider);
+            std::vector<Vector2> vertices = boxCollider.GetTransformedVertices(transform);
 
             glBegin(GL_QUADS);
             for (const auto& vertex : vertices)

@@ -105,7 +105,7 @@ int main()
         physicsWorld.CreateRandomCircle();
     }
 
-    physicsWorld.AddComponent(10, Movable(Fixed16_16(8)));
+    physicsWorld.AddComponent(10, Movable(Fixed16_16(20)));
 
     //Add boxes
     for (int i = 0; i < 20; ++i)

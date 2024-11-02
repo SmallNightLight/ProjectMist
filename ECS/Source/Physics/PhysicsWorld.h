@@ -86,11 +86,13 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
-        rigidBodySystem-> ApplyVelocity(deltaTime);
-
         movingSystem->Update(window, deltaTime);
+
+        rigidBodySystem->ApplyVelocity(deltaTime);
         rigidBodySystem->DetectCollisions();
         rigidBodySystem->RotateAllEntities(deltaTime);
+
+        rigidBodySystem->WrapEntities(GetComponent<Camera>(cameraEntity));
     }
 
     void Render()

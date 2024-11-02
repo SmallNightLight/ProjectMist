@@ -43,9 +43,14 @@ public:
 
                 if (DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo)) //SWAPPING
                 {
-                    MovePosition(entity1, resultInfo.Normal * resultInfo.Depth / 2, colliderTransform1);
-                    MovePosition(entity2, -resultInfo.Normal * resultInfo.Depth / 2, colliderTransform2);
+                    colliderTransform1.MovePosition(-resultInfo.Normal * resultInfo.Depth / 2);
+                    colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth / 2);
+
+                    ResolveCollision(entity1, entity2, resultInfo);
+
+                    //Show indication when colliding
                     renderDataCollection->GetComponent(entity1).Outline = true;
+                    renderDataCollection->GetComponent(entity2).Outline = true;
                 }
             }
         }
@@ -58,8 +63,12 @@ public:
             ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
 
+            rigidBodyData.Velocity += rigidBodyData.Force / rigidBodyData.Mass * deltaTime;
+
             colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
             colliderTransform.Rotate(rigidBodyData.RotationalVelocity * deltaTime);
+
+            rigidBodyData.Force = Vector2::Zero();
         }
     }
 
@@ -67,7 +76,21 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            Rotate(entity, Fixed16_16::pi() / 2 * delta, colliderTransformCollection->GetComponent(entity));
+            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
+            rigidBodyData.RotationalVelocity = Fixed16_16::pi() / 2;
+        }
+    }
+
+    void WrapEntities(Camera camera)
+    {
+        for (const Entity& entity : Entities)
+        {
+            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+
+            if (colliderTransform.Position.X < camera.Left) { colliderTransform.MovePosition(Vector2(camera.Width / camera.ZoomLevel, Fixed16_16(0))); }
+            if (colliderTransform.Position.X > camera.Right) { colliderTransform.MovePosition(Vector2(-camera.Width / camera.ZoomLevel, Fixed16_16(0))); }
+            if (colliderTransform.Position.Y < camera.Bottom) { colliderTransform.MovePosition(Vector2(Fixed16_16(0), camera.Height / camera.ZoomLevel)); }
+            if (colliderTransform.Position.Y > camera.Top) { colliderTransform.MovePosition(Vector2(Fixed16_16(0), -camera.Height / camera.ZoomLevel)); }
         }
     }
 
@@ -79,11 +102,11 @@ private:
         {
             if (colliderTransform2.Shape == Circle)
             {
-                return collisionDetection.CircleCircleCollision(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
+                return collisionDetection.CircleCircleCollision(entity1, entity2, colliderTransform1, colliderTransform2, true, resultInfo);
             }
             if (colliderTransform2.Shape == Box)
             {
-                return collisionDetection.CircleBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, true, resultInfo);
+                return collisionDetection.CircleBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
             }
             if (colliderTransform2.Shape == Convex)
             {
@@ -94,11 +117,11 @@ private:
         {
             if (colliderTransform2.Shape == Circle)
             {
-                return collisionDetection.CircleBoxCollisionDetection(entity2, entity1, colliderTransform2, colliderTransform1, false, resultInfo);
+                return collisionDetection.CircleBoxCollisionDetection(entity2, entity1, colliderTransform2, colliderTransform1, true, resultInfo);
             }
             if (colliderTransform2.Shape == Box)
             {
-                return collisionDetection.BoxBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, true, resultInfo);
+                return collisionDetection.BoxBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
             }
             if (colliderTransform2.Shape == Convex)
             {
@@ -124,35 +147,20 @@ private:
         return false;
     }
 
-    inline void MovePosition(Entity entity, const Vector2& direction, ColliderTransform& colliderTransform) const
+    void ResolveCollision(Entity entity1, Entity entity2, CollisionInfo collisionInfo) //TODO: use owner and other in collisioninfo
     {
-        colliderTransform.MovePosition(direction);
+        RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(entity1);
+        RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
 
-        if (colliderTransform.Shape == Box)
-        {
-            boxColliderCollection->GetComponent(entity).TransformUpdateRequired = true;
-        }
+        Vector2 relativeVelocity = rigidBodyData2.Velocity - rigidBodyData1.Velocity;
+        Fixed16_16 restitution = min(rigidBodyData1.Restitution, rigidBodyData2.Restitution);
+
+        Fixed16_16 j = (-(Fixed16_16(1) + restitution) * relativeVelocity.Dot(collisionInfo.Normal)) / ((Fixed16_16(1) / rigidBodyData1.Mass) + (Fixed16_16(1) / rigidBodyData2.Mass));
+
+        rigidBodyData1.Velocity -= collisionInfo.Normal * (j / rigidBodyData1.Mass);
+        rigidBodyData2.Velocity += collisionInfo.Normal * (j / rigidBodyData2.Mass);
     }
 
-    inline void SetPosition(Entity entity, const Vector2& newPosition, ColliderTransform& colliderTransform) const
-    {
-        colliderTransform.SetPosition(newPosition);
-
-        if (colliderTransform.Shape == Box)
-        {
-            boxColliderCollection->GetComponent(entity).TransformUpdateRequired = true;
-        }
-    }
-
-    inline void Rotate(Entity entity, const Fixed16_16& amount, ColliderTransform& colliderTransform) const
-    {
-        colliderTransform.Rotate(amount);
-
-        if (colliderTransform.Shape == Box)
-        {
-            boxColliderCollection->GetComponent(entity).TransformUpdateRequired = true;
-        }
-    }
 
 private:
     template <typename T>

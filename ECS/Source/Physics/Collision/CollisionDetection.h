@@ -38,7 +38,7 @@ public:
       }
 
       //SAP - optimized for polygons
-      bool BoxBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
+      bool BoxBoxCollisionDetection(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
       {
             assert(boxColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Box) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
@@ -50,8 +50,8 @@ public:
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            std::vector<Vector2> vertices1 = GetTransformedVertices(colliderTransform1, boxCollider1);
-            std::vector<Vector2> vertices2 = GetTransformedVertices(colliderTransform2, boxCollider2);
+            std::vector<Vector2> vertices1 = boxCollider1.GetTransformedVertices(colliderTransform1);
+            std::vector<Vector2> vertices2 = boxCollider2.GetTransformedVertices(colliderTransform2);
 
             for(int i = 0; i < vertices1.size(); ++i)
             {
@@ -106,8 +106,6 @@ public:
             }
 
             //Detected a collision
-            //resultInfo.Depth /= resultInfo.Normal.Magnitude();
-            //resultInfo.Normal = resultInfo.Normal.Normalize();
 
             Vector2 center1 = GetCenter(vertices1);
             Vector2 center2 = GetCenter(vertices2);
@@ -122,7 +120,7 @@ public:
             return true;
       }
 
-      bool CircleBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
+      bool CircleBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
@@ -134,7 +132,7 @@ public:
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            std::vector<Vector2> vertices = GetTransformedVertices(colliderTransform2, boxCollider2);
+            std::vector<Vector2> vertices = boxCollider2.GetTransformedVertices(colliderTransform2);
 
             for(int i = 0; i < vertices.size(); ++i)
             {
@@ -193,22 +191,6 @@ public:
             resultInfo.Normal *= swap ? -1 : 1;
 
             return true;
-      }
-
-public:
-      static std::vector<Vector2> GetTransformedVertices(const ColliderTransform& colliderTransform, BoxCollider& boxCollider)
-      {
-            if (boxCollider.TransformUpdateRequired)
-            {
-                  for (int i = 0; i < boxCollider.TransformedVertices.size(); ++i)
-                  {
-                        boxCollider.TransformedVertices[i] = colliderTransform.Transform(boxCollider.Vertices[i]);
-                  }
-
-                  boxCollider.TransformUpdateRequired = false;
-            }
-
-            return boxCollider.TransformedVertices;
       }
 
 private:

@@ -26,11 +26,13 @@ struct ColliderTransform
     bool IsKinematic;
     bool IsDynamic;
 
-    ColliderTransform() : Position(0, 0), Rotation(0), Shape(ColliderType::Box), IsStatic(true), IsKinematic(false), IsDynamic(false) { }
+    bool TransformUpdateRequired;
+
+    ColliderTransform() : Position(0, 0), Rotation(0), Shape(ColliderType::Box), IsStatic(true), IsKinematic(false), IsDynamic(false), TransformUpdateRequired(false) { }
 
     constexpr ColliderTransform(Vector2 position, Fixed16_16 rotation, ColliderType shape, RigidBodyType type) : Position(position), Rotation(rotation), Shape(shape), IsStatic(type == RigidBodyType::Static),
       IsKinematic(type == RigidBodyType::Kinematic),
-      IsDynamic(type == RigidBodyType::Dynamic)
+      IsDynamic(type == RigidBodyType::Dynamic), TransformUpdateRequired(true)
     {
     }
 
@@ -45,16 +47,19 @@ struct ColliderTransform
     void MovePosition(Vector2 direction)
     {
         Position += direction;
+        TransformUpdateRequired = true;
     }
 
     void SetPosition(Vector2 position)
     {
         Position = position;
+        TransformUpdateRequired = true;
     }
 
     void Rotate(Fixed16_16 amount)
     {
         Rotation += amount;
+        TransformUpdateRequired = true;
     }
 
     [[nodiscard]] Vector2 Transform (Vector2 vector) const

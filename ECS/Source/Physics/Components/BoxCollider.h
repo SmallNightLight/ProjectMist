@@ -10,10 +10,23 @@ struct BoxCollider
     std::vector<Vector2> Vertices { };
     std::vector<Vector2> TransformedVertices { };
 
-    bool TransformUpdateRequired; //DO IN COlliderTransform //TODO
+    BoxCollider() : Width(0), Height(0) { }
+    BoxCollider(Fixed16_16 width, Fixed16_16 height) : Width(width), Height(height), Vertices(GetBoxVertices()), TransformedVertices(Vertices) { }
 
-    BoxCollider() : Width(0), Height(0), TransformUpdateRequired(false) { }
-    BoxCollider(Fixed16_16 width, Fixed16_16 height) : Width(width), Height(height), Vertices(GetBoxVertices()), TransformedVertices(Vertices), TransformUpdateRequired(true) { }
+    std::vector<Vector2> GetTransformedVertices(ColliderTransform& colliderTransform)
+    {
+        if (colliderTransform.TransformUpdateRequired)
+        {
+            for (int i = 0; i < TransformedVertices.size(); ++i)
+            {
+                TransformedVertices[i] = colliderTransform.Transform(Vertices[i]);
+            }
+
+            colliderTransform.TransformUpdateRequired = false;
+        }
+
+        return TransformedVertices;
+    }
 
 private:
     [[nodiscard]] std::vector<Vector2> GetBoxVertices() const
@@ -23,7 +36,7 @@ private:
         Fixed16_16 bottom = -Height / 2;
         Fixed16_16 top = bottom + Height;
 
-        return std::vector<Vector2>
+        return std::vector
         {
             Vector2{left, top},
             Vector2{right, top},
