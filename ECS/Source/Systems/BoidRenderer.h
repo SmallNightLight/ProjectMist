@@ -8,19 +8,22 @@
 class BoidRenderer : public System
 {
 public:
-    static Signature GetSignature()
+    explicit BoidRenderer(ECSWorld* world) : System(world)
+    {
+        transformCollection = World->GetComponentCollection<Transform>();
+        boidCollection = World->GetComponentCollection<Boid>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<Transform>());
-        signature.set(EcsManager.GetComponentType<Boid>());
+        signature.set(World->GetComponentType<Transform>());
+        signature.set(World->GetComponentType<Boid>());
         return signature;
     }
 
     void Render()
     {
-        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
-        auto boidCollection = EcsManager.GetComponentCollection<Boid>();
-
         auto triangleSize = Fixed16_16(6);
 
         glBegin(GL_TRIANGLES);
@@ -35,7 +38,7 @@ public:
             Vector2 perpendicular(-vel.Y, vel.X);
 
             //Define the vertices of the triangle
-            Vector2 p1 = pos + vel * triangleSize;                        //Tip of the triangle (facing velocity direction)
+            Vector2 p1 = pos + vel * triangleSize;                     //Tip of the triangle (facing velocity direction)
             Vector2 p2 = pos - perpendicular * (triangleSize / 2);     //Left base vertex
             Vector2 p3 = pos + perpendicular * (triangleSize / 2);     //Right base vertex
 
@@ -50,4 +53,7 @@ public:
         }
         glEnd();
     }
+
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<Boid>* boidCollection;
 };

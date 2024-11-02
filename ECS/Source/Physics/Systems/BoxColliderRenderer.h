@@ -3,21 +3,24 @@
 class BoxColliderRenderer : public System
 {
 public:
-    static Signature GetSignature()
+    explicit BoxColliderRenderer(ECSWorld* world) : System(world)
+    {
+        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
+        boxColliderCollection = World->GetComponentCollection<BoxCollider>();
+        colliderRenderDataCollection = World->GetComponentCollection<ColliderRenderData>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<ColliderTransform>());
-        signature.set(EcsManager.GetComponentType<BoxCollider>());
-        signature.set(EcsManager.GetComponentType<ColliderRenderData>());
+        signature.set(World->GetComponentType<ColliderTransform>());
+        signature.set(World->GetComponentType<BoxCollider>());
+        signature.set(World->GetComponentType<ColliderRenderData>());
         return signature;
     }
 
     void Render()
     {
-        auto colliderTransformCollection = EcsManager.GetComponentCollection<ColliderTransform>();
-        auto boxColliderCollection = EcsManager.GetComponentCollection<BoxCollider>();
-        auto colliderRenderDataCollection = EcsManager.GetComponentCollection<ColliderRenderData>();
-
         for (const Entity& entity : Entities)
         {
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
@@ -48,22 +51,11 @@ public:
                 }
                 glEnd();
             }
-
-
-
-            //TEST
-            //Draw filled circle
-            glColor3f(0.1f, 0.1f, 0.1f);
-            glBegin(GL_TRIANGLE_FAN);
-            glVertex2f(colliderRenderData.p.X.ToFloating<float>(), colliderRenderData.p.Y.ToFloating<float>()); // Center point
-            for (int i = 0; i <= 20; ++i)
-            {
-                float theta = 2.0f * 3.1415926f * static_cast<float>(i) / static_cast<float>(20);
-                float dx = 0.5f * cosf(theta);
-                float dy = 0.5f * sinf(theta);
-                glVertex2f(colliderRenderData.p.X.ToFloating<float>() + dx, colliderRenderData.p.Y.ToFloating<float>() + dy);
-            }
-            glEnd();
         }
     }
+
+private:
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<BoxCollider>* boxColliderCollection;
+    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 };

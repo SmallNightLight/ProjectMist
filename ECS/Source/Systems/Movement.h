@@ -1,23 +1,24 @@
 #pragma once
 
-extern ECSManager EcsManager;
-
 class Movement : public System
 {
 public:
-    static Signature GetSignature()
+    explicit  Movement(ECSWorld* world) : System(world)
+    {
+        transformCollection = World->GetComponentCollection<Transform>();
+        velocityCollection = World->GetComponentCollection<Velocity>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<Transform>());
-        signature.set(EcsManager.GetComponentType<Velocity>());
+        signature.set(World->GetComponentType<Transform>());
+        signature.set(World->GetComponentType<Velocity>());
         return signature;
     }
 
     void Update(Fixed16_16 deltaTime, Vector2 mousePosition)
     {
-        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
-        auto velocityCollection = EcsManager.GetComponentCollection<Velocity>();
-
         Fixed16_16 combinedMass = gravity * attractorMass * particleMass;
 
         for (const Entity& entity : Entities)
@@ -42,4 +43,7 @@ private:
     Fixed16_16 particleMass = Fixed16_16::FromFixed(0, 1);
     Fixed16_16 gravity = Fixed16_16::FromFixed(2000, 0);
     Fixed16_16 softening = Fixed16_16::FromFixed(0, 5);
+
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<Velocity>* velocityCollection;
 };

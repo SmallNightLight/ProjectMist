@@ -1,4 +1,4 @@
-#include "Base/ECSManager.h"
+#include "Base/ECSWorld.h"
 #include "Components/ComponentHeaders.h"
 #include "Systems/SystemHeader.h"
 
@@ -9,8 +9,6 @@
 
 #include "Math/TestMath.h"
 #include "Physics/Physics.h"
-
-ECSManager EcsManager;
 
 void SetFrameSize(GLFWwindow* window, int width, int height)
 {
@@ -65,58 +63,59 @@ int main()
     glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, -1, 1);
 
     //ECS setup
-    EcsManager.Setup();
+    ECSWorld EcsWorld;
+    EcsWorld.Setup();
 
     //Register components
-    EcsManager.RegisterComponent<Transform>();
-    EcsManager.RegisterComponent<Velocity>();
-    EcsManager.RegisterComponent<Lifetime>();
-    EcsManager.RegisterComponent<Boid>();
-    EcsManager.RegisterComponent<Camera>();
+    EcsWorld.RegisterComponent<Transform>();
+    EcsWorld.RegisterComponent<Velocity>();
+    EcsWorld.RegisterComponent<Lifetime>();
+    EcsWorld.RegisterComponent<Boid>();
+    EcsWorld.RegisterComponent<Camera>();
 
-    EcsManager.RegisterComponent<ColliderTransform>();
-    EcsManager.RegisterComponent<RigidBodyData>();
-    EcsManager.RegisterComponent<Movable>();
-    EcsManager.RegisterComponent<ColliderRenderData>();
-    EcsManager.RegisterComponent<BoxCollider>();
-    EcsManager.RegisterComponent<CircleCollider>();
+    EcsWorld.RegisterComponent<ColliderTransform>();
+    EcsWorld.RegisterComponent<RigidBodyData>();
+    EcsWorld.RegisterComponent<Movable>();
+    EcsWorld.RegisterComponent<ColliderRenderData>();
+    EcsWorld.RegisterComponent<BoxCollider>();
+    EcsWorld.RegisterComponent<CircleCollider>();
 
     //Register systems
-    auto movementSystem = EcsManager.RegisterSystem<Movement>();
-    auto particleRenderer = EcsManager.RegisterSystem<ParticleRenderer>();
-    auto blinkingParticles = EcsManager.RegisterSystem<BlinkingParticles>();
-    auto boidMovement = EcsManager.RegisterSystem<BoidMovement>();
-    auto boidRenderer = EcsManager.RegisterSystem<BoidRenderer>();
-    auto cameraSystem = EcsManager.RegisterSystem<CameraSystem>();
+    auto movementSystem = EcsWorld.RegisterSystem<Movement>();
+    auto particleRenderer = EcsWorld.RegisterSystem<ParticleRenderer>();
+    auto blinkingParticles = EcsWorld.RegisterSystem<BlinkingParticles>();
+    auto boidMovement = EcsWorld.RegisterSystem<BoidMovement>();
+    auto boidRenderer = EcsWorld.RegisterSystem<BoidRenderer>();
+    auto cameraSystem = EcsWorld.RegisterSystem<CameraSystem>();
 
-    auto rigidBodySystem = EcsManager.RegisterSystem<RigidBody>();
-    auto movingSystem = EcsManager.RegisterSystem<MovingSystem>();
+    auto rigidBodySystem = EcsWorld.RegisterSystem<RigidBody>();
+    auto movingSystem = EcsWorld.RegisterSystem<MovingSystem>();
 
-    auto boxColliderRenderer = EcsManager.RegisterSystem<BoxColliderRenderer>();
-    auto circleColliderRenderer = EcsManager.RegisterSystem<CircleColliderRenderer>();
+    auto boxColliderRenderer = EcsWorld.RegisterSystem<BoxColliderRenderer>();
+    auto circleColliderRenderer = EcsWorld.RegisterSystem<CircleColliderRenderer>();
 
     //Setup signatures
-    EcsManager.SetSignature<Movement>(Movement::GetSignature());
-    EcsManager.SetSignature<ParticleRenderer>(ParticleRenderer::GetSignature());
-    EcsManager.SetSignature<BlinkingParticles>(BlinkingParticles::GetSignature());
-    EcsManager.SetSignature<BoidMovement>(BoidMovement::GetSignature());
-    EcsManager.SetSignature<BoidRenderer>(BoidRenderer::GetSignature());
-    EcsManager.SetSignature<CameraSystem>(CameraSystem::GetSignature());
+    EcsWorld.SetSignature<Movement>(movementSystem->GetSignature());
+    EcsWorld.SetSignature<ParticleRenderer>(particleRenderer->GetSignature());
+    EcsWorld.SetSignature<BlinkingParticles>(blinkingParticles->GetSignature());
+    EcsWorld.SetSignature<BoidMovement>(boidMovement->GetSignature());
+    EcsWorld.SetSignature<BoidRenderer>(boidRenderer->GetSignature());
+    EcsWorld.SetSignature<CameraSystem>(cameraSystem->GetSignature());
 
-    EcsManager.SetSignature<RigidBody>(RigidBody::GetSignature());
-    EcsManager.SetSignature<MovingSystem>(MovingSystem::GetSignature());
+    EcsWorld.SetSignature<RigidBody>(rigidBodySystem->GetSignature());
+    EcsWorld.SetSignature<MovingSystem>(movingSystem->GetSignature());
 
-    EcsManager.SetSignature<BoxColliderRenderer>(BoxColliderRenderer::GetSignature());
-    EcsManager.SetSignature<CircleColliderRenderer>(CircleColliderRenderer::GetSignature());
+    EcsWorld.SetSignature<BoxColliderRenderer>(boxColliderRenderer->GetSignature());
+    EcsWorld.SetSignature<CircleColliderRenderer>(circleColliderRenderer->GetSignature());
 
 
     //Add camera
-    Entity cameraEntity = EcsManager.CreateEntity();
-    EcsManager.AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
+    Entity cameraEntity = EcsWorld.CreateEntity();
+    EcsWorld.AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
 
 
     //Add physics objects
-    Camera camera = EcsManager.GetComponent<Camera>(cameraEntity);
+    Camera camera = EcsWorld.GetComponent<Camera>(cameraEntity);
     std::default_random_engine random;
     FixedRandom16_16 randomPositionX(camera.Left, camera.Right);
     FixedRandom16_16 randomPositionY(camera.Bottom, camera.Top);
@@ -127,40 +126,40 @@ int main()
     //Add circles
     for (int i = 0; i < 20; ++i)
     {
-        Entity entity = EcsManager.CreateEntity();
+        Entity entity = EcsWorld.CreateEntity();
 
-        EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
-        EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(1)));
-        EcsManager.AddComponent(entity, RigidBodyData());
-        EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
+        EcsWorld.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
+        EcsWorld.AddComponent(entity, CircleCollider(Fixed16_16(1)));
+        EcsWorld.AddComponent(entity, RigidBodyData());
+        EcsWorld.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
     }
 
-    EcsManager.AddComponent(10, Movable(Fixed16_16(0, 1)));
+    EcsWorld.AddComponent(10, Movable(Fixed16_16(0, 1)));
 
     //Add boxes
     for (int i = 0; i < 20; ++i)
     {
-        Entity entity = EcsManager.CreateEntity();
+        Entity entity = EcsWorld.CreateEntity();
 
-        EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Box, RigidBodyType::Static));
-        EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(2), Fixed16_16(2)));
-        EcsManager.AddComponent(entity, RigidBodyData());
-        EcsManager.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
+        EcsWorld.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Box, RigidBodyType::Static));
+        EcsWorld.AddComponent(entity, BoxCollider(Fixed16_16(2), Fixed16_16(2)));
+        EcsWorld.AddComponent(entity, RigidBodyData());
+        EcsWorld.AddComponent(entity, ColliderRenderData(randomColor(random),randomColor(random), randomColor(random)));
     }
 
     /*for (Entity entity = 0; entity < 20; ++entity)
     {
-        EcsManager.CreateEntity();
+        EcsWorld.CreateEntity();
 
-        EcsManager.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
-        EcsManager.AddComponent(entity, CircleCollider(Fixed16_16(30)));
-        //EcsManager.AddComponent(entity, BoxCollider(Fixed16_16(100), Fixed16_16(100)));
-        EcsManager.AddComponent(entity, ColliderRenderData(0.5, 0.5, 0.5));
+        EcsWorld.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
+        EcsWorld.AddComponent(entity, CircleCollider(Fixed16_16(30)));
+        //EcsWorld.AddComponent(entity, BoxCollider(Fixed16_16(100), Fixed16_16(100)));
+        EcsWorld.AddComponent(entity, ColliderRenderData(0.5, 0.5, 0.5));
 
-        //EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        //EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
-        //EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
-        //EcsManager.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
+        //EcsWorld.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
+        //EcsWorld.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
+        //EcsWorld.AddComponent(entity, Lifetime {randomLifetime(random)});
+        //EcsWorld.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
     }*/
 
     bool isPaused = false;

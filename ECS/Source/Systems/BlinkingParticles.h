@@ -3,17 +3,20 @@
 class BlinkingParticles : public System
 {
 public:
-    static Signature GetSignature()
+    explicit  BlinkingParticles(ECSWorld* world) : System(world)
+    {
+        lifeTimeCollection = World->GetComponentCollection<Lifetime>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<Lifetime>());
+        signature.set(World->GetComponentType<Lifetime>());
         return signature;
     }
 
     void Update(Fixed16_16 deltaTime)
     {
-        auto lifeTimeCollection = EcsManager.GetComponentCollection<Lifetime>();
-
         int destroyedEntities = 0;
         for (const Entity& entity : Entities)
         {
@@ -24,11 +27,11 @@ public:
             if (lifeTime.CurrentLifetime <= 0)
             {
                 destroyedEntities++;
-                EcsManager.MarkEntityForDestruction(entity);
+                World->MarkEntityForDestruction(entity);
             }
         }
 
-        EcsManager.DestroyMarkedEntities();
+        World->DestroyMarkedEntities();
 
         std::default_random_engine random;
         FixedRandom16_16 randomPositionX(Fixed16_16(0), Fixed16_16(SCREEN_WIDTH));
@@ -38,11 +41,14 @@ public:
 
         for(int i = 0; i < destroyedEntities; i++)
         {
-            Entity entity = EcsManager.CreateEntity();
+            Entity entity = World->CreateEntity();
 
-            EcsManager.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-            EcsManager.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
-            EcsManager.AddComponent(entity, Lifetime {randomLifetime(random)});
+            World->AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
+            World->AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
+            World->AddComponent(entity, Lifetime {randomLifetime(random)});
         }
     }
+
+private:
+    ComponentCollection<Lifetime>* lifeTimeCollection;
 };

@@ -8,24 +8,24 @@
 class ParticleRenderer : public System
 {
 public:
-    static Signature GetSignature()
+    explicit ParticleRenderer(ECSWorld* world) : System(world), shader()
     {
-        Signature signature;
-        signature.set(EcsManager.GetComponentType<Transform>());
-        signature.set(EcsManager.GetComponentType<Velocity>());
-        return signature;
+        transformCollection = World->GetComponentCollection<Transform>();
+        velocityCollection = World->GetComponentCollection<Velocity>();
+
+        shader.InitializeFromSource(vertexSource, fragmentSource);
     }
 
-    ParticleRenderer() : shader()
+    [[nodiscard]] Signature GetSignature() const
     {
-       shader.InitializeFromSource(vertexSource, fragmentSource);
+        Signature signature;
+        signature.set(World->GetComponentType<Transform>());
+        signature.set(World->GetComponentType<Velocity>());
+        return signature;
     }
 
     void Render()
     {
-        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
-        auto velocityCollection = EcsManager.GetComponentCollection<Velocity>();
-
         glPointSize(4);
         glEnable(GL_POINT_SMOOTH);
         glBegin(GL_POINTS);
@@ -42,6 +42,9 @@ public:
     }
 
 private:
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<Velocity>* velocityCollection;
+
     Shader shader;
 
     const char* vertexSource = "#version 330 core\n"

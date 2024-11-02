@@ -21,7 +21,7 @@ add_executable(ECS Source/main.cpp
         Source/Base/Settings.h
         Source/Base/System.h
         Source/Base/SystemManager.h
-        Source/Base/ECSManager.h
+        Source/Base/ECSWorld.h
         Source/Components/ComponentHeaders.h
         Source/Systems/SystemHeader.h
         Source/Math/FPM/fixed.hpp
@@ -62,6 +62,7 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Systems/MovingSystem.h
         Source/Physics/Collision/CollisionDetection.h
         Source/Physics/Collision/CollisionInfo.h
+        Source/Physics/PhysicsWorld.h
 
 )
 

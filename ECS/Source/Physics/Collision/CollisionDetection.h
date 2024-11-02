@@ -3,11 +3,11 @@
 class CollisionDetection
 {
 public:
-      CollisionDetection()
+      explicit  CollisionDetection(ECSWorld* world)
       {
-            rigidBodyDataCollection = EcsManager.GetComponentCollection<RigidBodyData>();
-            circleColliderCollection = EcsManager.GetComponentCollection<CircleCollider>();
-            boxColliderCollection = EcsManager.GetComponentCollection<BoxCollider>();
+            rigidBodyDataCollection = world->GetComponentCollection<RigidBodyData>();
+            circleColliderCollection = world->GetComponentCollection<CircleCollider>();
+            boxColliderCollection = world->GetComponentCollection<BoxCollider>();
       }
 
       bool CircleCircleCollision(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, CollisionInfo& resultInfo)
@@ -170,9 +170,7 @@ public:
 
             Vector2 closestVertexToCircle = GetClosestPointToCircle(colliderTransform1.Position, vertices);
             Vector2 axis = (closestVertexToCircle - colliderTransform1.Position).Normalize();
-
-            //EcsManager.GetComponent<ColliderRenderData>(entity2).p = colliderTransform1.Position;
-
+            
             Fixed16_16 min1, max1, min2, max2;
             ProjectVertices(vertices, axis, min1, max1);
             ProjectCircle(colliderTransform1.Position, circleCollider1.Radius, axis, min2, max2);

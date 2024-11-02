@@ -3,19 +3,22 @@
 class MovingSystem : public System
 {
 public:
-    static Signature GetSignature()
+    explicit MovingSystem(ECSWorld* world) : System(world)
+    {
+        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
+        movableCollection = World->GetComponentCollection<Movable>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<Movable>());
-        signature.set(EcsManager.GetComponentType<ColliderTransform>());
+        signature.set(World->GetComponentType<Movable>());
+        signature.set(World->GetComponentType<ColliderTransform>());
         return signature;
     }
 
     void Update(GLFWwindow* window, Fixed16_16 delta)
     {
-        auto colliderTransformCollection = EcsManager.GetComponentCollection<ColliderTransform>();
-        auto movableCollection = EcsManager.GetComponentCollection<Movable>();
-
         for (const Entity& entity : Entities)
         {
             ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
@@ -43,10 +46,14 @@ public:
                 colliderTransform.MovePosition(direction);
                 if (colliderTransform.Shape == Box)
                 {
-                    EcsManager.GetComponent<BoxCollider>(entity).TransformUpdateRequired = true;
+                    World->GetComponent<BoxCollider>(entity).TransformUpdateRequired = true;
                 }
             }
 
         }
     }
+
+private:
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<Movable>* movableCollection;
 };

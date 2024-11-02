@@ -8,7 +8,7 @@
 
 //Manages the different managers (EntityManager, ComponentManager and SystemManager)
 //Has functionality for modifying the components, systems and signatures of entities
-class ECSManager
+class ECSWorld
 {
 public:
     //Initializes the ECS managers (EntityManager, ComponentManager and SystemManager)
@@ -133,7 +133,9 @@ public:
     template<typename T>
     std::shared_ptr<T> RegisterSystem()
     {
-        return _systemManager->RegisterSystem<T>();
+        std::shared_ptr<T> system =_systemManager->RegisterSystem<T>(this);
+        //system->World = this;
+        return system;
     }
 
     //Set the signature (a mask indicating required components) for a system of type T

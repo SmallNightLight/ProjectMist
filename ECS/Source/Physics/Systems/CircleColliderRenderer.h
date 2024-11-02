@@ -3,21 +3,24 @@
 class CircleColliderRenderer : public System
 {
 public:
-    static Signature GetSignature()
+    explicit CircleColliderRenderer(ECSWorld* world) : System(world)
+    {
+        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
+        circleColliderCollection = World->GetComponentCollection<CircleCollider>();
+        colliderRenderDataCollection = World->GetComponentCollection<ColliderRenderData>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<ColliderTransform>());
-        signature.set(EcsManager.GetComponentType<CircleCollider>());
-        signature.set(EcsManager.GetComponentType<ColliderRenderData>());
+        signature.set(World->GetComponentType<ColliderTransform>());
+        signature.set(World->GetComponentType<CircleCollider>());
+        signature.set(World->GetComponentType<ColliderRenderData>());
         return signature;
     }
 
     void Render()
     {
-        auto colliderTransformCollection = EcsManager.GetComponentCollection<ColliderTransform>();
-        auto circleColliderCollection = EcsManager.GetComponentCollection<CircleCollider>();
-        auto colliderRenderDataCollection = EcsManager.GetComponentCollection<ColliderRenderData>();
-
         glEnable(GL_LINE_SMOOTH);
         glEnable(GL_POLYGON_SMOOTH);
 
@@ -65,4 +68,9 @@ public:
         glDisable(GL_POLYGON_SMOOTH);
         glDisable(GL_LINE_SMOOTH);
     }
+
+private:
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<CircleCollider>* circleColliderCollection;
+    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 };

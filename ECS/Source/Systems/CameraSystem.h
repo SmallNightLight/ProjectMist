@@ -3,17 +3,20 @@
 class CameraSystem : public System
 {
 public:
-    static Signature GetSignature()
+    explicit  CameraSystem(ECSWorld* world) : System(world)
+    {
+        cameraCollection = World->GetComponentCollection<Camera>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<Camera>());
+        signature.set(World->GetComponentType<Camera>());
         return signature;
     }
 
     void Apply()
     {
-        auto cameraCollection = EcsManager.GetComponentCollection<Camera>();
-
         for (const Entity& entity : Entities)
         {
             Camera& camera = cameraCollection->GetComponent(entity);
@@ -24,4 +27,7 @@ public:
             glMatrixMode(GL_MODELVIEW);
         }
     }
+
+private:
+    ComponentCollection<Camera>* cameraCollection;
 };

@@ -3,21 +3,21 @@
 class RigidBody : public System
 {
 public:
-    RigidBody()
+    explicit RigidBody(ECSWorld* world) : System(world)
     {
-        colliderTransformCollection = EcsManager.GetComponentCollection<ColliderTransform>();
-        rigidBodyDataCollection = EcsManager.GetComponentCollection<RigidBodyData>();
-        circleColliderCollection = EcsManager.GetComponentCollection<CircleCollider>();
-        boxColliderCollection = EcsManager.GetComponentCollection<BoxCollider>();
+        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
+        rigidBodyDataCollection = World->GetComponentCollection<RigidBodyData>();
+        circleColliderCollection = World->GetComponentCollection<CircleCollider>();
+        boxColliderCollection = World->GetComponentCollection<BoxCollider>();
 
-        renderDataCollection = EcsManager.GetComponentCollection<ColliderRenderData>();
+        renderDataCollection = World->GetComponentCollection<ColliderRenderData>();
     }
 
-    static Signature GetSignature()
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<ColliderTransform>());
-        signature.set(EcsManager.GetComponentType<RigidBodyData>());
+        signature.set(World->GetComponentType<ColliderTransform>());
+        signature.set(World->GetComponentType<RigidBodyData>());
         return signature;
     }
 
@@ -28,7 +28,7 @@ public:
             renderDataCollection->GetComponent(entity).Outline = false;
         }
 
-        CollisionDetection collisionDetection = CollisionDetection();
+        auto collisionDetection = CollisionDetection(World);
         CollisionInfo collisionInfo(Vector2::Zero(), 0, 0, Fixed16_16(0));
 
         for (auto it1 = Entities.begin(); it1 != Entities.end(); ++it1)
@@ -110,7 +110,7 @@ public:
         }
     }
 
-    void RotateAllEntities(Fixed16_16 delta)
+    void RotateAllEntities(Fixed16_16 delta) const
     {
         for (const Entity& entity : Entities)
         {

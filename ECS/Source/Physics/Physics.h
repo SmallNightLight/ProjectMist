@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Base/ECSManager.h"
+#include "../Base/ECSWorld.h"
 #include "../Math/FixedTypes.h"
 #include "PhysicsSettings.h"
 
@@ -24,3 +24,5 @@
 #include "Systems/CircleColliderRenderer.h"
 
 #include "Systems/MovingSystem.h"
+
+#include "PhysicsWorld.h"

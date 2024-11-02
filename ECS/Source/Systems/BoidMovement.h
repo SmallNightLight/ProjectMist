@@ -9,19 +9,22 @@
 class BoidMovement : public System
 {
 public:
-    static Signature GetSignature()
+    explicit BoidMovement(ECSWorld* world) : System(world)
+    {
+        transformCollection = World->GetComponentCollection<Transform>();
+        boidCollection = World->GetComponentCollection<Boid>();
+    }
+
+    [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
-        signature.set(EcsManager.GetComponentType<Transform>());
-        signature.set(EcsManager.GetComponentType<Boid>());
+        signature.set(World->GetComponentType<Transform>());
+        signature.set(World->GetComponentType<Boid>());
         return signature;
     }
 
     void Update(Fixed16_16 deltaTime)
     {
-        auto transformCollection = EcsManager.GetComponentCollection<Transform>();
-        auto boidCollection = EcsManager.GetComponentCollection<Boid>();
-
         for (const Entity& entity : Entities)
         {
             auto& transform = transformCollection->GetComponent(entity);
@@ -284,4 +287,7 @@ private:
 
     std::default_random_engine random;
     PartitionGrid2 partitionGrid = PartitionGrid2();
+
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<Boid>* boidCollection;
 };

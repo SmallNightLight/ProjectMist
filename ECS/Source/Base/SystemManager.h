@@ -8,19 +8,23 @@
 #include <unordered_map>
 #include <cassert>
 
+#include "ECSWorld.h"
+
+class ECSWorld;
+
 //Manages the systems, their signatures and gives functionality to automatically adding components to a system when their signature match (or not)
 class SystemManager
 {
 public:
     //Registers the system of type T
 	template<typename T>
-	std::shared_ptr<T> RegisterSystem()
+	std::shared_ptr<T> RegisterSystem(ECSWorld* world)
 	{
 		const char* typeName = typeid(T).name();
 
 		assert(_systems.find(typeName) == _systems.end() && "System already registered");
 
-		auto system = std::make_shared<T>();
+		auto system = std::make_shared<T>(world);
 		_systems.insert({ typeName, system });
 		return system;
 	}
