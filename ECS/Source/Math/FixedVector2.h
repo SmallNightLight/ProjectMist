@@ -2,12 +2,9 @@
 
 #include "FPM/math.hpp"
 #include "FPM/fixed.hpp"
-#include "FixedTypes.h"
 #include <type_traits>
 
-#include "FixedTypes.h"
-
- template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType>
+template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType>
 struct FixedVector2
 {
       T X;
@@ -274,7 +271,7 @@ struct FixedVector2
             return Magnitude() >= other.Magnitude();
       }
 
-      static FixedVector2 Zero()
+      constexpr static FixedVector2 Zero()
       {
             return FixedVector2(T(0), T(0));
       }

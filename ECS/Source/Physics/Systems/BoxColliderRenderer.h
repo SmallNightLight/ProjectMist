@@ -30,7 +30,7 @@ public:
             //Draw filled rectangle
             glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
 
-            std::vector<Vector2> vertices = boxCollider.GetTransformedVertices(transform);
+            std::vector<Vector2> vertices = transform.GetTransformedVertices(boxCollider);
 
             glBegin(GL_QUADS);
             for (const auto& vertex : vertices)

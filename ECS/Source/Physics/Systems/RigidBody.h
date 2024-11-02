@@ -3,7 +3,7 @@
 class RigidBody : public System
 {
 public:
-    explicit RigidBody(ECSWorld* world) : System(world), collisionDetection(World)
+    explicit RigidBody(ECSWorld* world) : System(world), collisionDetection(World) //TODO: Static objects should not need to have a rigidBody
     {
         colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
         rigidBodyDataCollection = World->GetComponentCollection<RigidBodyData>();

@@ -50,8 +50,8 @@ public:
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            std::vector<Vector2> vertices1 = boxCollider1.GetTransformedVertices(colliderTransform1);
-            std::vector<Vector2> vertices2 = boxCollider2.GetTransformedVertices(colliderTransform2);
+            std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1);
+            std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2);
 
             for(int i = 0; i < vertices1.size(); ++i)
             {
@@ -132,7 +132,7 @@ public:
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            std::vector<Vector2> vertices = boxCollider2.GetTransformedVertices(colliderTransform2);
+            std::vector<Vector2> vertices = colliderTransform2.GetTransformedVertices(boxCollider2);
 
             for(int i = 0; i < vertices.size(); ++i)
             {

@@ -2,6 +2,7 @@
 
 #include "../Base/ECSWorld.h"
 #include "../Math/FixedTypes.h"
+#include "../Math/AABB.h"
 #include "PhysicsSettings.h"
 
 #include "Collision/CollisionInfo.h"

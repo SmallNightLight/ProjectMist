@@ -5,6 +5,7 @@
 #include "FPM/ios.hpp"
 #include "FixedVector2.h"
 #include "IntVector2.h"
+
 #include "FixedRandom.h"
 
 #include <limits>
