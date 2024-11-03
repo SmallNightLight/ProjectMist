@@ -21,7 +21,9 @@ public:
 
     void DetectCollisions()
     {
-        CollisionInfo resultInfo(Vector2::Zero(), 0, 0, Fixed16_16(0));
+        std::vector<CollisionInfo> collisions;
+        //collisions.reserve(MAXENTITIES * 5);
+
 
         for (auto it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
@@ -34,7 +36,9 @@ public:
                 const Entity& entity2 = *it2;
                 ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
 
-                if (DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo)) //SWAPPING
+                CollisionInfo resultInfo = CollisionInfo();
+
+                if (DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo))
                 {
                     if (!colliderTransform1.IsDynamic)
                     {
@@ -50,9 +54,14 @@ public:
                         colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth / 2);
                     }
 
-                    ResolveCollision(entity1, entity2, colliderTransform1.IsDynamic, colliderTransform2.IsDynamic, resultInfo);
+                    collisions.emplace_back(resultInfo);
                 }
             }
+        }
+
+        for(CollisionInfo collision : collisions)
+        {
+            ResolveCollision(collision);
         }
     }
 
@@ -116,7 +125,7 @@ private:
         {
             if (colliderTransform2.Shape == Circle)
             {
-                return collisionDetection.CircleCircleCollision(entity1, entity2, colliderTransform1, colliderTransform2, true, resultInfo);
+                return collisionDetection.CircleCircleCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo);
             }
             if (colliderTransform2.Shape == Box)
             {
@@ -161,17 +170,17 @@ private:
         return false;
     }
 
-    void ResolveCollision(Entity entity1, Entity entity2, bool isDynamic1, bool isDynamic2, const CollisionInfo& collisionInfo) //TODO: use owner and other in collisioninfo
+    void ResolveCollision(const CollisionInfo& collisionInfo)
     {
-        RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(entity1);
-        RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
+        RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(collisionInfo.Entity1);
+        RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity2);
 
         Vector2 relativeVelocity = rigidBodyData2.Velocity - rigidBodyData1.Velocity;
 
         if (relativeVelocity.Dot(collisionInfo.Normal) > 0) return;
 
-        Fixed16_16 inverseMass1 = isDynamic1 ? rigidBodyData1.InverseMass : Fixed16_16(0);
-        Fixed16_16 inverseMass2 = isDynamic2 ? rigidBodyData2.InverseMass : Fixed16_16(0);
+        Fixed16_16 inverseMass1 = collisionInfo.IsDynamic1 ? rigidBodyData1.InverseMass : Fixed16_16(0);
+        Fixed16_16 inverseMass2 = collisionInfo.IsDynamic2 ? rigidBodyData2.InverseMass : Fixed16_16(0);
 
         Fixed16_16 restitution = min(rigidBodyData1.Restitution, rigidBodyData2.Restitution);
         Fixed16_16 j = (-(Fixed16_16(1) + restitution) * relativeVelocity.Dot(collisionInfo.Normal)) / (inverseMass1 + inverseMass2);

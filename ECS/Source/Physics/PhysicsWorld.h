@@ -1,4 +1,5 @@
 #pragma once
+#include "PhysicsSettings.h"
 
 class PhysicsWorld : public ECSWorld
 {
@@ -87,12 +88,17 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
-        movingSystem->Update(window, deltaTime);
+        Fixed16_16 stepTime = deltaTime / Iterations;
 
-        rigidBodySystem->ApplyVelocity(deltaTime);
-        rigidBodySystem->DetectCollisions();
+        for(int i = 0; i < Iterations; ++i)
+        {
+            movingSystem->Update(window, stepTime);
 
-        rigidBodySystem->WrapEntities(*camera);
+            rigidBodySystem->ApplyVelocity(stepTime);
+            rigidBodySystem->DetectCollisions();
+
+            rigidBodySystem->WrapEntities(*camera);
+        }
     }
 
     void Render()

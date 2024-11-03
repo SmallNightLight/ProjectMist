@@ -10,7 +10,7 @@ public:
             boxColliderCollection = world->GetComponentCollection<BoxCollider>();
       }
 
-      bool CircleCircleCollision(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
+      bool CircleCircleCollision(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, CollisionInfo& resultInfo)
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(circleColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
@@ -29,10 +29,12 @@ public:
             }
 
             //Detected discrete collision
-            resultInfo.Normal = (colliderTransform1.Position - colliderTransform2.Position).Normalize();
+            resultInfo.Normal = -(colliderTransform1.Position - colliderTransform2.Position).Normalize();
             resultInfo.Depth = totalRadius - distance;
-
-            resultInfo.Normal *= swap ? -1 : 1;
+            resultInfo.Entity1 = entity1;
+            resultInfo.Entity2 = entity2;
+            resultInfo.IsDynamic1 = colliderTransform1.IsDynamic;
+            resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
 
             return true;
       }
@@ -117,6 +119,11 @@ public:
             }
 
             resultInfo.Normal *= swap ? -1 : 1;
+            resultInfo.Entity1 = entity1;
+            resultInfo.Entity2 = entity2;
+            resultInfo.IsDynamic1 = colliderTransform1.IsDynamic;
+            resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
+
             return true;
       }
 
@@ -189,6 +196,21 @@ public:
             }
 
             resultInfo.Normal *= swap ? -1 : 1;
+
+            if (swap)
+            {
+                  resultInfo.Entity1 = entity2;
+                  resultInfo.Entity2 = entity1;
+                  resultInfo.IsDynamic1 = colliderTransform2.IsDynamic;
+                  resultInfo.IsDynamic2 = colliderTransform1.IsDynamic;
+            }
+            else
+            {
+                  resultInfo.Entity1 = entity1;
+                  resultInfo.Entity2 = entity2;
+                  resultInfo.IsDynamic1 = colliderTransform1.IsDynamic;
+                  resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
+            }
 
             return true;
       }
