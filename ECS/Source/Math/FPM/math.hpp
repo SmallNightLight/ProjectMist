@@ -117,6 +117,13 @@ constexpr inline bool isunordered(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y
     return false;
 }
 
+template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
+constexpr inline bool AlmostEqual(fixed<B,I,T1,T2,F,R> x, fixed<B,I,T1,T2,F,R> y) noexcept
+{
+    return abs(x - y) < std::numeric_limits<fixed<B,I,T1,T2,F,R>>::smallnumber();
+}
+
+
 //Max and min
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
 constexpr inline fixed<B,I,T1,T2,F,R> max(fixed<B,I,T1,T2,F,R> a, fixed<B,I,T1,T2,F,R> b) noexcept

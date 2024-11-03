@@ -4,7 +4,9 @@
 #include "FPM/fixed.hpp"
 #include <type_traits>
 
-template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType, unsigned int FractionBits>
+#include "FixedTypes.h"
+
+ template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType, unsigned int FractionBits>
 struct FixedVector2
 {
       T X;
@@ -288,6 +290,11 @@ struct FixedVector2
       bool operator>=(const FixedVector2& other) const
       {
             return Magnitude() >= other.Magnitude();
+      }
+
+      static bool AlmostEqual(const FixedVector2& f1, const FixedVector2& f2)
+      {
+            return fpm::AlmostEqual(f1.X, f2.X) && fpm::AlmostEqual(f1.Y, f2.Y);
       }
 
       constexpr static FixedVector2 Zero()

@@ -8,7 +8,6 @@ struct RigidBodyData
 {
     Vector2 Velocity;
     Fixed16_16 RotationalVelocity;
-
     Vector2 Force;
 
     Fixed16_16 Density;

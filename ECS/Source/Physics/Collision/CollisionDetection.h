@@ -216,7 +216,7 @@ public:
             resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
 
             CollisionCorrection(colliderTransform1, colliderTransform2, resultInfo);
-            //GetContact(colliderTransform1, colliderTransform2, boxCollider1, resultInfo);
+            GetContact(colliderTransform1, colliderTransform2, boxCollider1, boxCollider2, resultInfo);
 
             return true;
       }
@@ -354,6 +354,68 @@ public:
             collisionInfo.ContactCount = 1;
       }
 
+      static void GetContact(ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, BoxCollider& boxCollider1, BoxCollider& boxCollider2, CollisionInfo& collisionInfo)
+      {
+            std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1);
+            std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2);
+
+            long minDistanceSquared = std::numeric_limits<long>::max();
+
+            for(Vector2 p : vertices1)
+            {
+                  for(int i = 0; i < vertices2.size(); ++i)
+                  {
+                        Vector2 v1 = vertices2[i];
+                        Vector2 v2 = vertices2[(i + 1) % vertices2.size()];
+
+                        Vector2 contactPoint;
+                        long rawDistanceSquared = PointSegmentDistance(p, v1, v2, contactPoint);
+
+                        if (AlmostEqual(rawDistanceSquared, minDistanceSquared, 16))
+                        {
+                              if (!Vector2::AlmostEqual(contactPoint, collisionInfo.Contact1))
+                              {
+                                    collisionInfo.ContactCount = 2;
+                                    collisionInfo.Contact2 = contactPoint;
+                              }
+                        }
+                        else if (rawDistanceSquared < minDistanceSquared)
+                        {
+                              minDistanceSquared = rawDistanceSquared;
+                              collisionInfo.ContactCount = 1;
+                              collisionInfo.Contact1 = contactPoint;
+                        }
+                  }
+            }
+
+            for(Vector2 p : vertices2)
+            {
+                  for(int i = 0; i < vertices1.size(); ++i)
+                  {
+                        Vector2 v1 = vertices1[i];
+                        Vector2 v2 = vertices1[(i + 1) % vertices1.size()];
+
+                        Vector2 contactPoint;
+                        long rawDistanceSquared = PointSegmentDistance(p, v1, v2, contactPoint);
+
+                        if (AlmostEqual(rawDistanceSquared, minDistanceSquared, 16))
+                        {
+                              if (!Vector2::AlmostEqual(contactPoint, collisionInfo.Contact1))
+                              {
+                                    collisionInfo.ContactCount = 2;
+                                    collisionInfo.Contact2 = contactPoint;
+                              }
+                        }
+                        else if (rawDistanceSquared < minDistanceSquared)
+                        {
+                              minDistanceSquared = rawDistanceSquared;
+                              collisionInfo.ContactCount = 1;
+                              collisionInfo.Contact1 = contactPoint;
+                        }
+                  }
+            }
+      }
+
 private:
       static void ProjectVertices(const std::vector<Vector2>& vertices, const Vector2& axis, Fixed16_16& min, Fixed16_16& max)
       {
@@ -445,6 +507,11 @@ private:
             return p.RawDistanceSquared(closestPoint);
       }
 
+      static constexpr inline bool AlmostEqual(long x, long y, long epsilon)
+      {
+            return (x >= y - epsilon) && (x <= y + epsilon);
+      }
+
 private:
       template <typename T>
       inline static void swap(T& x, T& y)
@@ -458,4 +525,6 @@ private:
       ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
       ComponentCollection<CircleCollider>* circleColliderCollection;
       ComponentCollection<BoxCollider>* boxColliderCollection;
+
+      static constexpr Fixed16_16 SmallNumber = Fixed16_16::from_raw_value(16);
 };

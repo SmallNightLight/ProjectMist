@@ -613,6 +613,11 @@ struct numeric_limits<fpm::fixed<B,I,T1,T2,F,R>>
     static constexpr fpm::fixed<B,I,T1,T2,F,R> denorm_min() noexcept {
         return min();
     }
+
+    static constexpr fpm::fixed<B,I,T1,T2,F,R> smallnumber() noexcept
+    {
+        return fpm::fixed<B,I,T1,T2,F,R>::from_raw_value(F);
+    }
 };
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>
