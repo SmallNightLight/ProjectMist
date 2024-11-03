@@ -98,6 +98,7 @@ public:
             rigidBodySystem->DetectCollisions();
 
             rigidBodySystem->WrapEntities(*camera);
+
         }
     }
 
@@ -106,6 +107,18 @@ public:
         cameraSystem->Apply();
         boxColliderRenderer->Render();
         circleColliderRenderer->Render();
+
+        //Debug
+        if (RenderCollisionPoints)
+        {
+            CircleColliderRenderer::RenderContactPoints(rigidBodySystem->collisionsRE);
+        }
+
+        if (RenderBoundingBoxes)
+        {
+            circleColliderRenderer->RenderAABB();
+            boxColliderRenderer->RenderAABB();
+        }
     }
 
 private:

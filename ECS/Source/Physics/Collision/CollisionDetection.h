@@ -10,7 +10,84 @@ public:
             boxColliderCollection = world->GetComponentCollection<BoxCollider>();
       }
 
-      bool CircleCircleCollision(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, CollisionInfo& resultInfo)
+      static void CollisionCorrection(ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const CollisionInfo& resultInfo)
+      {
+            if (!colliderTransform1.IsDynamic)
+            {
+                  colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth);
+            }
+            else if (!colliderTransform2.IsDynamic)
+            {
+                  colliderTransform1.MovePosition(-resultInfo.Normal * resultInfo.Depth);
+            }
+            else
+            {
+                  Vector2 direction = resultInfo.Normal * (resultInfo.Depth / 2);
+
+                  colliderTransform1.MovePosition(-direction);
+                  colliderTransform2.MovePosition(direction);
+            }
+      }
+
+      bool DetectCollisionAndCorrect(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, CollisionInfo& resultInfo) const
+      {
+            //Skip if none of the objects are dynamic
+            if (!colliderTransform1.IsDynamic && !colliderTransform2.IsDynamic)
+            {
+                  return false;
+            }
+
+            //Check for different shape types and do the correct collision detection
+            if (colliderTransform1.Shape == Circle)
+            {
+                  if (colliderTransform2.Shape == Circle)
+                  {
+                        return CircleCircleCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo);
+                  }
+                  if (colliderTransform2.Shape == Box)
+                  {
+                        return CircleBoxCollision(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
+                  }
+                  if (colliderTransform2.Shape == Convex)
+                  {
+                  std::cout << "Collision type not defined" << std::endl;
+                  }
+            }
+            else if (colliderTransform1.Shape == Box)
+            {
+                  if (colliderTransform2.Shape == Circle)
+                  {
+                        return CircleBoxCollision(entity2, entity1, colliderTransform2, colliderTransform1, true, resultInfo);
+                  }
+                  if (colliderTransform2.Shape == Box)
+                  {
+                        return BoxBoxCollision(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
+                  }
+                  if (colliderTransform2.Shape == Convex)
+                  {
+                        std::cout << "Collision type not defined" << std::endl;
+                  }
+            }
+            else if (colliderTransform1.Shape == Convex)
+            {
+                  if (colliderTransform2.Shape == Circle)
+                  {
+                        std::cout << "Collision type not defined" << std::endl;
+                  }
+                  else if (colliderTransform2.Shape == Box)
+                  {
+                        std::cout << "Collision type not defined" << std::endl;
+                  }
+                  else if (colliderTransform2.Shape == Convex)
+                  {
+                        std::cout << "Collision type not defined" << std::endl;
+                  }
+            }
+
+            return false;
+      }
+
+      bool CircleCircleCollision(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, CollisionInfo& resultInfo) const
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(circleColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
@@ -18,6 +95,12 @@ public:
             //Get the components
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             CircleCollider& circleCollider2 = circleColliderCollection->GetComponent(entity2);
+
+            //First perform an AABB check, to test if the objects are even able to collide
+            if (!colliderTransform1.GetAABB(circleCollider1).Overlaps(colliderTransform2.GetAABB(circleCollider2)))
+            {
+                  return false;
+            }
 
             Fixed16_16 distance = colliderTransform1.Position.Distance(colliderTransform2.Position);
             Fixed16_16 totalRadius = circleCollider1.Radius + circleCollider2.Radius;
@@ -36,21 +119,29 @@ public:
             resultInfo.IsDynamic1 = colliderTransform1.IsDynamic;
             resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
 
+            CollisionCorrection(colliderTransform1, colliderTransform2, resultInfo);
+            GetContact(colliderTransform1, colliderTransform2, circleCollider1, resultInfo);
+
             return true;
       }
 
       //SAP - optimized for polygons
-      bool BoxBoxCollisionDetection(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
+      bool BoxBoxCollision(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo) const
       {
             assert(boxColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Box) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
 
-            resultInfo.Normal = Vector2::Zero();
-            resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
-
             //Get the components
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
+
+            //First perform an AABB check, to test if the objects are even able to collide
+            if (!colliderTransform1.GetAABB(boxCollider1).Overlaps(colliderTransform2.GetAABB(boxCollider2)))
+            {
+                  return false;
+            }
+
+            resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
 
             std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1);
             std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2);
@@ -124,20 +215,29 @@ public:
             resultInfo.IsDynamic1 = colliderTransform1.IsDynamic;
             resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
 
+            CollisionCorrection(colliderTransform1, colliderTransform2, resultInfo);
+            //GetContact(colliderTransform1, colliderTransform2, boxCollider1, resultInfo);
+
             return true;
       }
 
-      bool CircleBoxCollisionDetection(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo)
+      bool CircleBoxCollision(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo) const
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
 
-            resultInfo.Normal = Vector2::Zero();
-            resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
-
             //Get the components
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
+
+            //First perform an AABB check, to test if the objects are even able to collide
+            if (!colliderTransform1.GetAABB(circleCollider1).Overlaps(colliderTransform2.GetAABB(boxCollider2)))
+            {
+                  //No collision possible
+                  return false;
+            }
+
+            resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
 
             std::vector<Vector2> vertices = colliderTransform2.GetTransformedVertices(boxCollider2);
 
@@ -203,6 +303,8 @@ public:
                   resultInfo.Entity2 = entity1;
                   resultInfo.IsDynamic1 = colliderTransform2.IsDynamic;
                   resultInfo.IsDynamic2 = colliderTransform1.IsDynamic;
+
+                  CollisionCorrection(colliderTransform2, colliderTransform1, resultInfo);
             }
             else
             {
@@ -210,9 +312,22 @@ public:
                   resultInfo.Entity2 = entity2;
                   resultInfo.IsDynamic1 = colliderTransform1.IsDynamic;
                   resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
+
+                  CollisionCorrection(colliderTransform1, colliderTransform2, resultInfo);
             }
 
+            //GetContact(colliderTransform1, colliderTransform2, boxCollider2, resultInfo);
+
             return true;
+      }
+
+      //Contact point functions
+
+      static void GetContact(const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, const CircleCollider& circleCollider1, CollisionInfo& collisionInfo)
+      {
+            Vector2 direction = (colliderTransform2.Position - colliderTransform1.Position).Normalize();
+            collisionInfo.Contact1 = colliderTransform1.Position + direction * circleCollider1.Radius;
+            collisionInfo.ContactCount = 1;
       }
 
 private:
@@ -235,9 +350,9 @@ private:
 
       static void ProjectCircle(const Vector2& center, const Fixed16_16& radius, const Vector2& axis, Fixed16_16& min, Fixed16_16& max)
       {
-            Vector2 directonAndRadius = axis * radius;
-            Vector2 point1 = center + directonAndRadius;
-            Vector2 point2 = center -directonAndRadius;
+            Vector2 directionAndRadius = axis * radius;
+            Vector2 point1 = center + directionAndRadius;
+            Vector2 point2 = center -directionAndRadius;
 
             min = point1.Dot(axis);
             max = point2.Dot(axis);
@@ -250,7 +365,7 @@ private:
 
       static Vector2 GetCenter(const std::vector<Vector2>& vertices) //TODO: can be avoided
       {
-            Vector2 sum = Vector2::Zero();
+            Vector2 sum;
             short vertexCount = 0;
 
             for (auto& vertex : vertices)
@@ -264,7 +379,7 @@ private:
 
       static Vector2 GetClosestPointToCircle(Vector2 center, const std::vector<Vector2>& vertices)
       {
-            Vector2 result = Vector2::Zero();
+            Vector2 result;
             Fixed16_16 minDistance = std::numeric_limits<Fixed16_16>::max();
 
             for (auto& vertex : vertices)

@@ -22,8 +22,6 @@ public:
     void DetectCollisions()
     {
         std::vector<CollisionInfo> collisions;
-        //collisions.reserve(MAXENTITIES * 5);
-
 
         for (auto it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
@@ -38,22 +36,8 @@ public:
 
                 CollisionInfo resultInfo = CollisionInfo();
 
-                if (DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo))
+                if (collisionDetection.DetectCollisionAndCorrect(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo))
                 {
-                    if (!colliderTransform1.IsDynamic)
-                    {
-                        colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth);
-                    }
-                    else if (!colliderTransform2.IsDynamic)
-                    {
-                        colliderTransform1.MovePosition(-resultInfo.Normal * resultInfo.Depth);
-                    }
-                    else
-                    {
-                        colliderTransform1.MovePosition(-resultInfo.Normal * resultInfo.Depth / 2);
-                        colliderTransform2.MovePosition(resultInfo.Normal * resultInfo.Depth / 2);
-                    }
-
                     collisions.emplace_back(resultInfo);
                 }
             }
@@ -63,6 +47,8 @@ public:
         {
             ResolveCollision(collision);
         }
+
+        collisionsRE = std::vector(collisions);
     }
 
     void ApplyVelocity(Fixed16_16 deltaTime)
@@ -112,64 +98,6 @@ public:
     }
 
 private:
-    bool DetectCollision(Entity entity1, Entity entity2, ColliderTransform colliderTransform1, ColliderTransform colliderTransform2, CollisionInfo& resultInfo)
-    {
-        //Skip if none of the objects are dynamic
-        if (!colliderTransform1.IsDynamic && !colliderTransform2.IsDynamic)
-        {
-            return false;
-        }
-
-        //Check for different shape types and do the correct collision detection
-        if (colliderTransform1.Shape == Circle)
-        {
-            if (colliderTransform2.Shape == Circle)
-            {
-                return collisionDetection.CircleCircleCollision(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo);
-            }
-            if (colliderTransform2.Shape == Box)
-            {
-                return collisionDetection.CircleBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
-            }
-            if (colliderTransform2.Shape == Convex)
-            {
-                std::cout << "Collision type not defined" << std::endl;
-            }
-        }
-        else if (colliderTransform1.Shape == Box)
-        {
-            if (colliderTransform2.Shape == Circle)
-            {
-                return collisionDetection.CircleBoxCollisionDetection(entity2, entity1, colliderTransform2, colliderTransform1, true, resultInfo);
-            }
-            if (colliderTransform2.Shape == Box)
-            {
-                return collisionDetection.BoxBoxCollisionDetection(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
-            }
-            if (colliderTransform2.Shape == Convex)
-            {
-                std::cout << "Collision type not defined" << std::endl;
-            }
-        }
-        else if (colliderTransform1.Shape == Convex)
-        {
-            if (colliderTransform2.Shape == Circle)
-            {
-                std::cout << "Collision type not defined" << std::endl;
-            }
-            else if (colliderTransform2.Shape == Box)
-            {
-                std::cout << "Collision type not defined" << std::endl;
-            }
-            else if (colliderTransform2.Shape == Convex)
-            {
-                std::cout << "Collision type not defined" << std::endl;
-            }
-        }
-
-        return false;
-    }
-
     void ResolveCollision(const CollisionInfo& collisionInfo)
     {
         RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(collisionInfo.Entity1);
@@ -207,4 +135,7 @@ private:
     ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;
+
+public:
+    std::vector<CollisionInfo> collisionsRE; //TODO: remove
 };

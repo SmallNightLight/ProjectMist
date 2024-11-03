@@ -51,6 +51,27 @@ public:
         }
     }
 
+    void RenderAABB()
+    {
+        for (const Entity& entity : Entities)
+        {
+            ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
+            BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
+
+            glColor3f(0.5f, 0.5f, 0.5f);
+            glLineWidth(2.0f);
+            glBegin(GL_LINE_LOOP);
+
+            AABB boundingBox = transform.GetAABB(boxCollider);
+            glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
+            glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
+            glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
+            glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
+
+            glEnd();
+        }
+    }
+
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;

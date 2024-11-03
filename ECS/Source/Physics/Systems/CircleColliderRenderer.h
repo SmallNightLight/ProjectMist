@@ -66,6 +66,60 @@ public:
         glDisable(GL_LINE_SMOOTH);
     }
 
+    static void RenderContactPoints(std::vector<CollisionInfo>& collisions)
+    {
+        float size = 0.4f;
+
+        for(CollisionInfo collision : collisions)
+        {
+            if (collision.ContactCount > 0)
+            {
+                glLineWidth(2.0f);
+                glColor3f(0.5, 0.5f, 0.5f);
+                glBegin(GL_LINES);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() + size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() + size);
+                glEnd();
+
+                if (collision.ContactCount > 1)
+                {
+                    glLineWidth(2.0f);
+                    glBegin(GL_LINES);
+                    glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() - size);
+                    glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() + size);
+                    glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() - size);
+                    glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() + size);
+                    glEnd();
+
+
+                }
+            }
+        }
+    }
+
+    void RenderAABB()
+    {
+        for (const Entity& entity : Entities)
+        {
+            ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
+            CircleCollider& circleCollider = circleColliderCollection->GetComponent(entity);
+
+            glColor3f(0.5f, 0.5f, 0.5f);
+            glLineWidth(2.0f);
+            glBegin(GL_LINE_LOOP);
+
+            AABB boundingBox = transform.GetAABB(circleCollider);
+            glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
+            glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
+            glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
+            glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
+
+            glEnd();
+        }
+    }
+
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
