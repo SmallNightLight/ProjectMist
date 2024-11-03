@@ -4,7 +4,7 @@
 #include "FPM/fixed.hpp"
 #include <type_traits>
 
-template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType>
+template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType, unsigned int FractionBits>
 struct FixedVector2
 {
       T X;
@@ -154,6 +154,14 @@ struct FixedVector2
             return T::from_raw_value(static_cast<BaseTType>(result));
       }
 
+      IntermediateType RawMagnitudeSquared() const
+      {
+            auto xRaw = static_cast<IntermediateType>(X.raw_value());
+            auto yRaw = static_cast<IntermediateType>(Y.raw_value());
+
+            return (xRaw * xRaw + yRaw * yRaw) / FRACTION_MULT;
+      }
+
       FixedVector2 Normalize() const
       {
             T magnitude = Magnitude();
@@ -170,6 +178,17 @@ struct FixedVector2
             T dx = X - other.X;
             T dy = Y - other.Y;
             return fpm::sqrt(dx * dx + dy * dy);
+      }
+
+      IntermediateType RawDistanceSquared(const FixedVector2& other) const
+      {
+            T dx = X - other.X;
+            T dy = Y - other.Y;
+
+            auto xRaw = static_cast<IntermediateType>(dx.raw_value());
+            auto yRaw = static_cast<IntermediateType>(dy.raw_value());
+
+            return fpm::sqrt(xRaw * xRaw + yRaw * yRaw);
       }
 
       FixedVector2 ProjectOnto(const FixedVector2& other) const
@@ -275,4 +294,6 @@ struct FixedVector2
       {
             return FixedVector2(T(0), T(0));
       }
+
+      static constexpr IntermediateType FRACTION_MULT = IntermediateType(1) << FractionBits;
 };

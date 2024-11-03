@@ -316,7 +316,7 @@ public:
                   CollisionCorrection(colliderTransform1, colliderTransform2, resultInfo);
             }
 
-            //GetContact(colliderTransform1, colliderTransform2, boxCollider2, resultInfo);
+            GetContact(colliderTransform1, colliderTransform2, circleCollider1, boxCollider2, resultInfo);
 
             return true;
       }
@@ -327,6 +327,30 @@ public:
       {
             Vector2 direction = (colliderTransform2.Position - colliderTransform1.Position).Normalize();
             collisionInfo.Contact1 = colliderTransform1.Position + direction * circleCollider1.Radius;
+            collisionInfo.ContactCount = 1;
+      }
+
+      static void GetContact(const ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const CircleCollider& circleCollider1, BoxCollider& boxCollider2, CollisionInfo& collisionInfo)
+      {
+            std::vector<Vector2> vertices = colliderTransform2.GetTransformedVertices(boxCollider2);
+
+            long minDistanceSquared = std::numeric_limits<long>::max();
+
+            for(int i = 0; i < vertices.size(); ++i)
+            {
+                  Vector2 v1 = vertices[i];
+                  Vector2 v2 = vertices[(i + 1) % vertices.size()];
+
+                  Vector2 contactPoint;
+                  long rawDistanceSquared = PointSegmentDistance(colliderTransform1.Position, v1, v2, contactPoint);
+
+                  if (rawDistanceSquared < minDistanceSquared)
+                  {
+                        minDistanceSquared = rawDistanceSquared;
+                        collisionInfo.Contact1 = contactPoint;
+                  }
+            }
+
             collisionInfo.ContactCount = 1;
       }
 
@@ -380,11 +404,11 @@ private:
       static Vector2 GetClosestPointToCircle(Vector2 center, const std::vector<Vector2>& vertices)
       {
             Vector2 result;
-            Fixed16_16 minDistance = std::numeric_limits<Fixed16_16>::max();
+            long minDistance = std::numeric_limits<long>::max();
 
             for (auto& vertex : vertices)
             {
-                  Fixed16_16 distance = vertex.Distance(center);
+                  auto distance = vertex.RawDistanceSquared(center);
 
                   if (distance < minDistance)
                   {
@@ -394,6 +418,31 @@ private:
             }
 
             return result;
+      }
+
+      static long PointSegmentDistance(Vector2 p, Vector2 a, Vector2 b, Vector2& closestPoint)
+      {
+            Vector2 ab = b - a;
+            Vector2 ap = p - a;
+
+            int64_t rawProjection = ap.Dot(ab).raw_value();
+            int64_t lengthSquared = ab.RawMagnitudeSquared();
+
+            if (rawProjection <= 0)
+            {
+                  closestPoint = a;
+            }
+            else if (rawProjection >= lengthSquared)
+            {
+                  closestPoint = b;
+            }
+            else
+            {
+                  Fixed16_16 d = Fixed16_16::from_raw_value(static_cast<int32_t>((rawProjection << 16) / lengthSquared));
+                  closestPoint = a + ab * d;
+            }
+
+            return p.RawDistanceSquared(closestPoint);
       }
 
 private:
