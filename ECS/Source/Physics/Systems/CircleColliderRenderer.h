@@ -60,6 +60,21 @@ public:
                 glVertex2f(x + dx, y + dy);
             }
             glEnd();
+
+            //Draw line for circle rotation
+            Vector2 v1 = Vector2::Zero();
+            Vector2 v2 = Vector2(circleCollider.Radius, Fixed16_16(0));
+
+            v1 = transform.Transform(v1);
+            v2 = transform.Transform(v2);
+
+            glLineWidth(2.0f);
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glBegin(GL_LINES);
+            glVertex2f(v1.X.ToFloating<float>(), v1.Y.ToFloating<float>());
+            glVertex2f(v2.X.ToFloating<float>(), v2.Y.ToFloating<float>());
+            glEnd();
+
         }
 
         glDisable(GL_POLYGON_SMOOTH);

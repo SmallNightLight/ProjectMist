@@ -129,8 +129,10 @@ private:
 
         std::array<Vector2, 2> contacts {collisionInfo.Contact1, collisionInfo.Contact2};
         std::array<Vector2, 2> impulses { };
+        std::array<Vector2, 2> frictionImpulses { };
         std::array<Vector2, 2> r1 { };
         std::array<Vector2, 2> r2 { };
+        std::array<Fixed16_16, 2> j { };
 
         Fixed16_16 restitution = min(rigidBodyData1.Restitution, rigidBodyData2.Restitution);
 
@@ -139,6 +141,9 @@ private:
 
         Fixed16_16 inverseInertia1 = collisionInfo.IsDynamic1 ? rigidBodyData1.InverseInertia : Fixed16_16(0);
         Fixed16_16 inverseInertia2 = collisionInfo.IsDynamic2 ? rigidBodyData2.InverseInertia : Fixed16_16(0);
+
+        Fixed16_16 staticFriction = (rigidBodyData1.StaticFriction + rigidBodyData2.StaticFriction) / 2;
+        Fixed16_16 dynamicFriction = (rigidBodyData1.DynamicFriction + rigidBodyData2.DynamicFriction) / 2;
 
         for(int i = 0; i < collisionInfo.ContactCount; ++i)
         {
@@ -160,8 +165,8 @@ private:
             Fixed16_16 dot1 =  perpendicular1.Dot(collisionInfo.Normal);
             Fixed16_16 dot2 =  perpendicular2.Dot(collisionInfo.Normal);
 
-            Fixed16_16 j = -((Fixed16_16(1) + restitution) * velocityMagnitude / (inverseMass1 + inverseMass2 + dot1 * dot1 * inverseInertia1 + dot2 * dot2 * inverseInertia2)) / collisionInfo.ContactCount;
-            impulses[i] = collisionInfo.Normal * j;
+            j[i] = -((Fixed16_16(1) + restitution) * velocityMagnitude / (inverseMass1 + inverseMass2 + dot1 * dot1 * inverseInertia1 + dot2 * dot2 * inverseInertia2)) / collisionInfo.ContactCount;
+            impulses[i] = collisionInfo.Normal * j[i];
         }
 
         for(int i = 0; i < collisionInfo.ContactCount; ++i)
@@ -173,6 +178,60 @@ private:
 
             rigidBodyData1.AngularVelocity -= r1[i].Cross(impulse) * inverseInertia1;
             rigidBodyData2.AngularVelocity += r2[i].Cross(impulse) * inverseInertia2;
+        }
+
+
+        //Friction
+        for(int i = 0; i < collisionInfo.ContactCount; ++i)
+        {
+            r1[i] = contacts[i] - colliderTransform1.Position;
+            r2[i] = contacts[i] - colliderTransform2.Position;
+
+            Vector2 perpendicular1 = r1[i].Perpendicular();
+            Vector2 perpendicular2 = r2[i].Perpendicular();
+
+            Vector2 angularVelocity1 = perpendicular1 * rigidBodyData1.AngularVelocity;
+            Vector2 angularVelocity2 = perpendicular2 * rigidBodyData2.AngularVelocity;
+
+            Vector2 relativeVelocity = (rigidBodyData2.Velocity + angularVelocity2) - (rigidBodyData1.Velocity + angularVelocity1);
+            Vector2 tangent = relativeVelocity - collisionInfo.Normal * relativeVelocity.Dot(collisionInfo.Normal);
+
+            if (Vector2::AlmostEqual(tangent, Vector2::Zero()))
+            {
+                continue;
+            }
+
+            tangent = tangent.Normalize();
+
+            Fixed16_16 dot1 =  perpendicular1.Dot(tangent);
+            Fixed16_16 dot2 =  perpendicular2.Dot(tangent);
+
+            Fixed16_16 jT = -(relativeVelocity.Dot(tangent) / (inverseMass1 + inverseMass2 + dot1 * dot1 * inverseInertia1 + dot2 * dot2 * inverseInertia2)) / collisionInfo.ContactCount;
+
+            Vector2 frictionImpulse;
+
+            //Apply coulombs law
+            if (fpm::abs(jT) <= j[i] * staticFriction)
+            {
+                frictionImpulse = tangent * jT;
+            }
+            else
+            {
+                frictionImpulse = tangent * (-j[i] * dynamicFriction);
+            }
+
+            frictionImpulses[i] = frictionImpulse;
+        }
+
+        for(int i = 0; i < collisionInfo.ContactCount; ++i)
+        {
+            Vector2 frictionImpulse = frictionImpulses[i];
+
+            rigidBodyData1.Velocity -= frictionImpulse * inverseMass1;
+            rigidBodyData2.Velocity += frictionImpulse * inverseMass2;
+
+            rigidBodyData1.AngularVelocity -= r1[i].Cross(frictionImpulse) * inverseInertia1;
+            rigidBodyData2.AngularVelocity += r2[i].Cross(frictionImpulse) * inverseInertia2;
         }
     }
 

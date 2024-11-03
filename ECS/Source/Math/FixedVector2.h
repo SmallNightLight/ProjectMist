@@ -190,7 +190,7 @@ struct FixedVector2
             auto xRaw = static_cast<IntermediateType>(dx.raw_value());
             auto yRaw = static_cast<IntermediateType>(dy.raw_value());
 
-            return fpm::sqrt(xRaw * xRaw + yRaw * yRaw);
+            return (xRaw * xRaw + yRaw * yRaw) / FRACTION_MULT;
       }
 
       FixedVector2 ProjectOnto(const FixedVector2& other) const

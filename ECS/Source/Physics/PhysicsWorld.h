@@ -52,7 +52,7 @@ public:
 
         AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Circle, shape));
         AddComponent(entity, CircleCollider(radius));
-        AddComponent(entity, RigidBodyData::CreateCircleRigidBody(Fixed16_16(1), Fixed16_16(0, 5), radius));
+        AddComponent(entity, RigidBodyData::CreateCircleRigidBody(radius, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 6), Fixed16_16(0, 4)));
         AddComponent(entity, ColliderRenderData(r, g, b));
 
         return entity;
@@ -73,7 +73,7 @@ public:
 
         AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Box, shape));
         AddComponent(entity, BoxCollider(width, height));
-        AddComponent(entity, RigidBodyData::CreateBoxRigidBody(Fixed16_16(1), Fixed16_16(0, 5), width, height));
+        AddComponent(entity, RigidBodyData::CreateBoxRigidBody(width, height, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 6), Fixed16_16(0, 4)));
         AddComponent(entity, ColliderRenderData(r, g, b));
 
         return entity;
@@ -131,17 +131,22 @@ public:
     }
 
     //Debug
-    void SetupDebug(GLFWwindow* window)
+    static void SetupDebug(GLFWwindow* window)
     {
         glfwSetMouseButtonCallback(window, DebugCallbackMouse);
     }
 
     void UpdateDebug(GLFWwindow* window)
     {
-        if (clicked)
+        if (createBox)
         {
             CreateBox(GetMousePosition(window), Fixed16_16(2), Fixed16_16(2), Dynamic, 0.5f, 0.5f, 0.5f);
-            clicked = false;
+            createBox = false;
+        }
+        if (createCircle)
+        {
+            CreateCircle(GetMousePosition(window), Fixed16_16(1), Dynamic, 0.5f, 0.5f, 0.5f);
+            createCircle = false;
         }
     }
 
@@ -149,7 +154,11 @@ public:
     {
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
         {
-            clicked = true;
+            createBox = true;
+        }
+        if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+        {
+            createCircle = true;
         }
     }
 
@@ -176,7 +185,8 @@ private:
     std::shared_ptr<CameraSystem> cameraSystem;
 
     std::default_random_engine random;
-    static inline bool clicked = false;
+    static inline bool createBox = false;
+    static inline bool createCircle = false;
 
     Camera* camera;
 };

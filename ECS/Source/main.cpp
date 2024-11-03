@@ -132,7 +132,7 @@ int main()
     double lastTime = 0.0;
     double lastTitleUpdateTime = 0.0;
 
-    physicsWorld.SetupDebug(window);
+    PhysicsWorld::SetupDebug(window);
 
     while (!glfwWindowShouldClose(window))
     {
