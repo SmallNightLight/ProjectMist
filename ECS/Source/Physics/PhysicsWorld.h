@@ -36,13 +36,17 @@ public:
         camera = AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
 
         //Add a ground
-        CreateBox(Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(1), Kinematic);
+        CreateBox(Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(2), Static);
+
+        //Add walls
+        CreateBox(Vector2(camera->Left, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
+        CreateBox(Vector2(camera->Right, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
 
         //Create rotated objects
-        Entity e1 = CreateBox(Vector2(100, 0), Fixed16_16(30), Fixed16_16(1), Kinematic);
+        Entity e1 = CreateBox(Vector2(100, 0), Fixed16_16(30), Fixed16_16(1), Static);
         GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
 
-        Entity e2 = CreateBox(Vector2(-95, -10), Fixed16_16(30), Fixed16_16(1), Kinematic);
+        Entity e2 = CreateBox(Vector2(-95, -10), Fixed16_16(30), Fixed16_16(1), Static);
         GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
     }
 
