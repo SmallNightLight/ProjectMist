@@ -129,7 +129,6 @@ private:
 
         std::array<Vector2, 2> contacts {collisionInfo.Contact1, collisionInfo.Contact2};
         std::array<Vector2, 2> impulses { };
-        std::array<Vector2, 2> frictionImpulses { };
         std::array<Vector2, 2> r1 { };
         std::array<Vector2, 2> r2 { };
         std::array<Fixed16_16, 2> j { };
@@ -180,13 +179,11 @@ private:
             rigidBodyData2.AngularVelocity += r2[i].Cross(impulse) * inverseInertia2;
         }
 
+        impulses = { };
 
         //Friction
         for(int i = 0; i < collisionInfo.ContactCount; ++i)
         {
-            r1[i] = contacts[i] - colliderTransform1.Position;
-            r2[i] = contacts[i] - colliderTransform2.Position;
-
             Vector2 perpendicular1 = r1[i].Perpendicular();
             Vector2 perpendicular2 = r2[i].Perpendicular();
 
@@ -220,12 +217,12 @@ private:
                 frictionImpulse = tangent * (-j[i] * dynamicFriction);
             }
 
-            frictionImpulses[i] = frictionImpulse;
+            impulses[i] = frictionImpulse;
         }
 
         for(int i = 0; i < collisionInfo.ContactCount; ++i)
         {
-            Vector2 frictionImpulse = frictionImpulses[i];
+            Vector2 frictionImpulse = impulses[i];
 
             rigidBodyData1.Velocity -= frictionImpulse * inverseMass1;
             rigidBodyData2.Velocity += frictionImpulse * inverseMass2;
