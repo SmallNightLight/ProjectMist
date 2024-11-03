@@ -45,7 +45,7 @@ public:
 
         for(CollisionInfo collision : collisions)
         {
-            ResolveCollision(collision);
+            ResolveCollisionWithRotation(collision);
         }
 
         collisionsRE = std::vector(collisions);
@@ -69,7 +69,7 @@ public:
             }
 
             colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
-            colliderTransform.Rotate(rigidBodyData.RotationalVelocity * deltaTime);
+            colliderTransform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
 
             rigidBodyData.Force = Vector2::Zero();
         }
@@ -80,7 +80,7 @@ public:
         for (const Entity& entity : Entities)
         {
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
-            rigidBodyData.RotationalVelocity = Fixed16_16::pi() / 2;
+            rigidBodyData.AngularVelocity = Fixed16_16::pi() / 2;
         }
     }
 
@@ -104,18 +104,76 @@ private:
         RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity2);
 
         Vector2 relativeVelocity = rigidBodyData2.Velocity - rigidBodyData1.Velocity;
+        Fixed16_16 velocityMagnitude = relativeVelocity.Dot(collisionInfo.Normal);
 
-        if (relativeVelocity.Dot(collisionInfo.Normal) > 0) return;
+        if (velocityMagnitude > 0) return;
 
         Fixed16_16 inverseMass1 = collisionInfo.IsDynamic1 ? rigidBodyData1.InverseMass : Fixed16_16(0);
         Fixed16_16 inverseMass2 = collisionInfo.IsDynamic2 ? rigidBodyData2.InverseMass : Fixed16_16(0);
 
         Fixed16_16 restitution = min(rigidBodyData1.Restitution, rigidBodyData2.Restitution);
-        Fixed16_16 j = (-(Fixed16_16(1) + restitution) * relativeVelocity.Dot(collisionInfo.Normal)) / (inverseMass1 + inverseMass2);
+        Fixed16_16 j = -(Fixed16_16(1) + restitution) * velocityMagnitude / (inverseMass1 + inverseMass2);
         Vector2 impulse = collisionInfo.Normal * j;
 
         rigidBodyData1.Velocity -= impulse * inverseMass1;
         rigidBodyData2.Velocity += impulse * inverseMass2;
+    }
+
+    void ResolveCollisionWithRotation(const CollisionInfo& collisionInfo)
+    {
+        ColliderTransform colliderTransform1 = colliderTransformCollection->GetComponent(collisionInfo.Entity1);
+        ColliderTransform colliderTransform2 = colliderTransformCollection->GetComponent(collisionInfo.Entity2);
+
+        RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(collisionInfo.Entity1);
+        RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity2);
+
+        std::array<Vector2, 2> contacts {collisionInfo.Contact1, collisionInfo.Contact2};
+        std::array<Vector2, 2> impulses { };
+        std::array<Vector2, 2> r1 { };
+        std::array<Vector2, 2> r2 { };
+
+        Fixed16_16 restitution = min(rigidBodyData1.Restitution, rigidBodyData2.Restitution);
+
+        Fixed16_16 inverseMass1 = collisionInfo.IsDynamic1 ? rigidBodyData1.InverseMass : Fixed16_16(0);
+        Fixed16_16 inverseMass2 = collisionInfo.IsDynamic2 ? rigidBodyData2.InverseMass : Fixed16_16(0);
+
+        Fixed16_16 inverseInertia1 = collisionInfo.IsDynamic1 ? rigidBodyData1.InverseInertia : Fixed16_16(0);
+        Fixed16_16 inverseInertia2 = collisionInfo.IsDynamic2 ? rigidBodyData2.InverseInertia : Fixed16_16(0);
+
+        for(int i = 0; i < collisionInfo.ContactCount; ++i)
+        {
+            r1[i] = contacts[i] - colliderTransform1.Position;
+            r2[i] = contacts[i] - colliderTransform2.Position;
+
+            Vector2 perpendicular1 = r1[i].Perpendicular();
+            Vector2 perpendicular2 = r2[i].Perpendicular();
+
+            Vector2 angularVelocity1 = perpendicular1 * rigidBodyData1.AngularVelocity;
+            Vector2 angularVelocity2 = perpendicular2 * rigidBodyData2.AngularVelocity;
+
+            Vector2 relativeVelocity = (rigidBodyData2.Velocity + angularVelocity2) - (rigidBodyData1.Velocity + angularVelocity1);
+
+            Fixed16_16 velocityMagnitude = relativeVelocity.Dot(collisionInfo.Normal);
+
+            if (velocityMagnitude > 0) continue;
+
+            Fixed16_16 dot1 =  perpendicular1.Dot(collisionInfo.Normal);
+            Fixed16_16 dot2 =  perpendicular2.Dot(collisionInfo.Normal);
+
+            Fixed16_16 j = -((Fixed16_16(1) + restitution) * velocityMagnitude / (inverseMass1 + inverseMass2 + dot1 * dot1 * inverseInertia1 + dot2 * dot2 * inverseInertia2)) / collisionInfo.ContactCount;
+            impulses[i] = collisionInfo.Normal * j;
+        }
+
+        for(int i = 0; i < collisionInfo.ContactCount; ++i)
+        {
+            Vector2 impulse = impulses[i];
+
+            rigidBodyData1.Velocity -= impulse * inverseMass1;
+            rigidBodyData2.Velocity += impulse * inverseMass2;
+
+            rigidBodyData1.AngularVelocity -= r1[i].Cross(impulse) * inverseInertia1;
+            rigidBodyData2.AngularVelocity += r2[i].Cross(impulse) * inverseInertia2;
+        }
     }
 
 

@@ -37,6 +37,13 @@ public:
 
         //Add a ground
         CreateBox(Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(1), Kinematic);
+
+        //Create rotated objects
+        Entity e1 = CreateBox(Vector2(100, 0), Fixed16_16(30), Fixed16_16(1), Kinematic);
+        GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
+
+        Entity e2 = CreateBox(Vector2(-95, -10), Fixed16_16(30), Fixed16_16(1), Kinematic);
+        GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
     }
 
     Entity CreateCircle(const Vector2& position, const Fixed16_16& radius, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
@@ -45,7 +52,7 @@ public:
 
         AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Circle, shape));
         AddComponent(entity, CircleCollider(radius));
-        AddComponent(entity, RigidBodyData());
+        AddComponent(entity, RigidBodyData::CreateCircleRigidBody(Fixed16_16(1), Fixed16_16(0, 5), radius));
         AddComponent(entity, ColliderRenderData(r, g, b));
 
         return entity;
@@ -66,7 +73,7 @@ public:
 
         AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Box, shape));
         AddComponent(entity, BoxCollider(width, height));
-        AddComponent(entity, RigidBodyData());
+        AddComponent(entity, RigidBodyData::CreateBoxRigidBody(Fixed16_16(1), Fixed16_16(0, 5), width, height));
         AddComponent(entity, ColliderRenderData(r, g, b));
 
         return entity;
@@ -88,6 +95,8 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
+        UpdateDebug(window);
+
         Fixed16_16 stepTime = deltaTime / Iterations;
 
         for(int i = 0; i < Iterations; ++i)
@@ -121,6 +130,44 @@ public:
         }
     }
 
+    //Debug
+    void SetupDebug(GLFWwindow* window)
+    {
+        glfwSetMouseButtonCallback(window, DebugCallbackMouse);
+    }
+
+    void UpdateDebug(GLFWwindow* window)
+    {
+        if (clicked)
+        {
+            CreateBox(GetMousePosition(window), Fixed16_16(2), Fixed16_16(2), Dynamic, 0.5f, 0.5f, 0.5f);
+            clicked = false;
+        }
+    }
+
+    static void DebugCallbackMouse(GLFWwindow* window, int button, int action, int mods)
+    {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+        {
+            clicked = true;
+        }
+    }
+
+private:
+    Vector2 GetMousePosition(GLFWwindow* window)
+    {
+        double mouseX, mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
+
+        Fixed16_16 normalizedX = Fixed16_16::FromFloat<double>(mouseX) / Fixed16_16::FromFloat<double>(SCREEN_WIDTH);
+        Fixed16_16 normalizedY = Fixed16_16::FromFloat<double>(SCREEN_HEIGHT - mouseY) / Fixed16_16::FromFloat<double>(SCREEN_HEIGHT);
+
+        Fixed16_16 worldX = camera->Left + normalizedX * (camera->Right - camera->Left);
+        Fixed16_16 worldY = camera->Bottom + normalizedY * (camera->Top - camera->Bottom);
+
+        return Vector2 { worldX, worldY };
+    }
+
 private:
     std::shared_ptr<RigidBody> rigidBodySystem;
     std::shared_ptr<MovingSystem> movingSystem;
@@ -129,6 +176,7 @@ private:
     std::shared_ptr<CameraSystem> cameraSystem;
 
     std::default_random_engine random;
+    static inline bool clicked = false;
 
     Camera* camera;
 };

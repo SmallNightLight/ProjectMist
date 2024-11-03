@@ -7,38 +7,41 @@
 struct RigidBodyData
 {
     Vector2 Velocity;
-    Fixed16_16 RotationalVelocity;
+    Fixed16_16 AngularVelocity;
     Vector2 Force;
 
-    Fixed16_16 Density;
     Fixed16_16 InverseMass;
     Fixed16_16 Restitution;
     Fixed16_16 Area;
+    Fixed16_16 InverseInertia;
 
-    RigidBodyData() : Velocity(0, 0), RotationalVelocity(0, 0), Density(1), InverseMass(1), Restitution(0, 5), Area(0), Force(0, 0) { }
+    RigidBodyData() : Velocity(0, 0), AngularVelocity(0, 0), Force(0, 0), InverseMass(1), Restitution(0, 5), Area(0), InverseInertia(1) { }
 
-    constexpr RigidBodyData(const Fixed16_16& density, const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area)
+    constexpr RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area, const Fixed16_16& inertia)
         : Velocity(0, 0),
-          RotationalVelocity(0, 0),
-          Density(density),
+          AngularVelocity(0, 0),
+          Force(0, 0),
           InverseMass(1 / mass),
           Restitution(restitution),
           Area(area),
-          Force(0, 0)
-    { }
-
-    constexpr static RigidBodyData CreateBoxRigidBody(const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16 width, const Fixed16_16 height)
-    {
-        Fixed16_16 area = width * height;
-        assert(area > Fixed16_16(0) && density > Fixed16_16(0) && restitution >= Fixed16_16(0) && restitution <= Fixed16_16(1) && "Invalid properties of rigidBody");
-        return RigidBodyData{density, area * density, restitution, area };
-    }
+          InverseInertia(1 / inertia) { }
 
     constexpr static RigidBodyData CreateCircleRigidBody(const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16 radius)
     {
         Fixed16_16 area = radius * radius * Fixed16_16::pi();
         assert(area > Fixed16_16(0) && density > Fixed16_16(0) && restitution >= Fixed16_16(0) && restitution <= Fixed16_16(1) && "Invalid properties of rigidBody");
-        return RigidBodyData{density, area * density, restitution, area };
+        Fixed16_16 mass = area * density;
+
+        return RigidBodyData{mass, restitution, area, GetRotationalInertiaCircle(mass, radius) };
+    }
+
+    constexpr static RigidBodyData CreateBoxRigidBody(const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16 width, const Fixed16_16 height)
+    {
+        Fixed16_16 area = width * height;
+        assert(area > Fixed16_16(0) && density > Fixed16_16(0) && restitution >= Fixed16_16(0) && restitution <= Fixed16_16(1) && "Invalid properties of rigidBody");
+        Fixed16_16 mass = area * density;
+
+        return RigidBodyData{area * density, restitution, area, GetRotationalInertiaBox(mass, width, height)};
     }
 
     void ApplyForce(const Vector2& direction)
@@ -49,5 +52,16 @@ struct RigidBodyData
     [[nodiscard]] Fixed16_16 GetMass() const
     {
         return 1 / InverseMass;
+    }
+
+
+    static constexpr Fixed16_16 GetRotationalInertiaCircle(const Fixed16_16& mass, const Fixed16_16& radius)
+    {
+        return Fixed16_16(1) / Fixed16_16(2) * mass * radius * radius;
+    }
+
+    static constexpr Fixed16_16 GetRotationalInertiaBox(const Fixed16_16& mass, const Fixed16_16& width, const Fixed16_16& height)
+    {
+        return Fixed16_16(1) / Fixed16_16(12) * mass * (width * width + height * height);
     }
 };

@@ -132,6 +132,8 @@ int main()
     double lastTime = 0.0;
     double lastTitleUpdateTime = 0.0;
 
+    physicsWorld.SetupDebug(window);
+
     while (!glfwWindowShouldClose(window))
     {
         //Calculate delta time

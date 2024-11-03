@@ -14,5 +14,5 @@ constexpr  Vector2 Gravity = Vector2(Fixed16_16(0), Fixed16_16(-9, 81));
 
 
 //Debug
-constexpr bool RenderCollisionPoints = true;
+constexpr bool RenderCollisionPoints = false;
 constexpr bool RenderBoundingBoxes = false;
