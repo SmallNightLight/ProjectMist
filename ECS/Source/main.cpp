@@ -27,7 +27,7 @@ Vector2 GetMousePosition(GLFWwindow* window)
 
 int main()
 {
-    //return TestMath::Test();
+    //return TestMath::Test(); //TODO: Use new fixed math library
 
     //Initialize OpenGL
     if (!glfwInit())
@@ -164,14 +164,14 @@ int main()
         //Render
         glClear(GL_COLOR_BUFFER_BIT);
 
-        Fixed16_16 fixedDelta = Fixed16_16::FromFloat(deltaTime); //Fixed16_16(1) / Fixed16_16(60);
+        Fixed16_16 fixedDelta = Fixed16_16::FromFloat(deltaTime);
         Fixed16_16 setDelta = Fixed16_16(1) / Fixed16_16(3000);
         if (!isPaused)
         {
             movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
             boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
             blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
-            physicsWorld.Update(window, setDelta);
+            physicsWorld.Update(window, fixedDelta);
         }
 
         //Rendering

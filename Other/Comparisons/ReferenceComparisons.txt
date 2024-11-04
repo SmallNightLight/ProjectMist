@@ -1,4 +1,4 @@
-Vector
+Vector Passinf ref vs value
 Results & &:
 Time to add 1.000.000 fixed numbers (with rounding): 0.001639 seconds, Offset: 7.080078125
 Time to add 1.000.000 fixed numbers (no rounding): 0.0014925 seconds, Offset: 8.178710938
@@ -33,3 +33,11 @@ Results &n: Time to add 1.000.000 fixed number vector2s (no rounding - default):
 
 
 Winner: && is faster for vectors (for vec and fixed), only for numbers only is pass by value faster
+
+
+
+
+
+
+
+

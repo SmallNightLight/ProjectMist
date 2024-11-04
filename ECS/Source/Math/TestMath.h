@@ -280,12 +280,29 @@ public:
         Fixed16_16 o;
         for (int i = 0; i < 1000000; ++i)
         {
-            o = Fixed16_16::from_raw_value(fpm::sqrt(u.raw_value()));
+            //o = Fixed16_16::from_raw_value(fpm::sqrt(u.raw_value()));
+            o = fpm::sqrt(u);
         }
 
         end1 = std::chrono::high_resolution_clock::now();
         elapsed_seconds1 = end1 - start1;
         std::cout << std::setprecision(10) << "Time to square root 1.000.000 fpm: " << elapsed_seconds1.count() << " seconds, Result: " << o << std::endl;
+
+
+        //Float sqrt
+        //Fixed lib
+        start1 = std::chrono::high_resolution_clock::now();
+
+        float b = 1000.5498f;
+        float l;
+        for (int i = 0; i < 1000000; ++i)
+        {
+            l = std::sqrt(b);
+        }
+
+        end1 = std::chrono::high_resolution_clock::now();
+        elapsed_seconds1 = end1 - start1;
+        std::cout << std::setprecision(10) << "Time to square root 1.000.000 float: " << elapsed_seconds1.count() << " seconds, Result: " << l << std::endl;
 
 
         return 0;

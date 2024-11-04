@@ -1,0 +1,20 @@
+Fixed vs float speed comparison
+
+Testing number addition speed
+Time to add 1.000.000 fixed numbers (with rounding): 0.001246 seconds, Offset: 7.080078125
+Time to add 1.000.000 fixed numbers (no rounding): 0.0014874 seconds, Offset: 8.178710938
+Time to add 1.000.000 fixed lib: 0.0017569000 seconds, Offset: 8.1787109375000000
+Time to add 1.000.000 floating point numbers: 0.0029775 seconds, Offset: 8.858459473
+
+Testing number multiplication / division speed
+Time to multiply and divide 1.000.000 fixed numbers (with rounding): 0.0146533 seconds, Offset: 0
+Time to multiply and divide 1.000.000 fixed numbers (no rounding): 0.0087988 seconds, Offset: 0.1999969482
+Time to multiply and divide 1.000.000 fixed lib: 0.0062374000 seconds, Offset: 0.1999969482421875
+Time to multiply and divide 1.000.000 floating point numbers: 0.0079967 seconds, Offset: 0
+
+Testing square root
+Time to square root 1.000.000 fixed lib: 0.0028017000 seconds, Result: 31.6314697265625000
+Time to square root 1.000.000 fpm: 0.0193440000 seconds, Result: 31.6314697266
+Time to square root 1.000.000 float: 0.0017060000 seconds, Result: 31.6314678192
+
+Result: FIxed lib is fastest
