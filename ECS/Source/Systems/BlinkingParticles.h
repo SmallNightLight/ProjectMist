@@ -33,7 +33,7 @@ public:
 
         World->DestroyMarkedEntities();
 
-        std::default_random_engine random;
+        std::mt19937 random;
         FixedRandom16_16 randomPositionX(Fixed16_16(0), Fixed16_16(SCREEN_WIDTH));
         FixedRandom16_16 randomPositionY(Fixed16_16(0), Fixed16_16(SCREEN_HEIGHT));
         FixedRandom16_16 randomVelocity(Fixed16_16(-1), Fixed16_16(1));

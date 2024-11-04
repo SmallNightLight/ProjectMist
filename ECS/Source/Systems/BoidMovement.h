@@ -285,7 +285,7 @@ private:
     const Fixed16_16 drag = Fixed16_16::FromFixed(0, 7) / 100;
     const Fixed16_16 noise = Fixed16_16::FromFixed(2, 0);
 
-    std::default_random_engine random;
+    std::mt19937 random;
     PartitionGrid2 partitionGrid = PartitionGrid2();
 
     ComponentCollection<Transform>* transformCollection;
