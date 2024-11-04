@@ -104,7 +104,7 @@ public:
 
             if (boid.Velocity.Magnitude() == 0)
             {
-                //Set velocity to a random direction
+                //Set velocity to a numberGenerator direction
                 boid.Velocity = RandomVector(minSpeed);
             }
             else

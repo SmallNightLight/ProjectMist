@@ -117,15 +117,15 @@ int main()
     {
         EcsWorld.CreateEntity();
 
-        EcsWorld.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
+        EcsWorld.AddComponent(entity, ColliderTransform(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(0), ColliderType::Circle, RigidBodyType::Static));
         EcsWorld.AddComponent(entity, CircleCollider(Fixed16_16(30)));
         //EcsWorld.AddComponent(entity, BoxCollider(Fixed16_16(100), Fixed16_16(100)));
         EcsWorld.AddComponent(entity, ColliderRenderData(0.5, 0.5, 0.5));
 
-        //EcsWorld.AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-        //EcsWorld.AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
-        //EcsWorld.AddComponent(entity, Lifetime {randomLifetime(random)});
-        //EcsWorld.AddComponent(entity, Boid {Vector2{randomVelocity(random), randomVelocity(random)}, Vector2{0, 0} });
+        //EcsWorld.AddComponent(entity, Transform {randomPositionX(numberGenerator), randomPositionY(numberGenerator)});
+        //EcsWorld.AddComponent(entity, Velocity {randomVelocity(numberGenerator), randomVelocity(numberGenerator)});
+        //EcsWorld.AddComponent(entity, Lifetime {randomLifetime(numberGenerator)});
+        //EcsWorld.AddComponent(entity, Boid {Vector2{randomVelocity(numberGenerator), randomVelocity(numberGenerator)}, Vector2{0, 0} });
     }*/
 
     bool isPaused = false;
@@ -165,12 +165,13 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         Fixed16_16 fixedDelta = Fixed16_16::FromFloat(deltaTime); //Fixed16_16(1) / Fixed16_16(60);
+        Fixed16_16 setDelta = Fixed16_16(1) / Fixed16_16(3000);
         if (!isPaused)
         {
             movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
             boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
             blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
-            physicsWorld.Update(window, fixedDelta);
+            physicsWorld.Update(window, setDelta);
         }
 
         //Rendering

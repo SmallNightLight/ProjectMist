@@ -31,6 +31,9 @@ public:
         SetSignature<CircleColliderRenderer>(circleColliderRenderer->GetSignature());
         SetSignature<CameraSystem>(cameraSystem->GetSignature());
 
+        //Set seed for deterministic number generation
+        numberGenerator = std::mt19937(12);
+
         //Add camera
         Entity cameraEntity = CreateEntity();
         camera = AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
@@ -56,7 +59,7 @@ public:
 
         AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Circle, shape));
         AddComponent(entity, CircleCollider(radius));
-        AddComponent(entity, RigidBodyData::CreateCircleRigidBody(radius, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 6), Fixed16_16(0, 4)));
+        AddComponent(entity, RigidBodyData::CreateCircleRigidBody(radius, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 8), Fixed16_16(0, 4)));
         AddComponent(entity, ColliderRenderData(r, g, b));
 
         return entity;
@@ -68,7 +71,7 @@ public:
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
         std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
-        return CreateCircle(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(1), Dynamic, randomColor(random),randomColor(random), randomColor(random));
+        return CreateCircle(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(1), Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
     }
 
     Entity CreateBox(const Vector2& position, const Fixed16_16& width, const Fixed16_16& height, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
@@ -77,7 +80,7 @@ public:
 
         AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Box, shape));
         AddComponent(entity, BoxCollider(width, height));
-        AddComponent(entity, RigidBodyData::CreateBoxRigidBody(width, height, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 6), Fixed16_16(0, 4)));
+        AddComponent(entity, RigidBodyData::CreateBoxRigidBody(width, height, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 8), Fixed16_16(0, 4)));
         AddComponent(entity, ColliderRenderData(r, g, b));
 
         return entity;
@@ -89,7 +92,7 @@ public:
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
         std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
-        return CreateBox(Vector2(randomPositionX(random), randomPositionY(random)), Fixed16_16(2), Fixed16_16(2), Dynamic, randomColor(random),randomColor(random), randomColor(random));
+        return CreateBox(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(2), Fixed16_16(2), Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
     }
 
     //Entity AddConvexObject()
@@ -188,7 +191,7 @@ private:
     std::shared_ptr<CircleColliderRenderer> circleColliderRenderer;
     std::shared_ptr<CameraSystem> cameraSystem;
 
-    std::default_random_engine random;
+    std::mt19937 numberGenerator;
     static inline bool createBox = false;
     static inline bool createCircle = false;
 
