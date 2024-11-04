@@ -8,6 +8,7 @@ public:
             rigidBodyDataCollection = world->GetComponentCollection<RigidBodyData>();
             circleColliderCollection = world->GetComponentCollection<CircleCollider>();
             boxColliderCollection = world->GetComponentCollection<BoxCollider>();
+          polygonColliderCollection = world->GetComponentCollection<PolygonCollider>();
       }
 
       static void CollisionCorrection(ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const CollisionInfo& resultInfo)
@@ -48,9 +49,9 @@ public:
                   {
                         return CircleBoxCollision(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
                   }
-                  if (colliderTransform2.Shape == Convex)
+                  if (colliderTransform2.Shape == Polygon)
                   {
-                  std::cout << "Collision type not defined" << std::endl;
+                        std::cout << "Collision type not defined" << std::endl;
                   }
             }
             else if (colliderTransform1.Shape == Box)
@@ -63,12 +64,12 @@ public:
                   {
                         return BoxBoxCollision(entity1, entity2, colliderTransform1, colliderTransform2, false, resultInfo);
                   }
-                  if (colliderTransform2.Shape == Convex)
+                  if (colliderTransform2.Shape == Polygon)
                   {
                         std::cout << "Collision type not defined" << std::endl;
                   }
             }
-            else if (colliderTransform1.Shape == Convex)
+            else if (colliderTransform1.Shape == Polygon)
             {
                   if (colliderTransform2.Shape == Circle)
                   {
@@ -78,7 +79,7 @@ public:
                   {
                         std::cout << "Collision type not defined" << std::endl;
                   }
-                  else if (colliderTransform2.Shape == Convex)
+                  else if (colliderTransform2.Shape == Polygon)
                   {
                         std::cout << "Collision type not defined" << std::endl;
                   }
@@ -97,7 +98,7 @@ public:
             CircleCollider& circleCollider2 = circleColliderCollection->GetComponent(entity2);
 
             //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABB(circleCollider1).Overlaps(colliderTransform2.GetAABB(circleCollider2)))
+            if (!colliderTransform1.GetAABB(circleCollider1.Radius).Overlaps(colliderTransform2.GetAABB(circleCollider2.Radius)))
             {
                   return false;
             }
@@ -136,15 +137,15 @@ public:
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
             //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABB(boxCollider1).Overlaps(colliderTransform2.GetAABB(boxCollider2)))
+            if (!colliderTransform1.GetAABB(boxCollider1.TransformedVertices, boxCollider1.Vertices).Overlaps(colliderTransform2.GetAABB(boxCollider2.TransformedVertices, boxCollider2.Vertices)))
             {
                   return false;
             }
 
             resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
 
-            std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1);
-            std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2);
+            std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.TransformedVertices, boxCollider1.Vertices);
+            std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2.TransformedVertices, boxCollider2.Vertices);
 
             for(int i = 0; i < vertices1.size(); ++i)
             {
@@ -231,7 +232,7 @@ public:
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
             //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABB(circleCollider1).Overlaps(colliderTransform2.GetAABB(boxCollider2)))
+            if (!colliderTransform1.GetAABB(circleCollider1.Radius).Overlaps(colliderTransform2.GetAABB(boxCollider2.TransformedVertices, boxCollider2.Vertices)))
             {
                   //No collision possible
                   return false;
@@ -239,7 +240,7 @@ public:
 
             resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
 
-            std::vector<Vector2> vertices = colliderTransform2.GetTransformedVertices(boxCollider2);
+            std::vector<Vector2> vertices = colliderTransform2.GetTransformedVertices(boxCollider2.TransformedVertices, boxCollider2.Vertices);
 
             for(int i = 0; i < vertices.size(); ++i)
             {
@@ -321,6 +322,101 @@ public:
             return true;
       }
 
+    bool PolygonPolygonCollision(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, bool swap, CollisionInfo& resultInfo) const
+    {
+        assert(polygonColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Polygon) attached");
+        assert(polygonColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Polygon) attached");
+
+        //Get the components
+        PolygonCollider& polygonCollider1 = polygonColliderCollection->GetComponent(entity1);
+        PolygonCollider& polygonCollider2 = polygonColliderCollection->GetComponent(entity2);
+
+        //First perform an AABB check, to test if the objects are even able to collide
+        if (!colliderTransform1.GetAABB(polygonCollider1.TransformedVertices, polygonCollider1.Vertices).Overlaps(colliderTransform2.GetAABB(polygonCollider2.TransformedVertices, polygonCollider2.Vertices)))
+        {
+            return false;
+        }
+
+        resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
+
+        std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(polygonCollider1.TransformedVertices, polygonCollider1.Vertices);
+        std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(polygonCollider2.TransformedVertices, polygonCollider2.Vertices);
+
+        for(int i = 0; i < vertices1.size(); ++i)
+        {
+            Vector2 v1 = vertices1[i];
+            Vector2 v2 = vertices1[(i + 1) % vertices1.size()];
+
+            Vector2 edge = v2 - v1;
+            Vector2 axis = edge.Perpendicular().Normalize();
+
+            Fixed16_16 min1, max1, min2, max2;
+            ProjectVertices(vertices1, axis, min1, max1);
+            ProjectVertices(vertices2, axis, min2, max2);
+
+            if (min1 >= max2 || min2 >= max1)
+            {
+                //Separation detected - No collision
+                return false;
+            }
+
+            Fixed16_16 axisDepth = fpm::min(max2 - min1, max1 - min2);
+            if (axisDepth < resultInfo.Depth)
+            {
+                resultInfo.Depth = axisDepth;
+                resultInfo.Normal = axis;
+            }
+        }
+
+        for(int i = 0; i < vertices2.size(); ++i)
+        {
+            Vector2 v1 = vertices2[i];
+            Vector2 v2 = vertices2[(i + 1) % vertices2.size()];
+
+            Vector2 edge = v2 - v1;
+            Vector2 axis = edge.Perpendicular().Normalize();
+
+            Fixed16_16 min1, max1, min2, max2;
+            ProjectVertices(vertices1, axis, min1, max1);
+            ProjectVertices(vertices2, axis, min2, max2);
+
+            if (min1 >= max2 || min2 >= max1)
+            {
+                //Separation detected - No collision
+                return false;
+            }
+
+            Fixed16_16 axisDepth = fpm::min(max2 - min1, max1 - min2);
+            if (axisDepth < resultInfo.Depth)
+            {
+                resultInfo.Depth = axisDepth;
+                resultInfo.Normal = axis;
+            }
+        }
+
+        //Detected a collision
+
+        Vector2 center1 = GetCenter(vertices1);
+        Vector2 center2 = GetCenter(vertices2);
+        Vector2 direction = center2 - center1;
+
+        if (direction.Dot(resultInfo.Normal) < 0)
+        {
+            resultInfo.Normal = -resultInfo.Normal;
+        }
+
+        resultInfo.Normal *= swap ? -1 : 1;
+        resultInfo.Entity1 = entity1;
+        resultInfo.Entity2 = entity2;
+        resultInfo.IsDynamic1 = colliderTransform1.IsDynamic;
+        resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
+
+        CollisionCorrection(colliderTransform1, colliderTransform2, resultInfo);
+        GetContact(colliderTransform1, colliderTransform2, polygonCollider1, polygonCollider2, resultInfo);
+
+        return true;
+    }
+
       //Contact point functions
 
       static void GetContact(const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, const CircleCollider& circleCollider1, CollisionInfo& collisionInfo)
@@ -332,7 +428,7 @@ public:
 
       static void GetContact(const ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const CircleCollider& circleCollider1, BoxCollider& boxCollider2, CollisionInfo& collisionInfo)
       {
-            std::vector<Vector2> vertices = colliderTransform2.GetTransformedVertices(boxCollider2);
+            std::vector<Vector2> vertices = colliderTransform2.GetTransformedVertices(boxCollider2.TransformedVertices, boxCollider2.Vertices);
 
             long minDistanceSquared = std::numeric_limits<long>::max();
 
@@ -356,8 +452,8 @@ public:
 
       static void GetContact(ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, BoxCollider& boxCollider1, BoxCollider& boxCollider2, CollisionInfo& collisionInfo)
       {
-            std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1);
-            std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2);
+            std::vector<Vector2> vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.TransformedVertices, boxCollider1.Vertices);
+            std::vector<Vector2> vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2.TransformedVertices, boxCollider2.Vertices);
 
             long minDistanceSquared = std::numeric_limits<long>::max();
 
@@ -525,6 +621,7 @@ private:
       ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
       ComponentCollection<CircleCollider>* circleColliderCollection;
       ComponentCollection<BoxCollider>* boxColliderCollection;
+      ComponentCollection<PolygonCollider>* polygonColliderCollection;
 
       static constexpr Fixed16_16 SmallNumber = Fixed16_16::from_raw_value(16);
 };

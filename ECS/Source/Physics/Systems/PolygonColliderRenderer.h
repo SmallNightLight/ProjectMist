@@ -1,20 +1,20 @@
 #pragma once
 
-class BoxColliderRenderer : public System
+class PolygonColliderRenderer : public System
 {
 public:
-    explicit BoxColliderRenderer(ECSWorld* world) : System(world)
+    explicit PolygonColliderRenderer(ECSWorld* world) : System(world)
     {
-        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
-        boxColliderCollection = World->GetComponentCollection<BoxCollider>();
-        colliderRenderDataCollection = World->GetComponentCollection<ColliderRenderData>();
+            colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
+            polygonColliderCollection = World->GetComponentCollection<PolygonCollider>();
+            colliderRenderDataCollection = World->GetComponentCollection<ColliderRenderData>();
     }
 
     [[nodiscard]] Signature GetSignature() const
     {
         Signature signature;
         signature.set(World->GetComponentType<ColliderTransform>());
-        signature.set(World->GetComponentType<BoxCollider>());
+        signature.set(World->GetComponentType<PolygonCollider>());
         signature.set(World->GetComponentType<ColliderRenderData>());
         return signature;
     }
@@ -24,13 +24,13 @@ public:
         for (const Entity& entity : Entities)
         {
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
-            BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
+            PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
             //Draw filled rectangle
             glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
 
-            std::vector<Vector2> vertices = transform.GetTransformedVertices(boxCollider.TransformedVertices, boxCollider.Vertices);
+            std::vector<Vector2> vertices = transform.GetTransformedVertices(polygonCollider.TransformedVertices, polygonCollider.Vertices);
 
             glBegin(GL_QUADS);
             for (const auto& vertex : vertices)
@@ -56,13 +56,13 @@ public:
         for (const Entity& entity : Entities)
         {
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
-            BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
+            PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
 
             glColor3f(0.5f, 0.5f, 0.5f);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = transform.GetAABB(boxCollider.TransformedVertices, boxCollider.Vertices);
+            AABB boundingBox = transform.GetAABB(polygonCollider.TransformedVertices, polygonCollider.Vertices);
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
@@ -74,6 +74,6 @@ public:
 
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
-    ComponentCollection<BoxCollider>* boxColliderCollection;
+    ComponentCollection<PolygonCollider>* polygonColliderCollection;
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 };

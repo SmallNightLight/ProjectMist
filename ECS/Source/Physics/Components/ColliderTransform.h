@@ -9,7 +9,7 @@ enum ColliderType
 {
     Circle,
     Box,
-    Convex
+    Polygon
 };
 
 enum RigidBodyType
@@ -65,33 +65,33 @@ struct ColliderTransform
         AABBUpdateRequired = true;
     }
 
-    std::vector<Vector2> GetTransformedVertices(BoxCollider& boxCollider)
+    const std::vector<Vector2>& GetTransformedVertices(std::vector<Vector2>& transformedVertices, std::vector<Vector2>& vertices)
     {
         if (TransformUpdateRequired)
         {
-            for (int i = 0; i < boxCollider.TransformedVertices.size(); ++i)
+            for (int i = 0; i < transformedVertices.size(); ++i)
             {
-                boxCollider.TransformedVertices[i] = Transform(boxCollider.Vertices[i]);
+                transformedVertices[i] = Transform(vertices[i]);
             }
 
             TransformUpdateRequired = false;
         }
 
-        return boxCollider.TransformedVertices;
+        return transformedVertices;
     }
 
-    AABB GetAABB(const CircleCollider& circleCollider)
+    const AABB& GetAABB(const Fixed16_16& radius)
     {
         if (AABBUpdateRequired)
         {
-            BoundingBox = AABB{Vector2(Position.X - circleCollider.Radius, Position.Y - circleCollider.Radius), Vector2(Position.X + circleCollider.Radius, Position.Y + circleCollider.Radius)};
+            BoundingBox = AABB{Vector2(Position.X - radius, Position.Y - radius), Vector2(Position.X + radius, Position.Y + radius)};
             AABBUpdateRequired = false;
         }
 
         return BoundingBox;
     }
 
-    AABB GetAABB(BoxCollider& boxCollider)
+    const AABB& GetAABB(std::vector<Vector2>& transformedVertices, std::vector<Vector2>& vertices)
     {
         if (AABBUpdateRequired)
         {
@@ -100,7 +100,7 @@ struct ColliderTransform
             Fixed16_16 maxX = std::numeric_limits<Fixed16_16>::min();;
             Fixed16_16 maxY = std::numeric_limits<Fixed16_16>::min();;
 
-            for(Vector2 vertex : GetTransformedVertices(boxCollider))
+            for(Vector2 vertex : GetTransformedVertices(transformedVertices, vertices))
             {
                 if (vertex.X < minX) { minX = vertex.X; }
                 if (vertex.X > maxX) { maxX = vertex.X; }

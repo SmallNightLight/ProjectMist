@@ -48,6 +48,15 @@ struct RigidBodyData
         return RigidBodyData {area * density, restitution, area, GetRotationalInertiaBox(mass, width, height), staticFriction, dynamicFriction};
     }
 
+    static RigidBodyData CreatePolygonRigidBody(const std::vector<Vector2>& vertices, const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
+    {
+        Fixed16_16 area = GetPolygonArea(vertices);
+        assert(area > Fixed16_16(0) && density > Fixed16_16(0) && restitution >= Fixed16_16(0) && restitution <= Fixed16_16(1) && "Invalid properties of rigidBody");
+        Fixed16_16 mass = area * density;
+
+        return RigidBodyData {area * density, restitution, area, GetRotationalInertiaPolygon(mass, vertices), staticFriction, dynamicFriction};
+    }
+
     void ApplyForce(const Vector2& direction)
     {
         Force += direction;
@@ -58,6 +67,25 @@ struct RigidBodyData
         return 1 / InverseMass;
     }
 
+    static Fixed16_16 GetPolygonArea(const std::vector<Vector2>& vertices) //TODO: Make it constexpr
+    {
+        if (vertices.size() < 3)
+        {
+            //Area is zero for invalid polygons
+            return Fixed16_16(0);
+        }
+
+        Fixed16_16 area(0);
+        for (size_t i = 0; i < vertices.size(); ++i)
+        {
+            const Vector2& current = vertices[i];
+            const Vector2& next = vertices[(i + 1) % vertices.size()];
+
+            area += (current.X * next.Y) - (current.Y * next.X);
+        }
+
+        return abs(area) / Fixed16_16(2);;
+    }
 
     static constexpr Fixed16_16 GetRotationalInertiaCircle(const Fixed16_16& mass, const Fixed16_16& radius)
     {
@@ -67,5 +95,53 @@ struct RigidBodyData
     static constexpr Fixed16_16 GetRotationalInertiaBox(const Fixed16_16& mass, const Fixed16_16& width, const Fixed16_16& height)
     {
         return Fixed16_16(1) / Fixed16_16(12) * mass * (width * width + height * height);
+    }
+
+    static Fixed16_16 GetRotationalInertiaPolygon(const Fixed16_16& mass, const std::vector<Vector2>& vertices) //TODO: STRAIGHT FROM CHATGPT, NOT GUARANTEED TO WORK
+    {
+        if (vertices.size() < 3)
+        {
+            return Fixed16_16(0);
+        }
+
+        //Step 1: Calculate the centroid of the polygon
+        Fixed16_16 centroidX(0);
+        Fixed16_16 centroidY(0);
+        Fixed16_16 area = Fixed16_16(0);
+
+        for (size_t i = 0; i < vertices.size(); ++i)
+        {
+            const Vector2& current = vertices[i];
+            const Vector2& next = vertices[(i + 1) % vertices.size()];
+
+            Fixed16_16 crossProduct = (current.X * next.Y - current.Y * next.X);
+            centroidX += (current.X + next.X) * crossProduct;
+            centroidY += (current.Y + next.Y) * crossProduct;
+            area += crossProduct;
+        }
+
+        area /= Fixed16_16(2);
+        Fixed16_16 inverseArea6 = Fixed16_16(1) / (Fixed16_16(6) * area);
+        centroidX *= inverseArea6;
+        centroidY *= inverseArea6;
+
+        //Step 2: Calculate the moment of inertia about the centroid
+        Fixed16_16 inertia = Fixed16_16(0);
+
+        for (size_t i = 0; i < vertices.size(); ++i)
+        {
+            const Vector2& current = vertices[i];
+            const Vector2& next = vertices[(i + 1) % vertices.size()];
+
+            Fixed16_16 crossProduct = (current.X * next.Y - current.Y * next.X);
+
+            Fixed16_16 xSquaredSum = (current.X * current.X + current.X * next.X + next.X * next.X);
+            Fixed16_16 ySquaredSum = (current.Y * current.Y + current.Y * next.Y + next.Y * next.Y);
+
+            inertia += crossProduct * (xSquaredSum + ySquaredSum);
+        }
+
+        inertia = abs(inertia) / (Fixed16_16(12) * area);
+        return mass * inertia;
     }
 };

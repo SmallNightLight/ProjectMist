@@ -9,6 +9,7 @@ public:
         rigidBodyDataCollection = World->GetComponentCollection<RigidBodyData>();
         circleColliderCollection = World->GetComponentCollection<CircleCollider>();
         boxColliderCollection = World->GetComponentCollection<BoxCollider>();
+        polygonColliderCollection = world->GetComponentCollection<PolygonCollider>();
     }
 
     [[nodiscard]] Signature GetSignature() const
@@ -249,6 +250,7 @@ private:
     ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;
+    ComponentCollection<PolygonCollider>* polygonColliderCollection;
 
 public:
     std::vector<CollisionInfo> collisionsRE; //TODO: remove

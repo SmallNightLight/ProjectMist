@@ -100,7 +100,7 @@ int main()
 
     //Add physics objects
     //Add circles
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 15; ++i)
     {
         physicsWorld.CreateRandomCircle();
     }
@@ -108,9 +108,14 @@ int main()
     physicsWorld.AddComponent(10, Movable(Fixed16_16(20)));
 
     //Add boxes
-    for (int i = 0; i < 20; ++i)
+    for (int i = 0; i < 15; ++i)
     {
         physicsWorld.CreateRandomBox();
+    }
+
+    for (int i = 0; i < 15; ++i)
+    {
+        physicsWorld.CreateRandomPolygon();
     }
 
     /*for (Entity entity = 0; entity < 20; ++entity)

@@ -64,6 +64,8 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/CollisionInfo.h
         Source/Physics/PhysicsWorld.h
         Source/Math/AABB.h
+        Source/Physics/Components/PolygonCollider.h
+        Source/Physics/Systems/PolygonColliderRenderer.h
 
 )
 

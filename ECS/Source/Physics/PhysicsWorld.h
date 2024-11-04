@@ -13,22 +13,25 @@ public:
         RegisterComponent<RigidBodyData>();
         RegisterComponent<Movable>();
         RegisterComponent<ColliderRenderData>();
-        RegisterComponent<BoxCollider>();
         RegisterComponent<CircleCollider>();
+        RegisterComponent<BoxCollider>();
+        RegisterComponent<PolygonCollider>();
         RegisterComponent<Camera>();
 
         //Register systems
         rigidBodySystem = RegisterSystem<RigidBody>();
         movingSystem = RegisterSystem<MovingSystem>();
-        boxColliderRenderer = RegisterSystem<BoxColliderRenderer>();
         circleColliderRenderer = RegisterSystem<CircleColliderRenderer>();
+        boxColliderRenderer = RegisterSystem<BoxColliderRenderer>();
+        polygonColliderRenderer = RegisterSystem<PolygonColliderRenderer>();
         cameraSystem = RegisterSystem<CameraSystem>();
 
         //Set signatures
         SetSignature<RigidBody>(rigidBodySystem->GetSignature());
         SetSignature<MovingSystem>(movingSystem->GetSignature());
-        SetSignature<BoxColliderRenderer>(boxColliderRenderer->GetSignature());
         SetSignature<CircleColliderRenderer>(circleColliderRenderer->GetSignature());
+        SetSignature<BoxColliderRenderer>(boxColliderRenderer->GetSignature());
+        SetSignature<PolygonColliderRenderer>(polygonColliderRenderer->GetSignature());
         SetSignature<CameraSystem>(cameraSystem->GetSignature());
 
         //Set seed for deterministic number generation
@@ -86,13 +89,62 @@ public:
         return entity;
     }
 
-    Entity CreateRandomBox()
+    Entity CreateRandomBox() //TODO: Make all of these constexpr
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
         std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
         return CreateBox(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(2), Fixed16_16(2), Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
+    }
+
+    Entity CreatePolygon(const Vector2& position, const std::vector<Vector2>& vertices, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
+    {
+        Entity entity = CreateEntity();
+
+        AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Polygon, shape));
+        AddComponent(entity, PolygonCollider(vertices));
+        AddComponent(entity, RigidBodyData::CreatePolygonRigidBody(vertices, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 8), Fixed16_16(0, 4)));
+        AddComponent(entity, ColliderRenderData(r, g, b));
+
+        return entity;
+    }
+
+    Entity CreateRandomPolygon()
+    {
+        FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
+        FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
+        std::uniform_real_distribution<float> randomColor(0.0, 1.0);
+
+        // Generate a random center point for the polygon
+        Vector2 center(randomPositionX(numberGenerator), randomPositionY(numberGenerator));
+
+        // Create random vertices with random angles and distances from the center
+        std::vector<std::pair<Fixed16_16, Vector2>> verticesWithAngles;
+        FixedRandom16_16 randomAngle(Fixed16_16(0), Fixed16_16(2) * Fixed16_16::pi());
+        FixedRandom16_16 randomRadius(Fixed16_16 (1), Fixed16_16 (5)); // Choose an appropriate range for radius
+
+        for (int i = 0; i < 6; ++i)
+        {
+            Fixed16_16 angle = randomAngle(numberGenerator);
+            Fixed16_16 radius = randomRadius(numberGenerator);
+
+            Vector2 vertex(center.X + radius * cos(angle),center.Y + radius * sin(angle));
+            verticesWithAngles.emplace_back(angle, vertex);
+        }
+
+        // Sort vertices by angle to ensure convexity
+        std::sort(verticesWithAngles.begin(), verticesWithAngles.end(),
+                  [](const auto& a, const auto& b) { return a.first < b.first; });
+
+        // Extract only the vertex positions
+        std::vector<Vector2> randomVertices;
+        for (const auto& pair : verticesWithAngles)
+        {
+            randomVertices.push_back(pair.second);
+        }
+
+        return CreatePolygon(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), randomVertices, Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
     }
 
     //Entity AddConvexObject()
@@ -121,8 +173,10 @@ public:
     void Render()
     {
         cameraSystem->Apply();
-        boxColliderRenderer->Render();
+
         circleColliderRenderer->Render();
+        boxColliderRenderer->Render();
+        polygonColliderRenderer->Render();
 
         //Debug
         if (RenderCollisionPoints)
@@ -187,8 +241,9 @@ private:
 private:
     std::shared_ptr<RigidBody> rigidBodySystem;
     std::shared_ptr<MovingSystem> movingSystem;
-    std::shared_ptr<BoxColliderRenderer> boxColliderRenderer;
     std::shared_ptr<CircleColliderRenderer> circleColliderRenderer;
+    std::shared_ptr<BoxColliderRenderer> boxColliderRenderer;
+    std::shared_ptr<PolygonColliderRenderer> polygonColliderRenderer;
     std::shared_ptr<CameraSystem> cameraSystem;
 
     std::mt19937 numberGenerator;

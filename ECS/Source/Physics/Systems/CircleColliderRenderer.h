@@ -107,8 +107,6 @@ public:
                     glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() - size);
                     glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() + size);
                     glEnd();
-
-
                 }
             }
         }
@@ -125,7 +123,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = transform.GetAABB(circleCollider);
+            AABB boundingBox = transform.GetAABB(circleCollider.Radius);
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
