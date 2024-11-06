@@ -27,19 +27,19 @@ public:
             PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
-            //Draw filled rectangle
-            glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
-
+            // Get transformed vertices
             std::vector<Vector2> vertices = transform.GetTransformedVertices(polygonCollider.TransformedVertices, polygonCollider.Vertices);
 
-            glBegin(GL_QUADS);
+            // Draw filled polygon
+            glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
+            glBegin(GL_POLYGON);
             for (const auto& vertex : vertices)
             {
                 glVertex2f(vertex.X.ToFloating<float>(), vertex.Y.ToFloating<float>());
             }
             glEnd();
 
-            //Draw white outline
+            // Draw white outline
             glColor3f(1.0f, 1.0f, 1.0f);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);

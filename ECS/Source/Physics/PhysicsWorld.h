@@ -49,10 +49,10 @@ public:
         CreateBox(Vector2(camera->Right, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
 
         //Create rotated objects
-        Entity e1 = CreateBox(Vector2(100, 0), Fixed16_16(30), Fixed16_16(1), Static);
+        Entity e1 = CreateBox(Vector2(10, 0), Fixed16_16(25), Fixed16_16(1), Static);
         GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
 
-        Entity e2 = CreateBox(Vector2(-95, -10), Fixed16_16(30), Fixed16_16(1), Static);
+        Entity e2 = CreateBox(Vector2(-10, -10), Fixed16_16(25), Fixed16_16(1), Static);
         GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
     }
 
@@ -112,6 +112,8 @@ public:
 
     Entity CreateRandomPolygon()
     {
+        int numSides = 5;
+
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
         std::uniform_real_distribution<float> randomColor(0.0, 1.0);
@@ -119,38 +121,25 @@ public:
         // Generate a random center point for the polygon
         Vector2 center(randomPositionX(numberGenerator), randomPositionY(numberGenerator));
 
-        // Create random vertices with random angles and distances from the center
-        std::vector<std::pair<Fixed16_16, Vector2>> verticesWithAngles;
-        FixedRandom16_16 randomAngle(Fixed16_16(0), Fixed16_16(2) * Fixed16_16::pi());
-        FixedRandom16_16 randomRadius(Fixed16_16 (1), Fixed16_16 (5)); // Choose an appropriate range for radius
+        // Random radius for the polygon
+        FixedRandom16_16 randomRadius(Fixed16_16(1), Fixed16_16(5)); // Choose an appropriate range for radius
+        Fixed16_16 radius = randomRadius(numberGenerator);
 
-        for (int i = 0; i < 6; ++i)
+        // Generate the vertices by evenly spacing them around the circle
+        std::vector<Vector2> vertices;
+        Fixed16_16 angleIncrement = Fixed16_16(2) * Fixed16_16::pi() / Fixed16_16(numSides);
+
+        for (int i = 0; i < numSides; ++i)
         {
-            Fixed16_16 angle = randomAngle(numberGenerator);
-            Fixed16_16 radius = randomRadius(numberGenerator);
-
-            Vector2 vertex(center.X + radius * cos(angle),center.Y + radius * sin(angle));
-            verticesWithAngles.emplace_back(angle, vertex);
+            Fixed16_16 angle = angleIncrement * Fixed16_16(i);
+            Vector2 vertex(center.X + radius * cos(angle), center.Y + radius * sin(angle));
+            vertices.push_back(vertex);
         }
 
-        // Sort vertices by angle to ensure convexity
-        std::sort(verticesWithAngles.begin(), verticesWithAngles.end(),
-                  [](const auto& a, const auto& b) { return a.first < b.first; });
-
-        // Extract only the vertex positions
-        std::vector<Vector2> randomVertices;
-        for (const auto& pair : verticesWithAngles)
-        {
-            randomVertices.push_back(pair.second);
-        }
-
-        return CreatePolygon(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), randomVertices, Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
+        // Return the polygon with the generated vertices
+        return CreatePolygon(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), vertices, Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
     }
 
-    //Entity AddConvexObject()
-    //{
-    //
-    //}
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
@@ -165,7 +154,7 @@ public:
             rigidBodySystem->ApplyVelocity(stepTime);
             rigidBodySystem->DetectCollisions();
 
-            rigidBodySystem->WrapEntities(*camera);
+            //rigidBodySystem->WrapEntities(*camera);
 
         }
     }

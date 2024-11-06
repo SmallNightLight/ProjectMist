@@ -115,6 +115,30 @@ struct ColliderTransform
         return BoundingBox;
     }
 
+    const AABB& GetAABBFromTransformed(const std::vector<Vector2>& transformedVertices)
+    {
+        if (AABBUpdateRequired)
+        {
+            Fixed16_16 minX = std::numeric_limits<Fixed16_16>::max();
+            Fixed16_16 minY = std::numeric_limits<Fixed16_16>::max();;
+            Fixed16_16 maxX = std::numeric_limits<Fixed16_16>::min();;
+            Fixed16_16 maxY = std::numeric_limits<Fixed16_16>::min();;
+
+            for(Vector2 vertex : transformedVertices)
+            {
+                if (vertex.X < minX) { minX = vertex.X; }
+                if (vertex.X > maxX) { maxX = vertex.X; }
+                if (vertex.Y < minY) { minY = vertex.Y; }
+                if (vertex.Y > maxY) { maxY = vertex.Y; }
+            }
+
+            BoundingBox = AABB{Vector2(minX, minY), Vector2(maxX, maxY)};
+            AABBUpdateRequired = false;
+        }
+
+        return BoundingBox;
+    }
+
     [[nodiscard]] Vector2 Transform (Vector2 vector) const
     {
         Fixed16_16 sin = fpm::sin(Rotation);

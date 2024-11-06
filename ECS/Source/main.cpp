@@ -170,7 +170,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         Fixed16_16 fixedDelta = Fixed16_16::FromFloat(deltaTime);
-        Fixed16_16 setDelta = Fixed16_16(1) / Fixed16_16(3000);
+        Fixed16_16 setDelta = Fixed16_16(1) / Fixed16_16(60);
         if (!isPaused)
         {
             movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
