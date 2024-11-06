@@ -27,10 +27,10 @@ public:
             PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
-            // Get transformed vertices
+            //Get transformed vertices
             std::vector<Vector2> vertices = transform.GetTransformedVertices(polygonCollider.TransformedVertices, polygonCollider.Vertices);
 
-            // Draw filled polygon
+            //Draw filled polygon
             glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
             glBegin(GL_POLYGON);
             for (const auto& vertex : vertices)
@@ -39,7 +39,7 @@ public:
             }
             glEnd();
 
-            // Draw white outline
+            //Draw white outline
             glColor3f(1.0f, 1.0f, 1.0f);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
@@ -48,10 +48,17 @@ public:
                 glVertex2f(vertex.X.ToFloating<float>(), vertex.Y.ToFloating<float>());
             }
             glEnd();
+
+            //Draw point at the position (center)
+            glBegin(GL_POINTS);
+            glPointSize(10);
+            glColor3f(1.0f, 1.0f, 1.0f);
+            glVertex2f(transform.Position.X.ToFloating<float>(), transform.Position.Y.ToFloating<float>());
+            glEnd();
         }
     }
 
-    void RenderAABB()
+    void RenderAABB() const
     {
         for (const Entity& entity : Entities)
         {

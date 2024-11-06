@@ -56,6 +56,45 @@ public:
         GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
     }
 
+    void Update(GLFWwindow* window, Fixed16_16 deltaTime)
+    {
+        UpdateDebug(window);
+
+        Fixed16_16 stepTime = deltaTime / Iterations;
+
+        for(int i = 0; i < Iterations; ++i)
+        {
+            movingSystem->Update(window, stepTime);
+
+            rigidBodySystem->ApplyVelocity(stepTime);
+            rigidBodySystem->DetectCollisions();
+
+            //rigidBodySystem->WrapEntities(*camera);
+        }
+    }
+
+    void Render() const
+    {
+        cameraSystem->Apply();
+
+        circleColliderRenderer->Render();
+        boxColliderRenderer->Render();
+        polygonColliderRenderer->Render();
+
+        //Debug
+        if (RenderDebugInfo)
+        {
+            RenderDebugInfo(rigidBodySystem->collisionsRE);
+        }
+
+        if (RenderBoundingBoxes)
+        {
+            circleColliderRenderer->RenderAABB();
+            boxColliderRenderer->RenderAABB();
+            polygonColliderRenderer->RenderAABB();
+        }
+    }
+
     Entity CreateCircle(const Vector2& position, const Fixed16_16& radius, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
     {
         Entity entity = CreateEntity();
@@ -72,9 +111,8 @@ public:
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
-        std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
-        return CreateCircle(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(1), Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
+        return CreateCircle(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(1), Dynamic, GetRandomColor(), GetRandomColor(), GetRandomColor());
     }
 
     Entity CreateBox(const Vector2& position, const Fixed16_16& width, const Fixed16_16& height, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
@@ -93,9 +131,8 @@ public:
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
-        std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
-        return CreateBox(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(2), Fixed16_16(2), Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
+        return CreateBox(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(), GetRandomColor(), GetRandomColor());
     }
 
     Entity CreatePolygon(const Vector2& position, const std::vector<Vector2>& vertices, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
@@ -112,72 +149,33 @@ public:
 
     Entity CreateRandomPolygon()
     {
-        int numSides = 5;
-
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
-        std::uniform_real_distribution<float> randomColor(0.0, 1.0);
 
-        // Generate a random center point for the polygon
-        Vector2 center(randomPositionX(numberGenerator), randomPositionY(numberGenerator));
+        return CreatePolygon(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), GetRandomVertices(), Dynamic, GetRandomColor(), GetRandomColor(), GetRandomColor());
+    }
 
-        // Random radius for the polygon
-        FixedRandom16_16 randomRadius(Fixed16_16(1), Fixed16_16(5)); // Choose an appropriate range for radius
+    //returns the vertices of a random convex shape
+    std::vector<Vector2> GetRandomVertices()
+    {
+        FixedRandom16_16 randomRadius(Fixed16_16(1), Fixed16_16(5));
         Fixed16_16 radius = randomRadius(numberGenerator);
 
-        // Generate the vertices by evenly spacing them around the circle
+        std::uniform_int_distribution randomSide(3, 6);
+        int numSides = randomSide(numberGenerator);
+
+        //Generate vertices around the origin
         std::vector<Vector2> vertices;
         Fixed16_16 angleIncrement = Fixed16_16(2) * Fixed16_16::pi() / Fixed16_16(numSides);
 
         for (int i = 0; i < numSides; ++i)
         {
             Fixed16_16 angle = angleIncrement * Fixed16_16(i);
-            Vector2 vertex(center.X + radius * cos(angle), center.Y + radius * sin(angle));
+            Vector2 vertex(radius * cos(angle), radius * sin(angle));
             vertices.push_back(vertex);
         }
 
-        // Return the polygon with the generated vertices
-        return CreatePolygon(Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), vertices, Dynamic, randomColor(numberGenerator), randomColor(numberGenerator), randomColor(numberGenerator));
-    }
-
-
-    void Update(GLFWwindow* window, Fixed16_16 deltaTime)
-    {
-        UpdateDebug(window);
-
-        Fixed16_16 stepTime = deltaTime / Iterations;
-
-        for(int i = 0; i < Iterations; ++i)
-        {
-            movingSystem->Update(window, stepTime);
-
-            rigidBodySystem->ApplyVelocity(stepTime);
-            rigidBodySystem->DetectCollisions();
-
-            //rigidBodySystem->WrapEntities(*camera);
-
-        }
-    }
-
-    void Render()
-    {
-        cameraSystem->Apply();
-
-        circleColliderRenderer->Render();
-        boxColliderRenderer->Render();
-        polygonColliderRenderer->Render();
-
-        //Debug
-        if (RenderCollisionPoints)
-        {
-            CircleColliderRenderer::RenderContactPoints(rigidBodySystem->collisionsRE);
-        }
-
-        if (RenderBoundingBoxes)
-        {
-            circleColliderRenderer->RenderAABB();
-            boxColliderRenderer->RenderAABB();
-        }
+        return vertices;
     }
 
     //Debug
@@ -188,15 +186,20 @@ public:
 
     void UpdateDebug(GLFWwindow* window)
     {
-        if (createBox)
-        {
-            CreateBox(GetMousePosition(window), Fixed16_16(2), Fixed16_16(2), Dynamic, 0.5f, 0.5f, 0.5f);
-            createBox = false;
-        }
         if (createCircle)
         {
-            CreateCircle(GetMousePosition(window), Fixed16_16(1), Dynamic, 0.5f, 0.5f, 0.5f);
+            CreateCircle(GetMousePosition(window), Fixed16_16(1), Dynamic, GetRandomColor(), GetRandomColor(), GetRandomColor());
             createCircle = false;
+        }
+        if (createBox)
+        {
+            CreateBox(GetMousePosition(window), Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(), GetRandomColor(), GetRandomColor());
+            createBox = false;
+        }
+        if (createPolygon)
+        {
+            CreatePolygon(GetMousePosition(window), GetRandomVertices(), Dynamic, GetRandomColor(), GetRandomColor(), GetRandomColor());
+            createPolygon = false;
         }
     }
 
@@ -210,10 +213,85 @@ public:
         {
             createCircle = true;
         }
+        if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS)
+        {
+            createPolygon = true;
+        }
+    }
+
+    static void RenderDebugInfo(std::vector<CollisionInfo>& collisions)
+    {
+        for (CollisionInfo collision : collisions)
+        {
+            //Render normal of collision
+            float normalLength = 1 + collision.Depth.ToFloating<float>();
+            glLineWidth(2.0f);
+            glColor3f(1.0f, 0.0f, 0.0f);
+            glBegin(GL_LINES);
+            glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
+            glVertex2f(collision.Contact1.X.ToFloating<float>() + collision.Normal.X.ToFloating<float>() * normalLength, collision.Contact1.Y.ToFloating<float>() + collision.Normal.Y.ToFloating<float>() * normalLength);
+            glEnd();
+
+            //Render contact points
+            float size = 0.4f;
+            if (collision.ContactCount > 0)
+            {
+                glLineWidth(2.0f);
+                glColor3f(0.5f, 0.5f, 0.5f);
+                glBegin(GL_LINES);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() + size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() + size);
+                glEnd();
+            }
+            if (collision.ContactCount > 1)
+            {
+                glLineWidth(2.0f);
+                glBegin(GL_LINES);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() + size);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() + size);
+                glEnd();
+            }
+
+            if (collision.ContactCount > 0)
+            {
+                if (collision.IsDynamic1)
+                {
+                    glColor3f(0.0f, 1.0f, 0.0f);
+                }
+                else
+                {
+                    glColor3f(0.0f, 0.0f, 1.0f);
+                }
+
+                glBegin(GL_POINTS);
+                glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
+                glEnd();
+
+                if (collision.IsDynamic2)
+                {
+                    glColor3f(0.0f, 1.0f, 0.0f);
+                }
+                else
+                {
+                    glColor3f(0.0f, 0.0f, 1.0f);
+                }
+
+                if (collision.ContactCount > 1)
+                {
+                    glBegin(GL_POINTS);
+                    glVertex2f(collision.Contact2.X.ToFloating<float>(), collision.Contact2.Y.ToFloating<float>());
+                    glEnd();
+                }
+            }
+        }
     }
 
 private:
-    Vector2 GetMousePosition(GLFWwindow* window)
+    Vector2 GetMousePosition(GLFWwindow* window) const
     {
         double mouseX, mouseY;
         glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -227,6 +305,12 @@ private:
         return Vector2 { worldX, worldY };
     }
 
+    float GetRandomColor()
+    {
+        std::uniform_real_distribution<float> randomColor(0.0, 1.0);
+        return randomColor(numberGenerator);
+    }
+
 private:
     std::shared_ptr<RigidBody> rigidBodySystem;
     std::shared_ptr<MovingSystem> movingSystem;
@@ -236,8 +320,10 @@ private:
     std::shared_ptr<CameraSystem> cameraSystem;
 
     std::mt19937 numberGenerator;
+
     static inline bool createBox = false;
     static inline bool createCircle = false;
+    static inline bool createPolygon = false;
 
     Camera* camera;
 };

@@ -97,7 +97,7 @@ struct RigidBodyData
         return Fixed16_16(1) / Fixed16_16(12) * mass * (width * width + height * height);
     }
 
-    static Fixed16_16 GetRotationalInertiaPolygon(const Fixed16_16& mass, const std::vector<Vector2>& vertices) //TODO: STRAIGHT FROM CHATGPT, NOT GUARANTEED TO WORK
+    static Fixed16_16 GetRotationalInertiaPolygon(const Fixed16_16& mass, const std::vector<Vector2>& vertices) //TODO: STRAIGHT FROM CHATGPT, NOT GUARANTEED TO WORK -edit: works!
     {
         if (vertices.size() < 3)
         {

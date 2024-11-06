@@ -399,8 +399,6 @@ public:
             }
       }
 
-
-private:
       static void ProjectVertices(const std::vector<Vector2>& vertices, const Vector2& axis, Fixed16_16& min, Fixed16_16& max)
       {
             min = std::numeric_limits<Fixed16_16>::max();
@@ -443,7 +441,6 @@ private:
                   ++vertexCount;
                   sum += vertex;
             }
-
             return sum / vertexCount;
       }
 
