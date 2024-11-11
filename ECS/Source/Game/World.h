@@ -12,13 +12,6 @@ class World
 public:
     World() : currentFrame(0), lastLayerIndex(0)
     {
-        SetupLayers();
-    }
-
-
-
-    void UpdateLayer()
-    {
 
     }
 
@@ -44,15 +37,10 @@ public:
         return systems;
     }
 
-private:
-    void SetupLayers()
+    void NextFrame()
     {
-        for(short frame = 0; frame < MaxRollBackFrames; frame++)
-        {
-            layers[frame].Setup();
-        }
+        //Copy
     }
-
 
 private:
     int currentFrame;

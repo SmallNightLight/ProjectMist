@@ -27,7 +27,7 @@ Vector2 GetMousePosition(GLFWwindow* window)
 
 int main()
 {
-    //return TestMath::Test(); //TODO: Use new fixed math library
+    //return TestMath::Test();
 
     //Initialize OpenGL
     if (!glfwInit())
@@ -65,8 +65,7 @@ int main()
     //ECS setup
     PhysicsWorld physicsWorld = PhysicsWorld();
 
-    Layer EcsWorld;
-    EcsWorld.Setup();
+    Layer EcsWorld = Layer();
 
     /*//Register components
     EcsWorld.RegisterComponent<Transform>();

@@ -13,13 +13,19 @@
 class Layer
 {
 public:
-    //Initializes the ECS managers (EntityManager, ComponentManager and SystemManager)
-    void Setup()
+    Layer()
     {
-        //Setup all managers
-        _entityManager = std::make_unique<EntityManager>();
-        _componentManager = std::make_unique<ComponentManager>();
-        _systemManager = std::make_unique<SystemManager>();
+        //Initializes the ECS managers (EntityManager, ComponentManager and SystemManager)
+        entityManager = std::make_unique<EntityManager>();
+        componentManager = std::make_unique<ComponentManager>();
+        systemManager = std::make_unique<SystemManager>();
+    }
+
+    Layer(const Layer& other)
+    {
+        entityManager = std::make_unique<EntityManager>();
+        componentManager = std::make_unique<ComponentManager>();
+        systemManager = std::make_unique<SystemManager>();
     }
 
     //Entity methods
@@ -27,34 +33,34 @@ public:
     //Creates a new entity and returns the entity ID
     Entity CreateEntity()
     {
-        return _entityManager->CreateEntity();
+        return entityManager->CreateEntity();
     }
 
     //Marks the entity for destruction, destroy the marked entities later, when the component references have been dropped with DestroyMarkedEntities()
     void MarkEntityForDestruction(Entity entity)
     {
-        _entitiesToDestroy.push_back(entity);
+        entitiesToDestroy.push_back(entity);
     }
 
     //Destroys the entities that are marked and removes any components and systems that are related to the entities
     void DestroyMarkedEntities()
     {
-        for (const Entity entity : _entitiesToDestroy)
+        for (const Entity entity : entitiesToDestroy)
         {
-            _entityManager->DestroyEntity(entity);
-            _componentManager->DestroyEntity(entity);
-            _systemManager->DestroyEntity(entity);
+            entityManager->DestroyEntity(entity);
+            componentManager->DestroyEntity(entity);
+            systemManager->DestroyEntity(entity);
         }
 
-        _entitiesToDestroy.clear();
+        entitiesToDestroy.clear();
     }
 
     //Unsafe method to instantly remove an entities with it components and systems
     void ImmediatlyDestroyEntity(Entity entity)
     {
-        _entityManager->DestroyEntity(entity);
-        _componentManager->DestroyEntity(entity);
-        _systemManager->DestroyEntity(entity);
+        entityManager->DestroyEntity(entity);
+        componentManager->DestroyEntity(entity);
+        systemManager->DestroyEntity(entity);
     }
 
     //Component methods
@@ -63,7 +69,7 @@ public:
     template<typename T>
     void RegisterComponent()
     {
-        _componentManager->RegisterComponent<T>();
+        componentManager->RegisterComponent<T>();
     }
 
     //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
@@ -71,62 +77,62 @@ public:
     T* AddComponent(Entity entity, T component)
     {
         //Render the signature of the entity by including the new component
-        Signature signature = _entityManager->GetSignature(entity);
-        signature.set(_componentManager->GetComponentType<T>(), true);
-        _entityManager->SetSignature(entity, signature);
+        Signature signature = entityManager->GetSignature(entity);
+        signature.set(componentManager->GetComponentType<T>(), true);
+        entityManager->SetSignature(entity, signature);
 
         //Notify the system manager about the new signature
-        _systemManager->EntitySignatureChanged(entity, signature);
+        systemManager->EntitySignatureChanged(entity, signature);
 
-        return _componentManager->AddComponent<T>(entity, component);
+        return componentManager->AddComponent<T>(entity, component);
     }
 
     //Removes the component of type T from the entity, updates the signature and updates on which systems the entity is registered based on the signature
     template<typename T>
     void RemoveComponent(Entity entity)
     {
-        _componentManager->RemoveComponent<T>(entity);
+        componentManager->RemoveComponent<T>(entity);
 
         //Render the signature of the entity by removing the component
-        Signature  signature = _entityManager->GetSignature(entity);
-        signature.set(_componentManager->GetComponentType<T>(), false);
-        _entityManager->SetSignature(entity, signature);
+        Signature  signature = entityManager->GetSignature(entity);
+        signature.set(componentManager->GetComponentType<T>(), false);
+        entityManager->SetSignature(entity, signature);
 
         //Notify the system manager about the new signature
-        _systemManager->EntitySignatureChanged(entity, signature);
+        systemManager->EntitySignatureChanged(entity, signature);
     }
 
     //Gets a reference to the component of type T for the given entity
     template<typename T>
     T& GetComponent(Entity entity)
     {
-        return _componentManager->GetComponent<T>(entity, GetComponentType<T>());
+        return componentManager->GetComponent<T>(entity, GetComponentType<T>());
     }
 
     template<typename T>
     ComponentCollection<T>* GetComponentCollection()
     {
-        return _componentManager->GetComponentCollection<T>();
+        return componentManager->GetComponentCollection<T>();
     }
 
     template<typename T>
     ComponentCollection<T>* GetComponentCollection(ComponentType componentType)
     {
-        return _componentManager->GetComponentCollection<T>(componentType);
+        return componentManager->GetComponentCollection<T>(componentType);
     }
 
     //Checks whether the given entity has the component of type T
     template<typename T>
     bool HasComponent(Entity entity)
     {
-        return _componentManager->HasComponent<T>(entity);
+        return componentManager->HasComponent<T>(entity);
     }
 
     //Get the unique ComponentType ID for a component type T
     template<typename T>
     ComponentType GetComponentType()
     {
-       return _componentManager->GetComponentType<T>();
+       return componentManager->GetComponentType<T>();
     }
 
     //Systems methods
@@ -135,27 +141,15 @@ public:
     template<typename T>
     std::shared_ptr<T> RegisterSystem()
     {
-        T::GetSignature(this);
-
-        std::shared_ptr<T> system = _systemManager->RegisterSystem<T>(this);
-        SetSignature<T>(system->GetSignature());
-        return system;
-    }
-
-
-    //Set the signature (a mask indicating required components) for a system of type T
-    template<typename T>
-    void SetSignature(Signature signature)
-    {
-        _systemManager->SetSignature<T>(signature);
+        return systemManager->RegisterSystem<T>(this);
     }
 
 private:
-    std::unique_ptr<EntityManager> _entityManager;
-    std::unique_ptr<ComponentManager> _componentManager;
-    std::unique_ptr<SystemManager> _systemManager;
+    std::unique_ptr<EntityManager> entityManager;
+    std::unique_ptr<ComponentManager> componentManager;
+    std::unique_ptr<SystemManager> systemManager;
 
-    std::vector<Entity> _entitiesToDestroy { };
+    std::vector<Entity> entitiesToDestroy { };
 };
 
 //Ideas to improve:

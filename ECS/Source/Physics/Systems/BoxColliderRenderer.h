@@ -19,15 +19,6 @@ public:
         return signature;
     }
 
-    static Signature GetSignature(Layer* layer) override
-    {
-        Signature signature;
-        signature.set(layer->GetComponentType<ColliderTransform>());
-        signature.set(layer->GetComponentType<BoxCollider>());
-        signature.set(layer->GetComponentType<ColliderRenderData>());
-        return signature;
-    }
-
     void Render()
     {
         for (const Entity& entity : Entities)

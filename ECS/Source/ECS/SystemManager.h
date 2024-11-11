@@ -4,7 +4,7 @@
 #include "System.h"
 
 #include <memory>
-#include <unordered_map>
+#include <vector>
 #include <cassert>
 
 #include "Layer.h"
@@ -15,37 +15,21 @@ class Layer;
 class SystemManager
 {
 public:
-    //Registers the system of type T
+    //Registers the system of type T and sets the signature
 	template<typename T>
 	std::shared_ptr<T> RegisterSystem(Layer* world)
 	{
-		const char* typeName = typeid(T).name();
-
-		assert(_systems.find(typeName) == _systems.end() && "System already registered");
-
 		auto system = std::make_shared<T>(world);
-		_systems.insert({ typeName, system });
+		Signature signature = system->GetSignature();
+		systems.emplace_back(signature, system);
 		return system;
-	}
-
-    //Set the signature (a mask indicating required components) for a system of type T
-	template<typename T>
-	void SetSignature(Signature signature)
-	{
-		const char* typeName = typeid(T).name();
-
-		assert(_systems.find(typeName) != _systems.end() && "System not yet registered");
-
-		_signatures.insert({ typeName, signature });
 	}
 
     //Removes the given entity from all systems that have a reference to the entity
 	void DestroyEntity(Entity entity)
 	{
-		for (auto const& pair : _systems)
+		for (auto& [signature, system] : systems)
 		{
-			auto const& system = pair.second;
-
 			system->Entities.erase(entity);
 		}
 	}
@@ -55,13 +39,9 @@ public:
     //When the signatures do not match the entity gets removes from the system entity set
 	void EntitySignatureChanged(Entity entity, Signature newSignature)
 	{
-		for (auto const& pair : _systems)
+		for (auto& [signature, system] : systems)
 		{
-			auto const& type = pair.first;
-			auto const& system = pair.second;
-			auto const& systemSignature = _signatures[type];
-
-			if ((newSignature & systemSignature) == systemSignature)
+			if ((newSignature & signature) == signature)
 			{
 				//Entity signature matches system signature - insert into set
 				system->Entities.insert(entity);
@@ -75,6 +55,5 @@ public:
 	}
 
 private:
-	std::unordered_map<const char*, Signature> _signatures;
-	std::unordered_map<const char*, std::shared_ptr<System>> _systems{};
+	std::vector<std::pair<Signature, std::shared_ptr<System>>> systems;
 };

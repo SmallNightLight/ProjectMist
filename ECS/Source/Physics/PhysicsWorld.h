@@ -4,10 +4,8 @@
 class PhysicsWorld : public Layer
 {
 public:
-    PhysicsWorld()
+    PhysicsWorld() : Layer()
     {
-        Setup();
-
         //Register components
         RegisterComponent<ColliderTransform>();
         RegisterComponent<RigidBodyData>();
