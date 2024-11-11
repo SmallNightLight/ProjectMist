@@ -3,19 +3,28 @@
 class BoxColliderRenderer : public System
 {
 public:
-    explicit BoxColliderRenderer(ECSWorld* world) : System(world)
+    explicit BoxColliderRenderer(Layer* world) : System(world)
     {
-        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
-        boxColliderCollection = World->GetComponentCollection<BoxCollider>();
-        colliderRenderDataCollection = World->GetComponentCollection<ColliderRenderData>();
+        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
+        boxColliderCollection = layer->GetComponentCollection<BoxCollider>();
+        colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<ColliderTransform>());
-        signature.set(World->GetComponentType<BoxCollider>());
-        signature.set(World->GetComponentType<ColliderRenderData>());
+        signature.set(layer->GetComponentType<ColliderTransform>());
+        signature.set(layer->GetComponentType<BoxCollider>());
+        signature.set(layer->GetComponentType<ColliderRenderData>());
+        return signature;
+    }
+
+    static Signature GetSignature(Layer* layer) override
+    {
+        Signature signature;
+        signature.set(layer->GetComponentType<ColliderTransform>());
+        signature.set(layer->GetComponentType<BoxCollider>());
+        signature.set(layer->GetComponentType<ColliderRenderData>());
         return signature;
     }
 

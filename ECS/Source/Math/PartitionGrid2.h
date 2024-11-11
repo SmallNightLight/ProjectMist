@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Base/Settings.h"
+#include "../ECS/ECSSettings.h"
 #include "Rect.h"
 
 #include <iostream>

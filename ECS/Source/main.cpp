@@ -1,4 +1,4 @@
-#include "Base/ECSWorld.h"
+#include "ECS/Layer.h"
 #include "Components/ComponentHeaders.h"
 #include "Systems/SystemHeader.h"
 
@@ -65,10 +65,10 @@ int main()
     //ECS setup
     PhysicsWorld physicsWorld = PhysicsWorld();
 
-    ECSWorld EcsWorld;
+    Layer EcsWorld;
     EcsWorld.Setup();
 
-    //Register components
+    /*//Register components
     EcsWorld.RegisterComponent<Transform>();
     EcsWorld.RegisterComponent<Velocity>();
     EcsWorld.RegisterComponent<Lifetime>();
@@ -84,22 +84,13 @@ int main()
     auto boidRenderer = EcsWorld.RegisterSystem<BoidRenderer>();
     auto cameraSystem = EcsWorld.RegisterSystem<CameraSystem>();
 
-    //Setup signatures
-    EcsWorld.SetSignature<Movement>(movementSystem->GetSignature());
-    EcsWorld.SetSignature<ParticleRenderer>(particleRenderer->GetSignature());
-    EcsWorld.SetSignature<BlinkingParticles>(blinkingParticles->GetSignature());
-    EcsWorld.SetSignature<BoidMovement>(boidMovement->GetSignature());
-    EcsWorld.SetSignature<BoidRenderer>(boidRenderer->GetSignature());
-    EcsWorld.SetSignature<CameraSystem>(cameraSystem->GetSignature());
-
-
     //Add camera
     //Entity cameraEntity = EcsWorld.CreateEntity();
     //EcsWorld.AddComponent(cameraEntity, Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
 
 
     //Add physics objects
-    //Add circles
+    //Add circles*/
     for (int i = 0; i < 15; ++i)
     {
         physicsWorld.CreateRandomCircle();
@@ -107,7 +98,7 @@ int main()
 
     physicsWorld.AddComponent(10, Movable(Fixed16_16(20)));
 
-    //Add boxes
+    //Add boxes/
     for (int i = 0; i < 15; ++i)
     {
         physicsWorld.CreateRandomBox();
@@ -173,16 +164,16 @@ int main()
         Fixed16_16 setDelta = Fixed16_16(1) / Fixed16_16(600);
         if (!isPaused)
         {
-            movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
-            boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
-            blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
+            //movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
+            //boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
+            //blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
             physicsWorld.Update(window, fixedDelta);
         }
 
         //Rendering
         //cameraSystem->Apply();
-        particleRenderer->Render();
-        boidRenderer->Render();
+        //particleRenderer->Render();
+        //boidRenderer->Render();
         physicsWorld.Render();
 
         glfwSwapBuffers(window);

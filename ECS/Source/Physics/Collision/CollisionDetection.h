@@ -3,7 +3,7 @@
 class CollisionDetection
 {
 public:
-      explicit  CollisionDetection(ECSWorld* world)
+      explicit  CollisionDetection(Layer* world)
       {
             rigidBodyDataCollection = world->GetComponentCollection<RigidBodyData>();
             circleColliderCollection = world->GetComponentCollection<CircleCollider>();

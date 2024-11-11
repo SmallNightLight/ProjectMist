@@ -3,19 +3,19 @@
 class PolygonColliderRenderer : public System
 {
 public:
-    explicit PolygonColliderRenderer(ECSWorld* world) : System(world)
+    explicit PolygonColliderRenderer(Layer* world) : System(world)
     {
-            colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
-            polygonColliderCollection = World->GetComponentCollection<PolygonCollider>();
-            colliderRenderDataCollection = World->GetComponentCollection<ColliderRenderData>();
+            colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
+            polygonColliderCollection = layer->GetComponentCollection<PolygonCollider>();
+            colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<ColliderTransform>());
-        signature.set(World->GetComponentType<PolygonCollider>());
-        signature.set(World->GetComponentType<ColliderRenderData>());
+        signature.set(layer->GetComponentType<ColliderTransform>());
+        signature.set(layer->GetComponentType<PolygonCollider>());
+        signature.set(layer->GetComponentType<ColliderRenderData>());
         return signature;
     }
 

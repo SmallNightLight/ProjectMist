@@ -1,10 +1,9 @@
 #pragma once
 
-#include "Settings.h"
+#include "ECSSettings.h"
 
 #include <array>
 #include <cassert>
-#include <unordered_map>
 #include <bitset>
 #include <memory>
 

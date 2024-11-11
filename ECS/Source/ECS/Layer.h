@@ -1,14 +1,16 @@
 #pragma once
 
+#include "ECSSettings.h"
 #include "EntityManager.h"
 #include "ComponentManager.h"
 #include "SystemManager.h"
 
 #include <vector>
+#include <memory>
 
 //Manages the different managers (EntityManager, ComponentManager and SystemManager)
 //Has functionality for modifying the components, systems and signatures of entities
-class ECSWorld
+class Layer
 {
 public:
     //Initializes the ECS managers (EntityManager, ComponentManager and SystemManager)
@@ -76,7 +78,7 @@ public:
         //Notify the system manager about the new signature
         _systemManager->EntitySignatureChanged(entity, signature);
 
-        return _componentManager->AddComponent<T>(entity, component);;
+        return _componentManager->AddComponent<T>(entity, component);
     }
 
     //Removes the component of type T from the entity, updates the signature and updates on which systems the entity is registered based on the signature
@@ -133,10 +135,13 @@ public:
     template<typename T>
     std::shared_ptr<T> RegisterSystem()
     {
-        std::shared_ptr<T> system =_systemManager->RegisterSystem<T>(this);
-        //system->World = this;
+        T::GetSignature(this);
+
+        std::shared_ptr<T> system = _systemManager->RegisterSystem<T>(this);
+        SetSignature<T>(system->GetSignature());
         return system;
     }
+
 
     //Set the signature (a mask indicating required components) for a system of type T
     template<typename T>

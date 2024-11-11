@@ -8,19 +8,19 @@
 class ParticleRenderer : public System
 {
 public:
-    explicit ParticleRenderer(ECSWorld* world) : System(world), shader()
+    explicit ParticleRenderer(Layer* world) : System(world), shader()
     {
-        transformCollection = World->GetComponentCollection<Transform>();
-        velocityCollection = World->GetComponentCollection<Velocity>();
+        transformCollection = layer->GetComponentCollection<Transform>();
+        velocityCollection = layer->GetComponentCollection<Velocity>();
 
         shader.InitializeFromSource(vertexSource, fragmentSource);
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<Transform>());
-        signature.set(World->GetComponentType<Velocity>());
+        signature.set(layer->GetComponentType<Transform>());
+        signature.set(layer->GetComponentType<Velocity>());
         return signature;
     }
 

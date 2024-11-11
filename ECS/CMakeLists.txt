@@ -10,18 +10,16 @@ endif()
 cmake_minimum_required(VERSION 3.27)
 project(ECS)
 
-
-
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(ECS Source/main.cpp
-        Source/Base/ComponentCollection.h
-        Source/Base/ComponentManager.h
-        Source/Base/EntityManager.h
-        Source/Base/Settings.h
-        Source/Base/System.h
-        Source/Base/SystemManager.h
-        Source/Base/ECSWorld.h
+        Source/ECS/ComponentCollection.h
+        Source/ECS/ComponentManager.h
+        Source/ECS/EntityManager.h
+        Source/ECS/ECSSettings.h
+        Source/ECS/System.h
+        Source/ECS/SystemManager.h
+        Source/ECS/Layer.h
         Source/Components/ComponentHeaders.h
         Source/Systems/SystemHeader.h
         Source/Math/FPM/fixed.hpp
@@ -66,6 +64,11 @@ add_executable(ECS Source/main.cpp
         Source/Math/AABB.h
         Source/Physics/Components/PolygonCollider.h
         Source/Physics/Systems/PolygonColliderRenderer.h
+        Source/Game/Game.h
+        Source/Game/World.h
+        Source/Game/GameSettings.h
+        Source/ECS/ECS.h
+        Source/Game/Worlds/PWorld.h
 
 )
 

@@ -3,19 +3,19 @@
 class MovingSystem : public System
 {
 public:
-    explicit MovingSystem(ECSWorld* world) : System(world)
+    explicit MovingSystem(Layer* world) : System(world)
     {
-        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
-        rigidBodyCollection = World->GetComponentCollection<RigidBodyData>();
-        movableCollection = World->GetComponentCollection<Movable>();
+        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
+        rigidBodyCollection = layer->GetComponentCollection<RigidBodyData>();
+        movableCollection = layer->GetComponentCollection<Movable>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<ColliderTransform>());
-        signature.set(World->GetComponentType<RigidBodyData>());
-        signature.set(World->GetComponentType<Movable>());
+        signature.set(layer->GetComponentType<ColliderTransform>());
+        signature.set(layer->GetComponentType<RigidBodyData>());
+        signature.set(layer->GetComponentType<Movable>());
         return signature;
     }
 

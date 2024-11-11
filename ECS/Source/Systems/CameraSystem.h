@@ -3,15 +3,15 @@
 class CameraSystem : public System
 {
 public:
-    explicit  CameraSystem(ECSWorld* world) : System(world)
+    explicit  CameraSystem(Layer* world) : System(world)
     {
-        cameraCollection = World->GetComponentCollection<Camera>();
+        cameraCollection = layer->GetComponentCollection<Camera>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<Camera>());
+        signature.set(layer->GetComponentType<Camera>());
         return signature;
     }
 

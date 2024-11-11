@@ -3,15 +3,15 @@
 class BlinkingParticles : public System
 {
 public:
-    explicit  BlinkingParticles(ECSWorld* world) : System(world)
+    explicit  BlinkingParticles(Layer* world) : System(world)
     {
-        lifeTimeCollection = World->GetComponentCollection<Lifetime>();
+        lifeTimeCollection = layer->GetComponentCollection<Lifetime>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<Lifetime>());
+        signature.set(layer->GetComponentType<Lifetime>());
         return signature;
     }
 
@@ -27,11 +27,11 @@ public:
             if (lifeTime.CurrentLifetime <= 0)
             {
                 destroyedEntities++;
-                World->MarkEntityForDestruction(entity);
+                layer->MarkEntityForDestruction(entity);
             }
         }
 
-        World->DestroyMarkedEntities();
+        layer->DestroyMarkedEntities();
 
         std::mt19937 random;
         FixedRandom16_16 randomPositionX(Fixed16_16(0), Fixed16_16(SCREEN_WIDTH));
@@ -41,11 +41,11 @@ public:
 
         for(int i = 0; i < destroyedEntities; i++)
         {
-            Entity entity = World->CreateEntity();
+            Entity entity = layer->CreateEntity();
 
-            World->AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-            World->AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
-            World->AddComponent(entity, Lifetime {randomLifetime(random)});
+            layer->AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
+            layer->AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
+            layer->AddComponent(entity, Lifetime {randomLifetime(random)});
         }
     }
 

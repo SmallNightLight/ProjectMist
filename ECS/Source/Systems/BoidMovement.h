@@ -9,17 +9,17 @@
 class BoidMovement : public System
 {
 public:
-    explicit BoidMovement(ECSWorld* world) : System(world)
+    explicit BoidMovement(Layer* world) : System(world)
     {
-        transformCollection = World->GetComponentCollection<Transform>();
-        boidCollection = World->GetComponentCollection<Boid>();
+        transformCollection = layer->GetComponentCollection<Transform>();
+        boidCollection = layer->GetComponentCollection<Boid>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<Transform>());
-        signature.set(World->GetComponentType<Boid>());
+        signature.set(layer->GetComponentType<Transform>());
+        signature.set(layer->GetComponentType<Boid>());
         return signature;
     }
 

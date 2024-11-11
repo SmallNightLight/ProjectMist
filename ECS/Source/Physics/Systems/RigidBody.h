@@ -3,20 +3,20 @@
 class RigidBody : public System
 {
 public:
-    explicit RigidBody(ECSWorld* world) : System(world), collisionDetection(World) //TODO: Static objects should not need to have a rigidBody
+    explicit RigidBody(Layer* world) : System(world), collisionDetection(layer) //TODO: Static objects should not need to have a rigidBody
     {
-        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
-        rigidBodyDataCollection = World->GetComponentCollection<RigidBodyData>();
-        circleColliderCollection = World->GetComponentCollection<CircleCollider>();
-        boxColliderCollection = World->GetComponentCollection<BoxCollider>();
+        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
+        rigidBodyDataCollection = layer->GetComponentCollection<RigidBodyData>();
+        circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
+        boxColliderCollection = layer->GetComponentCollection<BoxCollider>();
         polygonColliderCollection = world->GetComponentCollection<PolygonCollider>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<ColliderTransform>());
-        signature.set(World->GetComponentType<RigidBodyData>());
+        signature.set(layer->GetComponentType<ColliderTransform>());
+        signature.set(layer->GetComponentType<RigidBodyData>());
         return signature;
     }
 

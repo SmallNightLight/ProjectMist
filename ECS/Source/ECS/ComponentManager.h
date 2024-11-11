@@ -1,8 +1,12 @@
 #pragma once
 
+#include "ECSSettings.h"
 #include "ComponentCollection.h"
 
-//#include <array>
+#include <unordered_map>
+#include <array>
+#include <cassert>
+#include <memory>
 
 //Manages all component collections and uses the component name for easy lookups
 class ComponentManager

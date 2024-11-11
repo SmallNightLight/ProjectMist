@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Rect.h"
-#include "../Base/Settings.h"
+#include "../ECS/ECSSettings.h"
 
 #include <iostream>
 #include <memory>

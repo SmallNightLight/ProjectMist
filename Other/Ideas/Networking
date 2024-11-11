@@ -1,0 +1,85 @@
+Rollback & Prediction
+
+
+Only send input, the frame and a hash incooperating the input, frame and game state
+When receiving the packet, the hash is evaluated to check if it matches the data.
+
+
+int NetworkingFPS = 15 FPS (66.6ms) (~4 rendering frames)
+rate of sending packets
+
+int PhysicsFPS = 30 FPS (33.33ms)
+the physics in the game are simulated every 
+
+int RenderingFPS = variable
+the rendering can be done at any frame rate, and interpolates between the physics frames. Allows sync. The physics are prioritized, so when the hardware cant keep up with the Physics, the Rendering FPS is decreased.
+The rendering runs on a different thread
+
+int RollbackFramesCount = 15 (500ms)
+
+Related to the PhysicsFPS. 
+
+
+Save the latest game states for the last (RollbackFramesCount) frames.
+
+
+Simulation Thread:
+1) Get Input
+2) Generate Hash from input and previous game state
+3) Generate packet with the frame (number, from last game state), input and hash
+4) If (networking frame), send the packet to other clients, including recent packets
+5) Check and get the received packets
+6) Calculate next physics step using the most recent packet frame every client. Rollback to the frame with the  
+
+
+Every game state / frame keeps track of which clients it knwos the input from and which client is predicted. When no client needed to be predicted this Game state is sealed and is the minimum next rollback target
+
+
+When sending the input you also send the input of the last
+RollbackFramesCount.
+
+
+
+
+Networking model: UDP
+Since UDP is the fastest and input is send from the past frames it is the best.
+
+Reasons to not use TCP: Slow and it might not send small packets, it also queue packets even if it is better to receive packets more advanced in game time.
+
+
+
+Architecture
+- Layer: Stores components
+
+
+
+
+
+
+
+
+
+
+
+
+Prevent cheating
+A hash is generated from the complete packet (input and frame) and game state. It is a 128 bit number. 
+Note: UDP can also corrupt data, so an invalid hash might be possible without cheating
+
+
+
+
+
+
+
+
+
+
+
+
+Ressources:
+https://www.youtube.com/watch?v=0NLe4IpdS1w
+https://www.youtube.com/watch?v=7jb0FOcImdg
+https://www.reddit.com/r/gamedev/comments/4eigzo/generally_how_often_do_most_realtime_multiplayer/
+https://www.freecodecamp.org/news/tcp-vs-udp/
+https://gafferongames.com/post/udp_vs_tcp/

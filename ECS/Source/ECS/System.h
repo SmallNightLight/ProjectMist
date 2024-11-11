@@ -1,25 +1,28 @@
 #pragma once
 
-#include "Settings.h"
+#include "ECSSettings.h"
 
 #include <set>
 
-class ECSWorld;
+class Layer;
 
 //Base class for all systems
 //Gives access to a set of entities that the derived system can iterate over
 class System
 {
 public:
-	explicit System(ECSWorld* world)
+	explicit System(Layer* pLayer)
 	{
-		World = world;
+		layer = pLayer;
 	}
 
+	virtual ~System() = default;
+
+	[[nodiscard]] virtual Signature GetSignature() const = 0;
 
 public:
 	std::set<Entity> Entities;
 
 protected:
-	ECSWorld* World;
+	Layer* layer;
 };

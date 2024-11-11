@@ -3,6 +3,7 @@
 #include "FPM/math.hpp"
 #include "FPM/fixed.hpp"
 #include <type_traits>
+#include <iostream>
 
 #include "FixedTypes.h"
 

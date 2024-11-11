@@ -8,17 +8,17 @@
 class BoidRenderer : public System
 {
 public:
-    explicit BoidRenderer(ECSWorld* world) : System(world)
+    explicit BoidRenderer(Layer* world) : System(world)
     {
-        transformCollection = World->GetComponentCollection<Transform>();
-        boidCollection = World->GetComponentCollection<Boid>();
+        transformCollection = layer->GetComponentCollection<Transform>();
+        boidCollection = layer->GetComponentCollection<Boid>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<Transform>());
-        signature.set(World->GetComponentType<Boid>());
+        signature.set(layer->GetComponentType<Transform>());
+        signature.set(layer->GetComponentType<Boid>());
         return signature;
     }
 

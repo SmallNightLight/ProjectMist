@@ -1,16 +1,15 @@
 #pragma once
 
-#include "Settings.h"
+#include "ECSSettings.h"
 #include "System.h"
 
 #include <memory>
-#include <iostream>
 #include <unordered_map>
 #include <cassert>
 
-#include "ECSWorld.h"
+#include "Layer.h"
 
-class ECSWorld;
+class Layer;
 
 //Manages the systems, their signatures and gives functionality to automatically adding components to a system when their signature match (or not)
 class SystemManager
@@ -18,7 +17,7 @@ class SystemManager
 public:
     //Registers the system of type T
 	template<typename T>
-	std::shared_ptr<T> RegisterSystem(ECSWorld* world)
+	std::shared_ptr<T> RegisterSystem(Layer* world)
 	{
 		const char* typeName = typeid(T).name();
 
@@ -62,14 +61,14 @@ public:
 			auto const& system = pair.second;
 			auto const& systemSignature = _signatures[type];
 
-			//Entity signature matches system signature - insert into set
 			if ((newSignature & systemSignature) == systemSignature)
 			{
+				//Entity signature matches system signature - insert into set
 				system->Entities.insert(entity);
 			}
-			//Entity signature does not match system signature - erase from set
 			else
 			{
+				//Entity signature does not match system signature - erase from set
 				system->Entities.erase(entity);
 			}
 		}

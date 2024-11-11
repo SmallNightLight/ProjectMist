@@ -1,7 +1,7 @@
 #pragma once
 #include "PhysicsSettings.h"
 
-class PhysicsWorld : public ECSWorld
+class PhysicsWorld : public Layer
 {
 public:
     PhysicsWorld()
@@ -25,14 +25,6 @@ public:
         boxColliderRenderer = RegisterSystem<BoxColliderRenderer>();
         polygonColliderRenderer = RegisterSystem<PolygonColliderRenderer>();
         cameraSystem = RegisterSystem<CameraSystem>();
-
-        //Set signatures
-        SetSignature<RigidBody>(rigidBodySystem->GetSignature());
-        SetSignature<MovingSystem>(movingSystem->GetSignature());
-        SetSignature<CircleColliderRenderer>(circleColliderRenderer->GetSignature());
-        SetSignature<BoxColliderRenderer>(boxColliderRenderer->GetSignature());
-        SetSignature<PolygonColliderRenderer>(polygonColliderRenderer->GetSignature());
-        SetSignature<CameraSystem>(cameraSystem->GetSignature());
 
         //Set seed for deterministic number generation
         numberGenerator = std::mt19937(12);

@@ -3,19 +3,19 @@
 class CircleColliderRenderer : public System
 {
 public:
-    explicit CircleColliderRenderer(ECSWorld* world) : System(world)
+    explicit CircleColliderRenderer(Layer* world) : System(world)
     {
-        colliderTransformCollection = World->GetComponentCollection<ColliderTransform>();
-        circleColliderCollection = World->GetComponentCollection<CircleCollider>();
-        colliderRenderDataCollection = World->GetComponentCollection<ColliderRenderData>();
+        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
+        circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
+        colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
     }
 
-    [[nodiscard]] Signature GetSignature() const
+    [[nodiscard]] Signature GetSignature() const override
     {
         Signature signature;
-        signature.set(World->GetComponentType<ColliderTransform>());
-        signature.set(World->GetComponentType<CircleCollider>());
-        signature.set(World->GetComponentType<ColliderRenderData>());
+        signature.set(layer->GetComponentType<ColliderTransform>());
+        signature.set(layer->GetComponentType<CircleCollider>());
+        signature.set(layer->GetComponentType<ColliderRenderData>());
         return signature;
     }
 
