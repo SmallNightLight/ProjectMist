@@ -22,7 +22,7 @@ public:
         return signature;
     }
 
-    void Render()
+    void Render() const
     {
         auto triangleSize = Fixed16_16(6);
 

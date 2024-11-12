@@ -19,7 +19,7 @@ public:
         return signature;
     }
 
-    void Render()
+    void Render() const
     {
         for (const Entity& entity : Entities)
         {

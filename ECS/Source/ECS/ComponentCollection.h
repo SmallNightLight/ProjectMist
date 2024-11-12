@@ -8,72 +8,16 @@
 #include <memory>
 
 //Interface for component collections, used to enforce the `DestroyEntity` method in all collections
-class IComponentCollection //TODO: Implement all functions and avoid type conversion
+class IComponentCollection
 {
 public:
 	virtual ~IComponentCollection() = default;
 	virtual void DestroyEntity(Entity entity) = 0;
+    virtual void Overwrite(IComponentCollection* other) = 0;
 };
 
-/**
 //Stores the components of type T in an array
-//Iteration 1: Bitset-based ECS
-//Issues: Components are not next to each other in memory, but spread out, based to the entity ID, inefficient for CPU caching
-template<typename T>
-class ComponentCollection : public IComponentCollection
-{
-public:
-    //Adds the component of type T to the given entity
-	void AddComponent(Entity entity, T component)
-	{
-        assert(entity < MAXENTITIES && "Entity out of range");
-		assert(!_usedComponents[entity] && "Component added to same entity more then once. Use MultiComponentArray instead");
-
-		_components[entity] = component;
-		_usedComponents[entity] = true;
-	}
-
-    //Removes the component from the given entity
-	void RemoveComponent(Entity entity)
-	{
-        assert(entity < MAXENTITIES && "Entity out of range");
-		assert(_usedComponents[entity] && "Removing a component that does not exist");
-
-		_usedComponents[entity] = false;
-	}
-
-    //Gets a reference to the component for the given entity
-	T& GetComponent(Entity entity)
-	{
-        assert(entity < MAXENTITIES && "Entity out of range");
-		assert(_usedComponents[entity] && "Trying to get a component that does not exist");
-
-		return _components[entity];
-	}
-
-    //Checks whether the given entity has the component
-    bool HasComponent(Entity entity)
-    {
-        return _usedComponents[entity];
-    }
-
-    //Removes the component from the entity
-	void DestroyEntity(Entity entity) override
-	{
-        assert(entity < MAXENTITIES && "Entity out of range");
-
-        _usedComponents[entity] = false;
-	}
-
-private:
-	std::array<T, MAXENTITIES> _components{};
-	std::bitset<MAXENTITIES> _usedComponents{};
-};
-/**/
-
-/**/
-//Stores the components of type T in an array
-//Iteration 2: Sparse set-based ECS
+//Sparse set-based ECS
 //Issues: When removing components are removed the array reorders the entity indexes to make the array dense, resulting in a non-optimal order
 template<typename T>
 class ComponentCollection : public IComponentCollection
@@ -157,6 +101,15 @@ public:
         }
     }
 
+    void Overwrite(IComponentCollection* other) override
+    {
+        auto* collection = dynamic_cast<ComponentCollection<T>*>(other); //TODO: OR STATIC CAST??
+
+        assert(!collection && "Types of components collection do not match");
+
+        _components = collection->_components;
+    }
+
 private:
     std::array<T, MAXENTITIES> _components { };
     std::array<Entity, MAXENTITIES> _indexToEntity { };
@@ -164,7 +117,6 @@ private:
 
     std::uint32_t _entityCount = 0;
 };
-/**/
 
 //Fix for <brace-enclosed initializer list>:
 //Missing default constructor with no parameters

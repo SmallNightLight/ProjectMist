@@ -4,7 +4,6 @@
 #include "System.h"
 
 #include <memory>
-#include <vector>
 #include <cassert>
 
 #include "Layer.h"
@@ -15,21 +14,37 @@ class Layer;
 class SystemManager
 {
 public:
+	SystemManager() = default;
+
+	void Overwrite(const SystemManager& other)
+	{
+		for (unsigned int i = 0; i < other.systemCount; ++i)
+		{
+			auto system = systems[i].second;
+			auto otherSystem = other.systems[i].second;
+
+			//Only copy the entities - other data on the system will stay the same
+			system->Entities = otherSystem->Entities;
+		}
+	}
+
     //Registers the system of type T and sets the signature
 	template<typename T>
 	std::shared_ptr<T> RegisterSystem(Layer* world)
 	{
 		auto system = std::make_shared<T>(world);
 		Signature signature = system->GetSignature();
-		systems.emplace_back(signature, system);
+		systems[systemCount] = std::make_pair(signature, system);
+		systemCount++;
 		return system;
 	}
 
     //Removes the given entity from all systems that have a reference to the entity
 	void DestroyEntity(Entity entity)
 	{
-		for (auto& [signature, system] : systems)
+		for (unsigned int i = 0; i < systemCount; ++i)
 		{
+			auto& [signature, system] = systems[i];
 			system->Entities.erase(entity);
 		}
 	}
@@ -39,8 +54,10 @@ public:
     //When the signatures do not match the entity gets removes from the system entity set
 	void EntitySignatureChanged(Entity entity, Signature newSignature)
 	{
-		for (auto& [signature, system] : systems)
+		for (unsigned int i = 0; i < systemCount; ++i)
 		{
+			auto& [signature, system] = systems[i];
+
 			if ((newSignature & signature) == signature)
 			{
 				//Entity signature matches system signature - insert into set
@@ -55,5 +72,6 @@ public:
 	}
 
 private:
-	std::vector<std::pair<Signature, std::shared_ptr<System>>> systems;
+	unsigned int systemCount = 0;
+	std::array<std::pair<Signature, std::shared_ptr<System>>, MAXSYSTEMS> systems;
 };

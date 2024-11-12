@@ -16,18 +16,25 @@ public:
 	{
 		for (Entity entity = 0; entity < MAXENTITIES; ++entity)
 		{
-			_availableEntities.push(entity);
+			availableEntities.push(entity);
 		}
+	}
+
+	void Overwrite(const EntityManager& other)
+	{
+		livingEntityCount = other.livingEntityCount;
+		signatures = other.signatures;
+		availableEntities = other.availableEntities;
 	}
 
     //Creates a new entity and returns the entity ID
 	Entity CreateEntity()
 	{
-		assert(_livingEntityCount < MAXENTITIES && "Too many entities. Extend the buffer size");
+		assert(livingEntityCount < MAXENTITIES && "Too many entities. Extend the buffer size");
 
-		Entity id = _availableEntities.front();
-		_availableEntities.pop();
-		_livingEntityCount++;
+		Entity id = availableEntities.front();
+		availableEntities.pop();
+		livingEntityCount++;
 
 		return id;
 	}
@@ -37,9 +44,9 @@ public:
 	{
 		assert(entity < MAXENTITIES && "Entity out of range");
 
-		_signatures[entity].reset();
-		_availableEntities.push(entity);
-		_livingEntityCount--;
+		signatures[entity].reset();
+		availableEntities.push(entity);
+		livingEntityCount--;
 	}
 
     //Assigns a signature to the entity
@@ -47,19 +54,19 @@ public:
 	{
 		assert(entity < MAXENTITIES && "Entity out of range");
 
-		_signatures[entity] = signature;
+		signatures[entity] = signature;
 	}
 
-    //Gets the signature of the given component
+    //Gets the signature of the given entity
 	Signature GetSignature(Entity entity)
 	{
 		assert(entity < MAXENTITIES && "Entity out of range");
 
-		return _signatures[entity];
+		return signatures[entity];
 	}
 
 private:
-	std::queue<Entity> _availableEntities{};
-	std::array<Signature, MAXENTITIES> _signatures{};
-	uint32_t _livingEntityCount{};
+	uint32_t livingEntityCount { };
+	std::array<Signature, MAXENTITIES> signatures { };
+	std::queue<Entity> availableEntities { };
 };

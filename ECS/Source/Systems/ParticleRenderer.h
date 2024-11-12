@@ -24,7 +24,7 @@ public:
         return signature;
     }
 
-    void Render()
+    void Render() const
     {
         glPointSize(4);
         glEnable(GL_POINT_SMOOTH);

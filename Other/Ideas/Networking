@@ -49,6 +49,7 @@ Reasons to not use TCP: Slow and it might not send small packets, it also queue 
 
 
 Architecture
+- World: Manages layers
 - Layer: Stores components
 
 

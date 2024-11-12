@@ -12,20 +12,30 @@
 class ComponentManager
 {
 public:
+	ComponentManager() = default;
+
+	void Overwrite(const ComponentManager& other)
+	{
+		for(int i = 0; i < nextComponentType; ++i)
+		{
+			componentArrays[i]->Overwrite(other.componentArrays[i].get());
+		}
+	}
+
     //Registers the component of type T by using the type name as a hash and creates a new ComponentCollection filled with components of type T
 	template<typename T>
 	void RegisterComponent()
 	{
 		const char* typeName = typeid(T).name();
 
-		assert(_componentTypes.find(typeName) == _componentTypes.end() && "Component already registered");
+		assert(componentTypes.find(typeName) == componentTypes.end() && "Component already registered");
 
 		//Add the component type to the component map
-		_componentTypes.insert({ typeName, _nextComponentType });
+		componentTypes.insert({ typeName, nextComponentType });
 
 		//Create a componentArray pointer and add it to the component array map
-		_componentArrays[_componentTypes[typeName]] = std::make_unique<ComponentCollection<T>>();
-		_nextComponentType++;
+		componentArrays[componentTypes[typeName]] = std::make_unique<ComponentCollection<T>>();
+		nextComponentType++;
 	}
 
     //Gets the unique component type ID for the component type T
@@ -34,9 +44,9 @@ public:
 	{
 		const char* typeName = typeid(T).name();
 
-		assert(_componentTypes.find(typeName) != _componentTypes.end() && "Component not yet registered");
+		assert(componentTypes.find(typeName) != componentTypes.end() && "Component not yet registered");
 
-		return _componentTypes[typeName];
+		return componentTypes[typeName];
 	}
 
     //Adds the component of type T to the given entity
@@ -72,9 +82,9 @@ public:
     //Removes all components that are associated to the given entity
 	void DestroyEntity(Entity entity)
 	{
-		for(int i = 0; i < 4; i++)
+		for(int i = 0; i < nextComponentType; ++i)
 		{
-			_componentArrays[i]->DestroyEntity(entity);
+			componentArrays[i]->DestroyEntity(entity);
 		}
 	}
 
@@ -82,9 +92,9 @@ public:
 	template<typename T>
 	ComponentCollection<T>* GetComponentCollection(ComponentType componentType)
 	{
-		assert(_componentArrays[componentType] && "Component not yet registered");
+		assert(componentArrays[componentType] && "Component not yet registered");
 
-		return static_cast<ComponentCollection<T>*>(_componentArrays[componentType].get());
+		return static_cast<ComponentCollection<T>*>(componentArrays[componentType].get());
 	}
 
 	template<typename T>
@@ -92,13 +102,13 @@ public:
 	{
 		ComponentType componentType = GetComponentType<T>();
 
-		assert(_componentArrays[componentType] && "Component not yet registered");
+		assert(componentArrays[componentType] && "Component not yet registered");
 
-		return static_cast<ComponentCollection<T>*>(_componentArrays[componentType].get());
+		return static_cast<ComponentCollection<T>*>(componentArrays[componentType].get());
 	}
 
 private:
-	std::unordered_map<const char*, ComponentType> _componentTypes { };
-    std::array<std::unique_ptr<IComponentCollection>, MAXCOMPONENTS> _componentArrays { };
-	ComponentType _nextComponentType { };
+	std::unordered_map<const char*, ComponentType> componentTypes { };
+    std::array<std::unique_ptr<IComponentCollection>, MAXCOMPONENTS> componentArrays { };
+	ComponentType nextComponentType { };
 };

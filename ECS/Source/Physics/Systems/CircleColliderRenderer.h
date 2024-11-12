@@ -19,7 +19,7 @@ public:
         return signature;
     }
 
-    void Render()
+    void Render() const
     {
         glEnable(GL_LINE_SMOOTH);
         glEnable(GL_POLYGON_SMOOTH);

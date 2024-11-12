@@ -39,8 +39,27 @@ public:
 
     void NextFrame()
     {
-        //Copy
+        int currentLayer = lastLayerIndex;
+        lastLayerIndex++;
+        lastLayerIndex %= MaxRollBackFrames;
+
+        //Overwrite the layer that is (MaxRollBackFrames) frames behind
+        layers[lastLayerIndex].Overwrite(layers[currentLayer]);
     }
+
+    //Rollback the amount of specified frames from the current frame
+    /*void RollbackFrames(int frames)
+    {
+        assert(frames < MaxRollBackFrames);
+
+        RollbackTo(currentFrame - frames);
+    }
+
+    //Rollback to the given frame
+    void RollbackTo(int frame)
+    {
+
+    }*/
 
 private:
     int currentFrame;
