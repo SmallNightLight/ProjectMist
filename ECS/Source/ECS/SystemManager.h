@@ -39,6 +39,16 @@ public:
 		return system;
 	}
 
+	template<typename T>
+	SystemType RegisterSystemType(Layer* world)
+	{
+		auto system = std::make_shared<T>(world);
+		Signature signature = system->GetSignature();
+		systems[systemCount] = std::make_pair(signature, system);
+		systemCount++;
+		return systemCount - 1;
+	}
+
     //Removes the given entity from all systems that have a reference to the entity
 	void DestroyEntity(Entity entity)
 	{

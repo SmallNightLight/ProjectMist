@@ -10,10 +10,13 @@ static constexpr int32_t SCREEN_HEIGHT = 945; //TODO: Bug - needs to be divisble
 //ECS
 using Entity = std::uint32_t;
 using ComponentType = std::uint8_t;
+using SystemType = std::uint8_t;
+using WorldType = std::uint8_t;
 
 static constexpr std::uint32_t MAXENTITIES = 2000;
 static constexpr ComponentType MAXCOMPONENTS = 32;
 static constexpr unsigned int MAXSYSTEMS = 32;
+static constexpr WorldType MAXWORLDS = 4;
 
 using Signature = std::bitset<MAXCOMPONENTS>;
 

@@ -2,10 +2,10 @@
 #include "PhysicsSettings.h"
 #include "../ECS/Layer.h"
 
-class PhysicsWorld : public Layer
+class OldPhysicsWorld : public Layer
 {
 public:
-    PhysicsWorld() : Layer()
+    OldPhysicsWorld()
     {
         //Register components
         RegisterComponent<ColliderTransform>();
@@ -51,9 +51,9 @@ public:
     {
         UpdateDebug(window);
 
-        Fixed16_16 stepTime = deltaTime / Iterations;
+        Fixed16_16 stepTime = deltaTime / PhysicsIterations;
 
-        for(int i = 0; i < Iterations; ++i)
+        for(int i = 0; i < PhysicsIterations; ++i)
         {
             movingSystem->Update(window, stepTime);
 

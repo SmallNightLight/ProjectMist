@@ -3,51 +3,47 @@
 #include "../ECS/ECS.h"
 #include "../Physics/Physics.h"
 
+#include "../Components/ComponentHeaders.h"
+#include "../Systems/SystemHeader.h"
+
 #include "GameSettings.h"
 
-#include "World.h"
-#include "Worlds/PWorld.h"
+#include "WorldManager.h"
+#include "Worlds/PhysicsWorld.h"
 
 
 class Game
 {
 public:
-    Game()
+    Game() : worldManager(WorldManager())
     {
-        world = World();
-        PWorld::Register(&world);
+        physicsWorldType(worldManager.AddWorld<PhysicsWorld>());
     }
 
     void Setup()
     {
-        /*for (int i = 0; i < 15; ++i)
-        {
-            physicsWorld.CreateRandomCircle();
-        }
+        std::mt19937 numberGenerator(12);
 
-        physicsWorld.AddComponent(10, Movable(Fixed16_16(20)));
+        Layer& layer = worldManager.GetCurrentLayer();
 
-        //Add boxes/
-        for (int i = 0; i < 15; ++i)
-        {
-            physicsWorld.CreateRandomBox();
-        }
 
-        for (int i = 0; i < 15; ++i)
-        {
-            physicsWorld.CreateRandomPolygon();
-        }*/
+        Camera* camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
-    void Update()
+    void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
+        Layer& layer = worldManager.GetCurrentLayer();
 
+        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+        physicsWorld->Update(window, deltaTime);
     }
 
     void Render()
+
     {
 
     }
 
-    World world;
+    WorldManager worldManager;
+    WorldType physicsWorldType;
 };

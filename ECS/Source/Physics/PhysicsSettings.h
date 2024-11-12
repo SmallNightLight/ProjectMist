@@ -2,7 +2,7 @@
 
 #include "../Math/FixedTypes.h"
 
-constexpr int Iterations = 5;
+constexpr int PhysicsIterations = 5;
 
 constexpr Fixed16_16 MinBodySize = Fixed16_16::FromFloat(0.01f * 0.01f);
 constexpr Fixed16_16 MaxBodySize( 064 * 64);

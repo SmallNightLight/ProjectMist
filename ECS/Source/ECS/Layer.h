@@ -147,6 +147,12 @@ public:
         return systemManager.RegisterSystem<T>(this);
     }
 
+    template<typename T>
+    SystemType RegisterSystemType()
+    {
+        return systemManager.RegisterSystemType<T>(this);
+    }
+
 private:
     EntityManager entityManager;
     ComponentManager componentManager;

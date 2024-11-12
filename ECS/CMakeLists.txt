@@ -60,15 +60,17 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Systems/MovingSystem.h
         Source/Physics/Collision/CollisionDetection.h
         Source/Physics/Collision/CollisionInfo.h
-        Source/Physics/PhysicsWorld.h
+        Source/Physics/OldPhysicsWorld.h
         Source/Math/AABB.h
         Source/Physics/Components/PolygonCollider.h
         Source/Physics/Systems/PolygonColliderRenderer.h
         Source/Game/Game.h
-        Source/Game/World.h
+        Source/Game/WorldManager.h
         Source/Game/GameSettings.h
         Source/ECS/ECS.h
-        Source/Game/Worlds/PWorld.h
+        Source/Game/Worlds/PhysicsWorld.h
+        Source/Physics/PhysicsUtils.h
+        Source/Game/World.h
 
 )
 

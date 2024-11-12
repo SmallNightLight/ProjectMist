@@ -49,23 +49,17 @@ int main()
     glfwSwapInterval( 0 );
 
     //Initialize GLAD
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     {
         return -1;
     }
 
     glfwSetFramebufferSizeCallback(window, SetFrameSize);
 
-    //Set up the viewport
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, SCREEN_WIDTH, 0, SCREEN_HEIGHT, -1, 1);
-
     //ECS setup
-    PhysicsWorld physicsWorld = PhysicsWorld();
+    OldPhysicsWorld physicsWorld = OldPhysicsWorld();
 
-    Layer EcsWorld = Layer();
+    //Layer EcsWorld = Layer();
 
     /*//Register components
     EcsWorld.RegisterComponent<Transform>();
@@ -127,7 +121,7 @@ int main()
     double lastTime = 0.0;
     double lastTitleUpdateTime = 0.0;
 
-    PhysicsWorld::SetupDebug(window);
+    OldPhysicsWorld::SetupDebug(window);
 
     while (!glfwWindowShouldClose(window))
     {
