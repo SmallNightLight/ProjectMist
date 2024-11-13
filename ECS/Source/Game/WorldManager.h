@@ -15,7 +15,7 @@ struct SystemCollection
 class WorldManager
 {
 public:
-    WorldManager() : currentFrame(0), lastLayerIndex(0), worldCount(0)
+    WorldManager() : currentFrame(0), lastLayerIndex(0), rollbackCount(MaxRollBackFrames - 1), worldCount(0) //TODO: ACTUALLY - 1? or 2
     {
         for(short layer = 0; layer < MaxRollBackFrames; ++layer)
         {
@@ -57,25 +57,34 @@ public:
 
         //Overwrite the layer that is (MaxRollBackFrames) frames behind
         layers[lastLayerIndex].Overwrite(layers[currentLayer]);
+
+        if (rollbackCount > 0) rollbackCount--;
     }
 
     //Rollback the amount of specified frames from the current frame
-    /*void RollbackFrames(int frames)
+    bool Rollback(int frames)
     {
-        assert(frames < MaxRollBackFrames);
+        if (frames >= MaxRollBackFrames || rollbackCount + frames >= MaxRollBackFrames) return false;
 
-        RollbackTo(currentFrame - frames);
+        lastLayerIndex -= frames;;
+        lastLayerIndex %= MaxRollBackFrames;
+        rollbackCount += frames;
+
+        return true;
     }
 
     //Rollback to the given frame
-    void RollbackTo(int frame)
+    bool RollbackToFrame(int frame)
     {
+        if (frame > currentFrame) return false;
 
-    }*/
+        return Rollback(currentFrame - frame);
+    }
 
 private:
     int currentFrame;
     int lastLayerIndex;
+    int rollbackCount;
     int worldCount;
     std::array<Layer, MaxRollBackFrames> layers;
     std::array<std::array<std::shared_ptr<World>, MaxRollBackFrames>, MAXWORLDS> worlds { };

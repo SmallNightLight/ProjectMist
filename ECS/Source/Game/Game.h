@@ -1,16 +1,13 @@
 #pragma once
 
 #include "../ECS/ECS.h"
-#include "../Physics/Physics.h"
 
 #include "../Components/ComponentHeaders.h"
-#include "../Systems/SystemHeader.h"
 
 #include "GameSettings.h"
 
 #include "WorldManager.h"
 #include "Worlds/PhysicsWorld.h"
-
 
 class Game
 {
