@@ -10,6 +10,8 @@
 #include "Math/TestMath.h"
 #include "Physics/Physics.h"
 
+#include "Game/Game.h"
+
 void SetFrameSize(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -57,7 +59,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, SetFrameSize);
 
     //ECS setup
-    OldPhysicsWorld physicsWorld = OldPhysicsWorld();
+    //OldPhysicsWorld physicsWorld = OldPhysicsWorld();
 
     //Layer EcsWorld = Layer();
 
@@ -84,7 +86,7 @@ int main()
 
     //Add physics objects
     //Add circles*/
-    for (int i = 0; i < 15; ++i)
+    /*for (int i = 0; i < 15; ++i)
     {
         physicsWorld.CreateRandomCircle();
     }
@@ -100,7 +102,7 @@ int main()
     for (int i = 0; i < 15; ++i)
     {
         physicsWorld.CreateRandomPolygon();
-    }
+    }*/
 
     /*for (Entity entity = 0; entity < 20; ++entity)
     {
@@ -121,7 +123,9 @@ int main()
     double lastTime = 0.0;
     double lastTitleUpdateTime = 0.0;
 
-    OldPhysicsWorld::SetupDebug(window);
+    //OldPhysicsWorld::SetupDebug(window);
+
+    Game game = Game();
 
     while (!glfwWindowShouldClose(window))
     {
@@ -160,14 +164,16 @@ int main()
             //movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
             //boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
             //blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
-            physicsWorld.Update(window, fixedDelta);
+            //physicsWorld.Update(window, fixedDelta);
+            game.Update(window, fixedDelta);
         }
 
         //Rendering
         //cameraSystem->Apply();
         //particleRenderer->Render();
         //boidRenderer->Render();
-        physicsWorld.Render();
+        //physicsWorld.Render();
+        game.Render();
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -52,7 +52,7 @@ public:
 
         for(short layer = 0; layer < MaxRollBackFrames; ++layer)
         {
-             worlds[worldCount][layer] = T(layers[layer]);
+             worlds[worldCount][layer] = std::make_shared<T>(layers[layer]);
         }
 
         worldCount++;

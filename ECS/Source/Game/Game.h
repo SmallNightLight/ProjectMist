@@ -17,17 +17,17 @@ class Game
 public:
     Game() : worldManager(WorldManager())
     {
-        physicsWorldType(worldManager.AddWorld<PhysicsWorld>());
+        physicsWorldType = worldManager.AddWorld<PhysicsWorld>();
+
+        Setup();
     }
 
     void Setup()
     {
-        std::mt19937 numberGenerator(12);
-
         Layer& layer = worldManager.GetCurrentLayer();
 
+        worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects();
 
-        Camera* camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
@@ -39,9 +39,9 @@ public:
     }
 
     void Render()
-
     {
-
+        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+        physicsWorld->Render();
     }
 
     WorldManager worldManager;

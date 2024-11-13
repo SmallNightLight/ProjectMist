@@ -15,7 +15,7 @@ public:
         return entity;
     }
 
-    static Entity CreateRandomCircle(Layer& layer, std::mt19937 numberGenerator, const Camera* camera)
+    static Entity CreateRandomCircle(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
@@ -35,7 +35,7 @@ public:
         return entity;
     }
 
-    static Entity CreateRandomBox(Layer& layer, std::mt19937 numberGenerator, const Camera* camera)
+    static Entity CreateRandomBox(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
@@ -55,7 +55,7 @@ public:
         return entity;
     }
 
-    static Entity CreateRandomPolygon(Layer& layer, std::mt19937 numberGenerator, const Camera* camera)
+    static Entity CreateRandomPolygon(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
         FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
@@ -64,7 +64,7 @@ public:
     }
 
     //returns the vertices of a random convex shape
-    static std::vector<Vector2> GetRandomVertices(std::mt19937 numberGenerator)
+    static std::vector<Vector2> GetRandomVertices(std::mt19937& numberGenerator)
     {
         FixedRandom16_16 randomRadius(Fixed16_16(1), Fixed16_16(5));
         Fixed16_16 radius = randomRadius(numberGenerator);
@@ -86,7 +86,7 @@ public:
         return vertices;
     }
 
-    static float GetRandomColor(std::mt19937 numberGenerator)
+    static float GetRandomColor(std::mt19937& numberGenerator)
     {
         std::uniform_real_distribution<float> randomColor(0.0, 1.0);
         return randomColor(numberGenerator);
