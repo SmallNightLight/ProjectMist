@@ -24,7 +24,7 @@ public:
 
     void Overwrite(const Layer& other)
     {
-        assert(entitiesToDestroy.size() == 0 && "DestroyMarkedEntities() needs to be called first befor overwriting the layer");
+        assert(entitiesToDestroy.size() == 0 && "DestroyMarkedEntities() needs to be called first before overwriting the layer");
 
         entityManager.Overwrite(other.entityManager);
         componentManager.Overwrite(other.componentManager);

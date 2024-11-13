@@ -24,15 +24,12 @@ public:
 
     void Setup()
     {
-        Layer& layer = worldManager.GetCurrentLayer();
-
         worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects();
-
     }
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
-        Layer& layer = worldManager.GetCurrentLayer();
+        worldManager.NextFrame();
 
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         physicsWorld->Update(window, deltaTime);

@@ -23,28 +23,6 @@ public:
         }
     }
 
-    /*template<typename T>
-    void RegisterComponent()
-    {
-        for(short frame = 0; frame < MaxRollBackFrames; ++frame)
-        {
-            layers[frame].RegisterComponent<T>();
-        }
-    }
-
-    template<typename T>
-    std::array<T, MaxRollBackFrames> RegisterSystem()
-    {
-        std::array<T, MaxRollBackFrames> systems;
-
-        for(short frame = 0; frame < MaxRollBackFrames; ++frame)
-        {
-            systems[frame] = layers[frame].RegisterSystem<T>(this);
-        }
-
-        return systems;
-    }*/
-
     template<typename T>
     WorldType AddWorld()
     {

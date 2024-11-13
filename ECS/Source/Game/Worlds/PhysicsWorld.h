@@ -14,9 +14,6 @@ public:
         RegisterSystems();
 
         numberGenerator = std::mt19937(12);
-
-        //REMOVE
-        camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
     void RegisterComponents()
@@ -47,6 +44,8 @@ public:
 
     void AddObjects()
     {
+        camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
+
         //Add a ground
         PhysicsUtils::CreateBox(layer, Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(2), Static);
 
