@@ -1,10 +1,8 @@
 #pragma once
+#include <array>
 
-class Input
+template <std::size_t KeyCount>
+struct Input
 {
-public:
-    Input()
-    {
-
-    }
+    std::array<bool, KeyCount> Keys { };
 };

@@ -125,7 +125,7 @@ int main()
 
     //OldPhysicsWorld::SetupDebug(window);
 
-    Game game = Game();
+    Game game = Game(*window);
 
     while (!glfwWindowShouldClose(window))
     {

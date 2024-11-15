@@ -15,6 +15,11 @@ public:
         return entity;
     }
 
+    static Entity CreateRandomCircleFromPosition(Layer& layer, std::mt19937& numberGenerator, const Vector2& position)
+    {
+        return CreateCircle(layer, position, Fixed16_16(1), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
+    }
+
     static Entity CreateRandomCircle(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
@@ -35,6 +40,11 @@ public:
         return entity;
     }
 
+    static Entity CreateRandomBoxFromPosition(Layer& layer, std::mt19937& numberGenerator, const Vector2& position)
+    {
+        return CreateBox(layer, position, Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
+    }
+
     static Entity CreateRandomBox(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
     {
         FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
@@ -53,6 +63,11 @@ public:
         layer.AddComponent(entity, ColliderRenderData(r, g, b));
 
         return entity;
+    }
+
+    static Entity CreateRandomPolygonFromPosition(Layer& layer, std::mt19937& numberGenerator, const Vector2& position)
+    {
+        return CreatePolygon(layer, Vector2(position), GetRandomVertices(numberGenerator), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
     static Entity CreateRandomPolygon(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)

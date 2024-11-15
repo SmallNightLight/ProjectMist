@@ -9,19 +9,25 @@
 #include "WorldManager.h"
 #include "Worlds/PhysicsWorld.h"
 
+#include "Input/InputManager.h"
+
 class Game
 {
 public:
-    Game() : worldManager(WorldManager())
+    explicit Game(GLFWwindow& window) : worldManager(WorldManager()), input(InputManager(inputKeys))
     {
+        InputManager<3>::SetupCallbacks(window);
+
+        numberGenerator = std::mt19937(12);
         physicsWorldType = worldManager.AddWorld<PhysicsWorld>();
 
-        Setup();
+
+        Setup(window);
     }
 
-    void Setup()
+    void Setup(GLFWwindow& window)
     {
-        worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects();
+        worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects(numberGenerator);
     }
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
@@ -29,7 +35,9 @@ public:
         worldManager.NextFrame();
 
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        physicsWorld->Update(window, deltaTime);
+        physicsWorld->Update(deltaTime, input, numberGenerator);
+
+        input.Update();
     }
 
     void Render()
@@ -40,4 +48,9 @@ public:
 
     WorldManager worldManager;
     WorldType physicsWorldType;
+
+    InputManager<3> input;
+    static constexpr std::array<u_int16_t, 3> inputKeys = {GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE};
+
+    std::mt19937 numberGenerator;
 };

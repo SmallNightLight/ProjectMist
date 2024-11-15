@@ -4,6 +4,7 @@
 
 #include "../World.h"
 #include "../../Physics/Physics.h"
+#include "../Input/InputManager.h"
 
 class PhysicsWorld : public World
 {
@@ -13,7 +14,8 @@ public:
         RegisterComponents();
         RegisterSystems();
 
-        numberGenerator = std::mt19937(12);
+        camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
+
     }
 
     void RegisterComponents()
@@ -42,10 +44,8 @@ public:
         cameraSystem = layer.RegisterSystem<CameraSystem>();
     }
 
-    void AddObjects()
+    void AddObjects(std::mt19937& numberGenerator)
     {
-        camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
-
         //Add a ground
         PhysicsUtils::CreateBox(layer, Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(2), Static);
 
@@ -79,18 +79,34 @@ public:
         }
     }
 
-    void Update(GLFWwindow* window, Fixed16_16 deltaTime)
+    void Update(Fixed16_16 deltaTime, InputManager<3>& input, std::mt19937& numberGenerator)
     {
-        //UpdateDebug(window);
+        UpdateDebug(input, numberGenerator);
 
         Fixed16_16 stepTime = deltaTime / PhysicsIterations;
 
         for(int i = 0; i < PhysicsIterations; ++i)
         {
-            movingSystem->Update(window, stepTime);
-
             rigidBodySystem->ApplyVelocity(stepTime);
             rigidBodySystem->DetectCollisions();
+        }
+    }
+
+    void UpdateDebug(InputManager<3>& input, std::mt19937& numberGenerator)
+    {
+        if (input.GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
+        {
+            PhysicsUtils::CreateRandomCircleFromPosition(layer, numberGenerator, input.GetMousePosition(camera));
+        }
+
+        if (input.GetKeyDown(GLFW_MOUSE_BUTTON_RIGHT))
+        {
+            PhysicsUtils::CreateRandomBoxFromPosition(layer, numberGenerator, input.GetMousePosition(camera));
+        }
+
+        if (input.GetKeyDown(GLFW_MOUSE_BUTTON_MIDDLE))
+        {
+            PhysicsUtils::CreateRandomPolygonFromPosition(layer, numberGenerator, input.GetMousePosition(camera));
         }
     }
 
@@ -119,7 +135,6 @@ public:
 
 private:
     Layer& layer;
-    std::mt19937 numberGenerator;
 
     std::shared_ptr<RigidBody> rigidBodySystem;
     std::shared_ptr<MovingSystem> movingSystem;

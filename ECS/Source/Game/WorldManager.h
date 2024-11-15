@@ -6,15 +6,9 @@
 
 #include <array>
 
-template <typename T>
-struct SystemCollection
-{
-
-};
-
 class WorldManager
 {
-public:
+public: //TODO: MaxRollBackFrames ḿodf
     WorldManager() : currentFrame(0), lastLayerIndex(0), rollbackCount(MaxRollBackFrames - 1), worldCount(0) //TODO: ACTUALLY - 1? or 2
     {
         for(short layer = 0; layer < MaxRollBackFrames; ++layer)
