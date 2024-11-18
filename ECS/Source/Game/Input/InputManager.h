@@ -27,11 +27,11 @@ public:
         instances.push_back(this);
     }
 
-    static void SetupCallbacks(GLFWwindow& window)
+    static void SetupCallbacks(GLFWwindow* window)
     {
-        glfwSetKeyCallback(&window, KeyCallback);
-        glfwSetMouseButtonCallback(&window, MouseButtonCallback);
-        glfwSetCursorPosCallback(&window, CursorPositionCallback);
+        glfwSetKeyCallback(window, KeyCallback);
+        glfwSetMouseButtonCallback(window, MouseButtonCallback);
+        glfwSetCursorPosCallback(window, CursorPositionCallback);
     }
 
     ~InputManager()

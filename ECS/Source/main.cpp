@@ -1,62 +1,18 @@
-#include "ECS/Layer.h"
-#include "Components/ComponentHeaders.h"
-#include "Systems/SystemHeader.h"
 
-#include <iostream>
-#include <sstream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include "Math/TestMath.h"
-#include "Physics/Physics.h"
 
 #include "Game/Game.h"
 
-void SetFrameSize(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
-
-Vector2 GetMousePosition(GLFWwindow* window)
-{
-    //Get the mouse position in pixel coordinates
-    double mouseX, mouseY;
-    glfwGetCursorPos(window, &mouseX, &mouseY);
-
-    //Convert mouse X and Y to normalized screen coordinates [-1, 1]
-    return Vector2 {Fixed16_16::FromFloat<double>(mouseX), Fixed16_16::FromFloat<float>(SCREEN_HEIGHT - (float)mouseY) };
-}
 
 int main()
 {
-    //return TestMath::Test();
+    Game game = Game();
+    return game.GameLoop();
+}
 
-    //Initialize OpenGL
-    if (!glfwInit())
-    {
-        return -1;
-    }
+//OLD CODE
+ //return TestMath::Test();
 
-    //Create adn initialize a new window
-    GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Particle System - Instancing", nullptr, nullptr);
-    if (!window)
-    {
-        glfwTerminate();
-        return -1;
-    }
 
-    glfwMakeContextCurrent(window);
-
-    //Disable vsync (0 = Disabled)
-    glfwSwapInterval( 0 );
-
-    //Initialize GLAD
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-    {
-        return -1;
-    }
-
-    glfwSetFramebufferSizeCallback(window, SetFrameSize);
 
     //ECS setup
     //OldPhysicsWorld physicsWorld = OldPhysicsWorld();
@@ -119,69 +75,8 @@ int main()
         //EcsWorld.AddComponent(entity, Boid {Vector2{randomVelocity(numberGenerator), randomVelocity(numberGenerator)}, Vector2{0, 0} });
     }*/
 
-    bool isPaused = false;
-    double lastTime = 0.0;
-    double lastTitleUpdateTime = 0.0;
+    //bool isPaused = false;
+    //double lastTime = 0.0;
+    //double lastTitleUpdateTime = 0.0;
 
     //OldPhysicsWorld::SetupDebug(window);
-
-    Game game = Game(*window);
-
-    while (!glfwWindowShouldClose(window))
-    {
-        //Calculate delta time
-        double currentTime = glfwGetTime();
-        auto deltaTime = static_cast<float>(currentTime - lastTime);
-        lastTime = currentTime;
-
-        if (currentTime - lastTitleUpdateTime >= 1.0f)
-        {
-            std::ostringstream title;
-            title << "ECS Test - FPS: " << static_cast<int>(1.0f / deltaTime);
-            glfwSetWindowTitle(window, title.str().c_str());
-            lastTitleUpdateTime = currentTime;
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        {
-            isPaused = !isPaused;
-            glfwWaitEventsTimeout(0.3);
-        }
-
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        {
-            glfwSetWindowShouldClose(window, true);
-            break;
-        }
-
-        //Render
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        Fixed16_16 fixedDelta = Fixed16_16::FromFloat(deltaTime);
-        Fixed16_16 setDelta = Fixed16_16(1) / Fixed16_16(600);
-        if (!isPaused)
-        {
-            //movementSystem->Update(Fixed16_16::FromFloat(deltaTime), GetMousePosition(window));
-            //boidMovement->Update(Fixed16_16::FromFloat(deltaTime));
-            //blinkingParticles->Update(Fixed16_16::FromFloat(deltaTime));
-            //physicsWorld.Update(window, fixedDelta);
-            game.Update(window, fixedDelta);
-        }
-
-        //Rendering
-        //cameraSystem->Apply();
-        //particleRenderer->Render();
-        //boidRenderer->Render();
-        //physicsWorld.Render();
-        game.Render();
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    //Stop glfw
-    glfwDestroyWindow(window);
-    glfwTerminate();
-
-    return 0;
-}

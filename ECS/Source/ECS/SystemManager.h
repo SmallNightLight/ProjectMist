@@ -2,11 +2,10 @@
 
 #include "ECSSettings.h"
 #include "System.h"
+#include "Layer.h"
 
 #include <memory>
 #include <cassert>
-
-#include "Layer.h"
 
 class Layer;
 
