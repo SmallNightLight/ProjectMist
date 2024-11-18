@@ -73,6 +73,8 @@ add_executable(ECS Source/main.cpp
         Source/Game/World.h
         Source/Game/Input/InputManager.h
         Source/Game/Input/Input.h
+        Source/Game/Input/InputPackage.h
+        Source/Game/Input/BaseInput.h
 
 )
 

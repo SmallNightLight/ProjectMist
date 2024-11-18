@@ -10,20 +10,23 @@
 #include "WorldManager.h"
 #include "Worlds/PhysicsWorld.h"
 #include "Input/InputManager.h"
+#include "Input/Input.h"
 
 #include <iostream>
 #include <sstream>
+#include <thread>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 class Game
 {
 public:
-    explicit Game() : worldManager(WorldManager()), input(InputManager(inputKeys))
+    explicit Game() : worldManager(WorldManager()), playerInput(Input(playerInputKeys)), otherInput(Input(otherInputKeys))
     {
         if (InitializeOpenGL() != 0) return;
 
-        InputManager<3>::SetupCallbacks(window);
+        InputManager::SetupCallbacks(window);
+
         numberGenerator = std::mt19937(12);
 
         AddWorlds();
@@ -63,50 +66,100 @@ public:
 
     int GameLoop()
     {
-        double lastTime = 0.0;
+        isPaused = false;
+        Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
+        double lastTime = glfwGetTime();
+        Fixed16_16 accumulator = Fixed16_16(0);
         double lastTitleUpdateTime = 0.0;
+
+        //Time tracking variables
+        double updateRenderTime = 0.0;
+        double sleepTime = 0.0;
 
         while (!glfwWindowShouldClose(window))
         {
             //Calculate delta time
             double currentTime = glfwGetTime();
-            auto deltaTime = static_cast<float>(currentTime - lastTime);
+            double frameTime = currentTime - lastTime;
             lastTime = currentTime;
+
+            //Limit the frame time to avoid spiral of death (large lag spikes)
+            frameTime = std::min(frameTime, 0.25);
+            accumulator += Fixed16_16::FromFloat(frameTime);
+
+            //Reset time tracking variables for this frame
+            double frameStartTime = glfwGetTime();
+            double frameUpdateRenderStart = frameStartTime;
 
             if (currentTime - lastTitleUpdateTime >= 1.0f)
             {
+                double totalFrameTime = updateRenderTime + sleepTime;
+                double updateRenderPercent = (updateRenderTime / totalFrameTime) * 100.0;
+                double sleepPercent = (sleepTime / totalFrameTime) * 100.0;
+
                 std::ostringstream title;
-                title << "ECS Test - FPS: " << static_cast<int>(1.0f / deltaTime);
+                title << "ECS Test - FPS: " << static_cast<int>(1.0 / frameTime)
+                      << " | Update/Render: " << static_cast<int>(updateRenderPercent) << "%"
+                      << " | Waiting: " << static_cast<int>(sleepPercent) << "%";
                 glfwSetWindowTitle(window, title.str().c_str());
+
+                // Reset tracking for the next second
+                updateRenderTime = 0.0;
+                sleepTime = 0.0;
                 lastTitleUpdateTime = currentTime;
             }
 
-            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+            if (otherInput.GetKeyDown(GLFW_KEY_SPACE))
             {
                 isPaused = !isPaused;
-                glfwWaitEventsTimeout(0.3);
             }
 
-            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            if (otherInput.GetKeyDown(GLFW_KEY_ESCAPE))
             {
                 glfwSetWindowShouldClose(window, true);
                 break;
             }
 
-            //Clear frame
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            Fixed16_16 fixedDelta = Fixed16_16::FromFloat(deltaTime);
-            Fixed16_16 setDelta = Fixed16_16(1) / Fixed16_16(600);
-            if (!isPaused)
+            if (otherInput.GetKeyDown(GLFW_KEY_R))
             {
-                Update(window, fixedDelta);
+                isPaused = true;
+                worldManager.Rollback(1);
             }
 
-            Render();
+            while (accumulator >= fixedDelta)
+            {
+                if (!isPaused)
+                {
+                    Update(window, fixedDelta);
+                }
+                accumulator -= fixedDelta;
+            }
 
+            //Render frame
+            glClear(GL_COLOR_BUFFER_BIT);
+            Render();
             glfwSwapBuffers(window);
+
+            //Handle input
+            playerInput.Update();
+            otherInput.Update();
             glfwPollEvents();
+
+            // Time spent on updates and rendering
+            double frameUpdateRenderEnd = glfwGetTime();
+            updateRenderTime += frameUpdateRenderEnd - frameUpdateRenderStart;
+
+            //Sleep to maintain frame pacing
+            double frameEndTime = glfwGetTime();
+            double targetFrameTime = fixedDelta.ToFloating<float>();
+            double elapsedFrameTime = frameEndTime - frameStartTime;
+
+            if (elapsedFrameTime < targetFrameTime)
+            {
+                double sleepDuration = targetFrameTime - elapsedFrameTime;
+                std::this_thread::sleep_for(std::chrono::duration<double>(sleepDuration));
+                sleepTime += sleepDuration;
+            }
         }
 
         //Stop glfw
@@ -127,9 +180,7 @@ public:
         worldManager.NextFrame();
 
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        physicsWorld->Update(deltaTime, input, numberGenerator);
-
-        input.Update();
+        physicsWorld->Update(deltaTime, playerInput, numberGenerator);
     }
 
     void Render()
@@ -149,8 +200,8 @@ private:
     WorldType physicsWorldType;
 
     GLFWwindow* window;
-    InputManager<3> input;
-    static constexpr std::array<u_int16_t, 3> inputKeys = {GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE};
+    Input<3> playerInput;
+    Input<3> otherInput;
 
     std::mt19937 numberGenerator;
 

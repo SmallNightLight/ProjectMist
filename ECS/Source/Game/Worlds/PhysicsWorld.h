@@ -4,7 +4,7 @@
 
 #include "../World.h"
 #include "../../Physics/Physics.h"
-#include "../Input/InputManager.h"
+#include "../Input/Input.h"
 
 class PhysicsWorld : public World
 {
@@ -79,7 +79,7 @@ public:
         }
     }
 
-    void Update(Fixed16_16 deltaTime, InputManager<3>& input, std::mt19937& numberGenerator)
+    void Update(Fixed16_16 deltaTime, BaseInput& input, std::mt19937& numberGenerator)
     {
         UpdateDebug(input, numberGenerator);
 
@@ -92,7 +92,7 @@ public:
         }
     }
 
-    void UpdateDebug(InputManager<3>& input, std::mt19937& numberGenerator)
+    void UpdateDebug(BaseInput& input, std::mt19937& numberGenerator)
     {
         if (input.GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
         {

@@ -56,13 +56,20 @@ public: //TODO: MaxRollBackFrames ḿodf
     }
 
     //Rollback the amount of specified frames from the current frame
-    bool Rollback(int frames)
+    bool Rollback(unsigned int frames)
     {
-        if (frames >= MaxRollBackFrames || rollbackCount + frames >= MaxRollBackFrames) return false;
+        if (frames >= MaxRollBackFrames || rollbackCount + frames >= MaxRollBackFrames)
+            return false;
 
-        lastLayerIndex -= frames;;
-        lastLayerIndex %= MaxRollBackFrames;
+        lastLayerIndex -= frames;
+        lastLayerIndex = (lastLayerIndex % MaxRollBackFrames + MaxRollBackFrames) % MaxRollBackFrames;
         rollbackCount += frames;
+
+
+        if (lastLayerIndex == -1)
+        {
+            int i = 0;
+        }
 
         return true;
     }
