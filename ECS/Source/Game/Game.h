@@ -145,7 +145,7 @@ public:
             otherInput.Update();
             glfwPollEvents();
 
-            // Time spent on updates and rendering
+            //Time spent on updates and rendering
             double frameUpdateRenderEnd = glfwGetTime();
             updateRenderTime += frameUpdateRenderEnd - frameUpdateRenderStart;
 
