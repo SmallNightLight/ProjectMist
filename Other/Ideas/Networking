@@ -39,6 +39,24 @@ When sending the input you also send the input of the last
 RollbackFramesCount.
 
 
+Interpolation
+A rendering world - gets the necesarry components from the world manager
+
+It needs: the current layer 
+
+
+for animation:
+it recalculates the animation time step every step.
+
+
+Simulate(2)
+Render(1)
+Render(1.5)
+Simulate(3)
+Render(2)
+Render(2.5)
+
+
 
 
 Networking model: UDP
@@ -53,7 +71,7 @@ Networking setups: P2P
 
 
 Architecture
-- World: Manages layers
+- World: Manages layers, has sub worlds that manages the systems (like a physics world)
 - Layer: Stores components
 
 

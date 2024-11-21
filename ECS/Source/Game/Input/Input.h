@@ -11,7 +11,7 @@
 #include <map>
 #include <algorithm>
 
-static constexpr u_int16_t keyNull = 255;
+static constexpr uint16_t keyNull = 255;
 
 //class InputManager;
 
@@ -19,14 +19,14 @@ static constexpr u_int16_t keyNull = 255;
 template <std::size_t KeyCount>
 struct Input : BaseInput
 {
-    Input(const std::array<u_int16_t, KeyCount>& inputKeys)
+    Input(const std::array<uint16_t, KeyCount>& inputKeys)
     {
         InputManager::RegisterInput(this);
 
         keyIndexes.fill(keyNull);
 
-        u_int8_t keyIndex = 0;
-        for (u_int16_t key : inputKeys)
+        uint8_t keyIndex = 0;
+        for (uint16_t key : inputKeys)
         {
             keyIndexes[key] = keyIndex++;
         }
@@ -48,17 +48,17 @@ struct Input : BaseInput
     }*/
 
     //Ket input methods
-    bool GetKey(u_int16_t glfwKey) override
+    bool GetKey(uint16_t glfwKey) override
     {
         return CurrentInput[keyIndexes[glfwKey]];
     }
 
-    bool GetKeyDown(u_int16_t glfwKey) override
+    bool GetKeyDown(uint16_t glfwKey) override
     {
         return CurrentInput[keyIndexes[glfwKey]] && !LastInput[keyIndexes[glfwKey]];
     }
 
-    bool GetKeyUp(u_int16_t glfwKey) override
+    bool GetKeyUp(uint16_t glfwKey) override
     {
         return !CurrentInput[keyIndexes[glfwKey]] && LastInput[keyIndexes[glfwKey]];
     }
@@ -80,7 +80,7 @@ struct Input : BaseInput
         LastInput = CurrentInput;
     }
 
-    void SetKeyState(u_int16_t glfwKey, bool isDown) override
+    void SetKeyState(uint16_t glfwKey, bool isDown) override
     {
         if (keyIndexes[glfwKey] == keyNull) return;
 
@@ -98,5 +98,5 @@ struct Input : BaseInput
     std::array<bool, KeyCount> LastInput { };
     double mouseX = 0, mouseY = 0;
 
-    std::array<u_int8_t, GLFW_KEY_LAST + 1> keyIndexes { };
+    std::array<uint8_t, GLFW_KEY_LAST + 1> keyIndexes { };
 };
