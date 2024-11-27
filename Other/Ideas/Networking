@@ -1,4 +1,4 @@
-Rollback & Prediction
+2Rollback & Prediction
 
 
 Only send input, the frame and a hash incooperating the input, frame and game state
@@ -41,6 +41,57 @@ When connecting to a game that is already active the new player first requests t
 
 When sending the input you also send the input of the last
 RollbackFramesCount.
+
+
+Issues
+Lag spike: 
+Player 1 - 2: 30ms
+Player 2 - 3: 50ms
+Player 3 - 1: 3s
+
+Player 3 and 1 both realize there is a bad connection between them and send to each other to snap back to original position
+So maybe a server is needed on one clients, who deals 
+
+Idea:
+Priority list of the clients: based on the connection speed (better connection: higher priority)
+with higher priority the player will
+
+Every client has their own priority list of other clients. In case 
+Is also has a priority list of itselfs on other clients
+
+So there is a 2s delay between two clients, they both are at the bottom priority list and 
+
+Priority list needs to be same for every client
+
+so when there is a lag spike every client who detects it compares the priority and if it is bigger then the other client, it sends out the complete game state back. The client now might now expects from every higher client with slow connection a game data package. so from some clients it receives the input, which are immediatly applied and from other ot first does not receive anything for 2s. In this case if the last unknown frame > max rollback frames, the player will apply this time the previous inputs of itself to the screen. The other clients that have detected the slow 
+
+Every time a package is send the client also send the connection speeds that it has with the other clients (in frames) (1 byte), so all clients know when they dont receive packages if they, or the other client is the reason for this
+
+Send: 
+- the last perfect frame the frame that it knwos it correct with all input received)
+- the last frame where it received the input of every client
+
+sum up the framesof every connection that a clinet has and compare the value with its own average connection. Since it took time add the connection speed in frames it has with the other client
+
+this comparison might still be off
+
+so if it doesnt receive the needed input in time at th moment it needs to know the input in order to progress decide at this moment in time if it stops otself or if it stops the other
+
+perfect (most likely): one stopped itself, the other stopped the other
+bad (not likely): both stopped themselves. They both re
+
+2 frames rollback (66ms) : no penalty (only input predicttion)
+3 - 7 frames rollback (100ms - 233ms) : delay package to other client
+8 - 60 frames rollback (266ms - 2000ms) : if client is the reason: only do rollback when all input is known, while waiting for input: keep previous input and  input when client is the cause and then just stop rendering until client received all input and can . only calculate 
+
+
+Constant input prediction
+
+
+Solution; Allow for more rollback time, (lik up to 2s, but stil make a limit of where it should stop waiting for input and progress without the other clinet that has bad connection
+
+
+
 
 
 Optimizing
