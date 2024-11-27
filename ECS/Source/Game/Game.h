@@ -18,6 +18,15 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "../Networking/Factory.h"
+
+#ifdef _WIN32
+#define WIN32_WINNT 0x0A00
+#endif
+#include <asio.hpp>
+#include <asio/ts/buffer.hpp>
+#include <asio/ts/internet.hpp>
+
 class Game
 {
 public:
@@ -66,6 +75,8 @@ public:
 
     int GameLoop()
     {
+        NetworkingTest();
+
         isPaused = false;
         Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
         double lastTime = glfwGetTime();
@@ -169,13 +180,83 @@ public:
         return 0;
     }
 
+    int NetworkingTest()
+    {
+        auto server = NetworkLib::Factory::CreateServer(12345);
+        auto client = NetworkLib::Factory::CreateClient("localhost", 12345, 0);
+        std::string message("Test message");
+
+        // Sleep for a bit so that server has time to
+        // receive client announcement message
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        // Send from server to client
+        // TODO: get client ID from server itself
+        assert(server->GetClientCount() == 1);
+        server->SendToClient(message, server->GetClientIdByIndex(0));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        assert(!server->HasMessages());
+
+        auto receivedMessage = client->PopMessage();
+        std::cout << receivedMessage << std::endl;
+
+        assert(message == receivedMessage);
+
+        assert(!server->HasMessages());
+        assert(!client->HasMessages());
+
+        return 0;
+
+        /*asio::error_code error;
+        asio::io_context context;
+
+        asio::ip::udp::endpoint endpoint(asio::ip::make_address("127.0.0.1", error), 80);
+        asio::ip::udp::socket socket(context);
+        socket.connect(endpoint, error);
+
+        if (!error)
+        {
+            std::cout << "Connected to server" << std::endl;
+        }
+        else
+        {
+            std::cout << "Failed to connect to address: " << error.message() << std::endl;
+        }
+
+        if (socket.is_open())
+        {
+            std::string sRequest =  "GET /index.html HTTP/1.1\r\n"
+                                    "Host: example.com\r\n"
+                                    "Connection: close\r\n\r\n”";
+
+           // socket.write_some(asio::buffer(sRequest.data(), sRequest.size()), error);
+
+            size_t bytes = socket.available();
+            std::cout << "Bytes received: " << bytes << std::endl;
+
+            if (bytes > 0)
+            {
+                std::vector<char> vBuffer(bytes);
+                //socket.read_some(asio::buffer(vBuffer.data(), vBuffer.size()), error);
+
+                for(auto c : vBuffer)
+                    std::cout << c;
+            }
+        }
+
+        while(true) {}
+
+        return 0;*/
+    }
+
     void AddWorlds()
     {
         physicsWorldType = worldManager.AddWorld<PhysicsWorld>();
         worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects(numberGenerator);
     }
 
-    void Update(GLFWwindow* window, Fixed16_16 deltaTime)
+    void Update(GLFWwindow* window, Fixed16_16 deltaTime) //TODO: Rollback debug mode always rollback
     {
         worldManager.NextFrame();
 

@@ -1,0 +1,23 @@
+
+Introduction
+
+Framework
+- Architecture (Needs for deterministic physics, advantages for an ECS (quick iteration)
+
+ECS
+- Explanation of ECS and why I am using it 
+- Performance test with example of the boids system
+
+Physics
+- Architecture considerign the needs for the networking and ECS (not realistic, focus on performance, discrete, determinism)
+- Fixed point math (
+- Collision Detection using the SAT
+- Resolving collision with friction and angular velocity
+
+Networking
+- Considerations (
+- Architecture (
+- Rollback Netcode
+
+
+
