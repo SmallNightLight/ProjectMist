@@ -9,7 +9,7 @@ enum ColliderType
 {
     Circle,
     Box,
-    Polygon
+    Convex
 };
 
 enum RigidBodyType

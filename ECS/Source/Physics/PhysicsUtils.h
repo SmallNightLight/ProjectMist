@@ -57,7 +57,7 @@ public:
     {
         Entity entity = layer.CreateEntity();
 
-        layer.AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Polygon, shape));
+        layer.AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Convex, shape));
         layer.AddComponent(entity, PolygonCollider(vertices));
         layer.AddComponent(entity, RigidBodyData::CreatePolygonRigidBody(vertices, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 8), Fixed16_16(0, 4)));
         layer.AddComponent(entity, ColliderRenderData(r, g, b));

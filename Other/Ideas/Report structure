@@ -1,3 +1,5 @@
+Report structure
+
 
 Introduction
 
@@ -10,14 +12,29 @@ ECS
 
 Physics
 - Architecture considerign the needs for the networking and ECS (not realistic, focus on performance, discrete, determinism)
-- Fixed point math (
+- Fixed point math (with explanation compared to floating point math)
 - Collision Detection using the SAT
 - Resolving collision with friction and angular velocity
 
 Networking
-- Considerations (
-- Architecture (
+- Considerations
+- Architecture
 - Rollback Netcode
+
+
+
+
+
+
+
+
+
+
+
+
+
+game maker (discord server)
+gx games 
 
 
 

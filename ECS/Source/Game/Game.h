@@ -20,9 +20,9 @@
 
 #include "../Networking/Factory.h"
 
-#ifdef _WIN32
+/*#ifdef _WIN32
 #define WIN32_WINNT 0x0A00
-#endif
+#endif*/
 #include <asio.hpp>
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
@@ -182,29 +182,41 @@ public:
 
     int NetworkingTest()
     {
-        auto server = NetworkLib::Factory::CreateServer(12345);
-        auto client = NetworkLib::Factory::CreateClient("localhost", 12345, 0);
-        std::string message("Test message");
+        bool isServer, isClient;
 
-        // Sleep for a bit so that server has time to
-        // receive client announcement message
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::unique_ptr<NetworkLib::IServer> server;
+        std::unique_ptr<NetworkLib::IClient> client;
 
-        // Send from server to client
-        // TODO: get client ID from server itself
-        assert(server->GetClientCount() == 1);
-        server->SendToClient(message, server->GetClientIdByIndex(0));
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        while(true)
+        {
+            std::string message("Test message");
 
-        assert(!server->HasMessages());
+            std::cin >> message;
 
-        auto receivedMessage = client->PopMessage();
-        std::cout << receivedMessage << std::endl;
+            if (message == "server")
+            {
+                isServer = true;
+                server = NetworkLib::Factory::CreateServer(8888);
+                std::cout << "Is now server" << std::endl;
+            }
+            else if (message == "client")
+            {
+                isClient = true;
+                client = NetworkLib::Factory::CreateClient("localhost", 8888, 0);
+                std::cout << "Is now client" << std::endl;
+            }
 
-        assert(message == receivedMessage);
+            if (server)
+            {
+                server->SendToClient(message, server->GetClientIdByIndex(0));
+            }
 
-        assert(!server->HasMessages());
-        assert(!client->HasMessages());
+            if (client)
+            {
+                auto receivedMessage = client->PopMessage();
+                std::cout << receivedMessage << std::endl;
+            }
+        }
 
         return 0;
 

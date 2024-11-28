@@ -70,7 +70,7 @@ public:
                   {
                         return CircleBoxCollision(resultInfo, false, entity1, entity2, colliderTransform1, colliderTransform2);
                   }
-                  if (colliderTransform2.Shape == Polygon)
+                  if (colliderTransform2.Shape == Convex)
                   {
                         return CirclePolygonCollision(resultInfo, false, entity1, entity2, colliderTransform1, colliderTransform2);
                   }
@@ -85,12 +85,12 @@ public:
                   {
                         return BoxBoxCollision(resultInfo, entity1, entity2, colliderTransform1, colliderTransform2);
                   }
-                  if (colliderTransform2.Shape == Polygon)
+                  if (colliderTransform2.Shape == Convex)
                   {
                         return BoxPolygonCollision(resultInfo, false, entity1, entity2, colliderTransform1, colliderTransform2);
                   }
             }
-            else if (colliderTransform1.Shape == Polygon)
+            else if (colliderTransform1.Shape == Convex)
             {
                   if (colliderTransform2.Shape == Circle)
                   {
@@ -100,7 +100,7 @@ public:
                   {
                         return BoxPolygonCollision(resultInfo, true, entity2, entity1, colliderTransform2, colliderTransform1);
                   }
-                  if (colliderTransform2.Shape == Polygon)
+                  if (colliderTransform2.Shape == Convex)
                   {
                         return PolygonPolygonCollision(resultInfo, entity1, entity2, colliderTransform1, colliderTransform2);
                   }

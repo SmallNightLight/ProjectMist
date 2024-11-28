@@ -73,12 +73,12 @@ public:
         polygonColliderRenderer->Render();
 
         //Debug
-        if (RenderDebugInfo)
+        if (true) //(RenderDebugInfo)
         {
             RenderDebugInfo(rigidBodySystem->collisionsRE);
         }
 
-        if (RenderBoundingBoxes)
+        if (true)//(RenderBoundingBoxes)
         {
             circleColliderRenderer->RenderAABB();
             boxColliderRenderer->RenderAABB();
@@ -130,7 +130,7 @@ public:
     {
         Entity entity = CreateEntity();
 
-        AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Polygon, shape));
+        AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Convex, shape));
         AddComponent(entity, PolygonCollider(vertices));
         AddComponent(entity, RigidBodyData::CreatePolygonRigidBody(vertices, Fixed16_16(1), Fixed16_16(0, 5), Fixed16_16(0, 8), Fixed16_16(0, 4)));
         AddComponent(entity, ColliderRenderData(r, g, b));
