@@ -185,6 +185,14 @@ Default gameplay with good internet connection for everyone
 
 - The client sends the input package with hash to the other clinet every networking frame. When it receives the package from other client it rolls back and applies the input. When gathering the input it creates the hash from the input and the previous hash. The first hash of the game will be the game specific hash.
 
-When receiving input it can instantly verify the input by updating the latest saved hash from that client until it has reached the frame of the new input. When they dont match the client knows that is has received faulty input. In this case it 
+When receiving input it can instantly verify the input by updating the latest saved hash from that client until it has reached the frame of the new input. When they dont match the client knows that is has received faulty input. In this case it
+
+
+
+Server architecture
+
+- Server saves the connection speed between a server and client
+- The server does not save the game data, when a new client joins or a desync occurs, the server requests the game data from one of the clients and send it to the client
+- 
 
 

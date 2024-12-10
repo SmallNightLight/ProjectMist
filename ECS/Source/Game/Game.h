@@ -75,7 +75,7 @@ public:
 
     int GameLoop()
     {
-        NetworkingTest();
+        //NetworkingTest();
 
         isPaused = false;
         Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);

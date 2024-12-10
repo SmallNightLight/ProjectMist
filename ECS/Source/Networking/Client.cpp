@@ -1,5 +1,5 @@
 #include "Client.h"
-#include "Log.h"
+#include "Shared/Log.h"
 
 namespace NetworkLib {
 	Client::Client(std::string host, unsigned short server_port, unsigned short local_port) :
@@ -34,7 +34,7 @@ namespace NetworkLib {
 		}
 		else
 		{
-			Log::Error("Client::handle_receive:", error);
+			Error("Client::handle_receive:", error);
 		}
 
 		start_receive();
@@ -66,10 +66,10 @@ namespace NetworkLib {
 				io_service.run();
 			}
 			catch (const std::exception& e) {
-				Log::Warning("Client: network exception: ", e.what());
+				Warning("Client: network exception: ", e.what());
 			}
 			catch (...) {
-				Log::Error("Unknown exception in client network thread");
+				Error("Unknown exception in client network thread");
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 #include "Server.h"
-#include "Log.h"
+#include "Shared/Log.h"
 
 namespace NetworkLib {
 	Server::Server(unsigned short local_port) :
@@ -7,7 +7,7 @@ namespace NetworkLib {
 		service_thread(&Server::run_service, this),
 		nextClientID(0L)
 	{
-		Log::Info("Starting server on port ", local_port);
+		Info("Starting server on port ", local_port);
 	};
 
 	Server::~Server()
@@ -57,15 +57,15 @@ namespace NetworkLib {
 				statistics.RegisterReceivedMessage(bytes_transferred);
 			}
 			catch (std::exception ex) {
-				Log::Error("handle_receive: Error parsing incoming message:", ex.what());
+				Error("handle_receive: Error parsing incoming message:", ex.what());
 			}
 			catch (...) {
-				Log::Error("handle_receive: Unknown error while parsing incoming message");
+				Error("handle_receive: Unknown error while parsing incoming message");
 			}
 		}
 		else
 		{
-			Log::Error("handle_receive: error: ", error.message(), " while receiving from address ", remote_endpoint);
+			Error("handle_receive: error: ", error.message(), " while receiving from address ", remote_endpoint);
 			handle_remote_error(error, remote_endpoint);
 		}
 
@@ -86,13 +86,13 @@ namespace NetworkLib {
 				io_service.run();
 			}
 			catch (const std::exception& e) {
-				Log::Error("Server: Network exception: ", e.what());
+				Error("Server: Network exception: ", e.what());
 			}
 			catch (...) {
-				Log::Error("Server: Network exception: unknown");
+				Error("Server: Network exception: unknown");
 			}
 		}
-		Log::Debug("Server network thread stopped");
+		Debug("Server network thread stopped");
 	};
 
 	int32_t Server::get_or_create_client_id(udp::endpoint endpoint)
@@ -112,7 +112,7 @@ namespace NetworkLib {
 			send(message, clients.at(clientID));
 		}
 		catch (std::out_of_range) {
-			Log::Error(__FUNCTION__": Unknown client ID ", clientID);
+			Error(std::string(__FUNCTION__) + ": Unknown client ID ", clientID);
 		}
 	};
 
