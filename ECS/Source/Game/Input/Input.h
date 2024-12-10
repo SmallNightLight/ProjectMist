@@ -5,19 +5,21 @@
 #include "../../Math/FixedTypes.h"
 #include "../../Components/Camera.h"
 
-
 #include <array>
+#include <vector>
 #include <map>
 #include <algorithm>
 
 static constexpr uint16_t keyNull = 255;
 
-template <std::size_t KeyCount>
 struct Input : BaseInput
 {
-    Input(const std::array<uint16_t, KeyCount>& inputKeys)
+    Input(const std::vector<uint16_t>& inputKeys)
     {
         InputManager::RegisterInput(this);
+
+        CurrentInput.resize(inputKeys.size(), false);
+        LastInput.resize(inputKeys.size(), false);
 
         keyIndexes.fill(keyNull);
 
@@ -26,6 +28,11 @@ struct Input : BaseInput
         {
             keyIndexes[key] = keyIndex++;
         }
+    }
+
+    std::vector<bool> GetPacket()
+    {
+        return CurrentInput;
     }
 
     /*Input(InputPackage<KeyCount> inputPackage)
@@ -90,8 +97,8 @@ struct Input : BaseInput
         mouseY = Fixed16_16::FromFloat<double>(y);
     }
 
-    std::array<bool, KeyCount> CurrentInput { };
-    std::array<bool, KeyCount> LastInput { };
+    std::vector<bool> CurrentInput { };
+    std::vector<bool> LastInput { };
     Fixed16_16 mouseX = Fixed16_16(0), mouseY = Fixed16_16(0);
 
     std::array<uint8_t, GLFW_KEY_LAST + 1> keyIndexes { };

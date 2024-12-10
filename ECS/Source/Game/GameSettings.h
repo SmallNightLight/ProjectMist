@@ -8,12 +8,12 @@ static constexpr short NetworkFPS = 15;
 static constexpr short SimulationFPS = 30;
 static constexpr short RenderingFPS = 60;
 
-static constexpr std::array<uint16_t, 3> playerInputKeys =
+static const std::vector<uint16_t> playerInputKeys =
 {
     GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE
 };
 
-static constexpr std::array<uint16_t, 3> otherInputKeys =
+static const std::vector<uint16_t> otherInputKeys =
 {
     GLFW_KEY_ESCAPE, GLFW_KEY_SPACE, GLFW_KEY_R
 };

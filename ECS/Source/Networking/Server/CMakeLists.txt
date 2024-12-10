@@ -7,4 +7,5 @@ add_executable(Server main.cpp
         ../Shared/InputPacket.h
 
         ../../Game/Input/Input.h
+        ../Shared/Stream.h
 )

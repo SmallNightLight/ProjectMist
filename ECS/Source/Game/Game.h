@@ -293,8 +293,8 @@ private:
     WorldType physicsWorldType;
 
     GLFWwindow* window;
-    Input<3> playerInput;
-    Input<3> otherInput;
+    Input playerInput;
+    Input otherInput;
 
     std::mt19937 numberGenerator;
 

@@ -1,21 +1,43 @@
 #pragma once
 
 #include <bitset>
+
+#include "Stream.h"
 #include "../../Game/Input/Input.h"
 
-template <std::size_t KeyCount>
 struct InputPackage
 {
-    InputPackage(u_int32_t frame, const Input& input)
+    InputPackage(u_int32_t frame, const std::vector<bool>& input)
     {
         Frame = frame;
+        Input = input;
+    }
+
+    InputPackage(Stream& stream)
+    {
+        Frame = stream.ReadUInt32();
+
+        int inputSize = stream.ReadUInt32();
+
+        Input.resize(inputSize, false); //TODO: Add check if the size is actually correct
+
+        for(int i = 0; i < inputSize; i++)
+        {
+            Input[i] = stream.ReadBool();
+        }
+    }
+
+    void Serialize(Stream& stream)
+    {
+        stream.WriteUint32(Frame);
+
+        stream.WriteUint32(Input.size());
+        for(bool value : Input)
+        {
+            stream.WriteBool(value);
+        }
     }
 
     u_int32_t Frame;
-    std::bitset<KeyCount> Keys;
-
-    std::vector<char> Serialize()
-    {
-
-    }
+    std::vector<bool> Input;
 };
