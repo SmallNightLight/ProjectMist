@@ -12,9 +12,6 @@
 
 static constexpr uint16_t keyNull = 255;
 
-//class InputManager;
-
-
 template <std::size_t KeyCount>
 struct Input : BaseInput
 {
@@ -65,8 +62,8 @@ struct Input : BaseInput
     //Mouse position methods
     Vector2 GetMousePosition(Camera* camera) const override
     {
-        Fixed16_16 normalizedX = Fixed16_16::FromFloat<double>(mouseX) / Fixed16_16::FromFloat<double>(SCREEN_WIDTH);
-        Fixed16_16 normalizedY = Fixed16_16::FromFloat<double>(SCREEN_HEIGHT - mouseY) / Fixed16_16::FromFloat<double>(SCREEN_HEIGHT);
+        Fixed16_16 normalizedX = (mouseX) / Fixed16_16(SCREEN_WIDTH);
+        Fixed16_16 normalizedY = (Fixed16_16(SCREEN_HEIGHT) - mouseY) / Fixed16_16(SCREEN_HEIGHT);
 
         Fixed16_16 worldX = camera->Left + normalizedX * (camera->Right - camera->Left);
         Fixed16_16 worldY = camera->Bottom + normalizedY * (camera->Top - camera->Bottom);
@@ -89,13 +86,13 @@ struct Input : BaseInput
 
     void SetMousePosition(double x, double y) override
     {
-        mouseX = x;
-        mouseY = y;
+        mouseX = Fixed16_16::FromFloat<double>(x);
+        mouseY = Fixed16_16::FromFloat<double>(y);
     }
 
     std::array<bool, KeyCount> CurrentInput { };
     std::array<bool, KeyCount> LastInput { };
-    double mouseX = 0, mouseY = 0;
+    Fixed16_16 mouseX = Fixed16_16(0), mouseY = Fixed16_16(0);
 
     std::array<uint8_t, GLFW_KEY_LAST + 1> keyIndexes { };
 };

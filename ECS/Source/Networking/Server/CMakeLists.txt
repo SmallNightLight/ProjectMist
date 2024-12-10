@@ -5,4 +5,6 @@ add_executable(Server main.cpp
         Server.h
         ../Shared/Log.h
         ../Shared/InputPacket.h
+
+        ../../Game/Input/Input.h
 )
