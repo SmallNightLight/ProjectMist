@@ -20,12 +20,9 @@
 
 #include "../Networking/Factory.h"
 
-/*#ifdef _WIN32
-#define WIN32_WINNT 0x0A00
-#endif*/
-#include <asio.hpp>
+/*#include <asio.hpp>
 #include <asio/ts/buffer.hpp>
-#include <asio/ts/internet.hpp>
+#include <asio/ts/internet.hpp>*/
 
 class Game
 {

@@ -8,4 +8,12 @@ add_executable(Server main.cpp
 
         ../../Game/Input/Input.h
         ../Shared/Stream.h
+        ServerSettings.h
+        UDPServer.h
 )
+
+#Asio
+find_package(asio CONFIG REQUIRED)
+find_package(Threads REQUIRED)
+target_link_libraries(Server PRIVATE asio::asio Threads::Threads)
+target_compile_definitions(Server PRIVATE ASIO_STANDALONE)

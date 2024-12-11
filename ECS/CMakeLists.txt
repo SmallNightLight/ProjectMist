@@ -97,23 +97,6 @@ target_link_libraries(ECS PRIVATE glfw)
 find_package(glm CONFIG REQUIRED)
 target_link_libraries(ECS PRIVATE glm::glm)
 
-#Asio
-#find_package(asio CONFIG REQUIRED)
-#target_link_libraries(ECS PRIVATE asio::asio)
-
-
-#add_library(asio INTERFACE)
-#target_compile_options(asio INTERFACE ASIO_STANDALONE)
-#target_include_directories(asio INTERFACE <dir where asio.hpp lives>)
-#target_link_libraries(asio INTERFACE <threads>)  # Using ASIO requires you link your final executable/library with your system's threading library (e.g. pthread on linux)
-
-#Asio
-find_package(asio CONFIG REQUIRED)
-find_package(Threads REQUIRED)
-target_link_libraries(ECS PRIVATE asio::asio Threads::Threads)
-target_compile_definitions(ECS PRIVATE ASIO_STANDALONE)
-
-
 if (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
 endif()

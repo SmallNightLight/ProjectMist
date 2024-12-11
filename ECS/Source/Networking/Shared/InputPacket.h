@@ -19,7 +19,7 @@ struct InputPackage
 
         int inputSize = stream.ReadUInt32();
 
-        Input.resize(inputSize, false); //TODO: Add check if the size is actually correct
+        Input.resize(inputSize, false);
 
         for(int i = 0; i < inputSize; i++)
         {
