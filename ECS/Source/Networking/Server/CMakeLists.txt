@@ -3,13 +3,14 @@ project(Server)
 
 add_executable(Server main.cpp
         Server.h
+        UDPServer.h
+
         ../Shared/Log.h
         ../Shared/InputPacket.h
+        ../Shared/Stream.h
+        ../Shared/NetworkingSettings.h
 
         ../../Game/Input/Input.h
-        ../Shared/Stream.h
-        ServerSettings.h
-        UDPServer.h
 )
 
 #Asio

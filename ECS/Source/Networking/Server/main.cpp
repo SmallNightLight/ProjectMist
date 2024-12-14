@@ -92,7 +92,6 @@ int main()
 {
     try
     {
-
         asio::io_service io_service;
         udp_server server(io_service);
         io_service.run();

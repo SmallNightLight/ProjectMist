@@ -9,7 +9,7 @@
 
 #include <asio.hpp>
 
-#include "ServerSettings.h"
+#include "../Shared/NetworkingSettings.h"
 
 using asio::ip::udp;
 using asio::error_code;

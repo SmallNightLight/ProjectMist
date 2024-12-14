@@ -1,3 +1,5 @@
+#include "Client.h"
+
 #include <iostream>
 #include <array>
 #include <asio.hpp>
@@ -17,7 +19,13 @@ int main(int argc, char* argv[])
 
     std::cout << "Starting client with endpoint " << ip << ": " << port << std::endl;
 
-    try
+    Client client(ip, port);
+    while(!client.HasMessages()) { }
+
+    auto message = client.PopMessage();
+    std::cout << std::string(message.begin(), message.end()) << std::endl;
+
+    /*try
     {
         asio::io_service io_service;
 
@@ -54,7 +62,7 @@ int main(int argc, char* argv[])
     }
 
     std::string input;
-    std::cin >> input;
+    std::cin >> input;*/
 
     return 0;
 }

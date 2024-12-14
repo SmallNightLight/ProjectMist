@@ -2,12 +2,15 @@ cmake_minimum_required(VERSION 3.27)
 project(Client)
 
 add_executable(Client main.cpp
-        ../Shared/Log.h
+        Client.h
+
         ../Shared/InputPacket.h
+        ../Shared/Stream.h
+        ../Shared/ThreadedQueue.h
+        ../Shared/NetworkingSettings.h
+        ../Shared/Log.h
 
         ../../Game/Input/Input.h
-        ../Shared/Stream.h
-        Client.h
 )
 
 #Asio

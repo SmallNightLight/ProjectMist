@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ServerSettings.h"
+#include "../Shared/NetworkingSettings.h"
 #include "../Shared/Log.h"
 
 #include <asio.hpp>
