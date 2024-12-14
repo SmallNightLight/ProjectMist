@@ -5,6 +5,7 @@
 #include <array>
 #include <memory>
 #include <thread>
+#include <functional>
 
 #include <asio.hpp>
 
@@ -15,8 +16,8 @@ using asio::error_code;
 
 class udp_server;
 
-struct udp_session : std::enable_shared_from_this<udp_session> {
-
+struct udp_session : std::enable_shared_from_this<udp_session>
+{
     udp_session(udp_server* server) : server_(server) {}
 
     void handle_request(const error_code& error);
@@ -94,7 +95,7 @@ inline void udp_session::handle_request(const error_code& error)
 {
     if (!error || error == asio::error::message_size)
     {
-        message = make_daytime_string(); // let's assume this might be slow
+        message = "HELLO FROM SERVER"; // let's assume this might be slow
         message += "\n";
 
         // let the server coordinate actual IO
@@ -104,17 +105,27 @@ inline void udp_session::handle_request(const error_code& error)
 
 int main()
 {
-    try {
+    try
+    {
         asio::io_service io_service;
         udp_server server(io_service);
 
-        asio::detail::thread_group group;
-        for (unsigned i = 0; i < std::thread::hardware_concurrency(); ++i)
-            group.create_thread(bind(&asio::io_service::run, boost::ref(io_service)));
+        std::vector<std::thread> threads;
+        unsigned int thread_count = std::thread::hardware_concurrency();
 
-        group.join_all();
+        for (unsigned int i = 0; i < thread_count; ++i)
+        {
+            threads.emplace_back([&io_service]() { io_service.run(); });
+        }
+
+        for (auto& thread : threads)
+        {
+            if (thread.joinable())
+                thread.join();
+        }
     }
-    catch (std::exception& e) {
+    catch (const std::exception& e)
+    {
         std::cerr << e.what() << std::endl;
     }
     return 0;
