@@ -3,7 +3,6 @@
 #include <bitset>
 
 #include "Stream.h"
-#include "../../Game/Input/Input.h"
 
 struct InputPackage
 {

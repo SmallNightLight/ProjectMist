@@ -8,9 +8,8 @@ add_executable(Server main.cpp
         ../Shared/Log.h
         ../Shared/InputPacket.h
         ../Shared/Stream.h
+        ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
-
-        ../../Game/Input/Input.h
 )
 
 #Asio

@@ -90,6 +90,8 @@ private:
                 Error("Unknown exception in client network thread");
             }
         }
+
+        Debug("Server network thread stopped");
     }
 
 private:
