@@ -1,13 +1,15 @@
 #pragma once
 
 #include <vector>
-#include <algorithm>
+#include <cstdint>
 #include <stdexcept>
 
 class Stream
 {
 public:
     Stream() : currentIndex(0) { }
+
+    Stream(const std::vector<uint8_t>& _buffer) : buffer(_buffer), currentIndex(0) { }
 
     //Write to stream
     void WriteBool(bool value)
@@ -48,12 +50,12 @@ public:
         return value;
     }
 
-    std::vector<char> GetBuffer()
+    std::vector<uint8_t> GetBuffer()
     {
         return buffer;
     }
 
 private:
-    std::vector<char> buffer;
+    std::vector<uint8_t> buffer;
     size_t currentIndex;
 };

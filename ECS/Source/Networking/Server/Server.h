@@ -1,9 +1,11 @@
 #pragma once
 
+#include "../Shared/Stream.h"
 #include "../Shared/ThreadedQueue.h"
 #include "../Shared/NetworkingSettings.h"
 #include "../Shared/Log.h"
 
+#include <string>
 #include <vector>
 #include <map>
 #include <asio.hpp>
@@ -26,8 +28,7 @@ public:
         service_thread.join();
     }
 
-    template<typename T>
-    void SendToClient(const T& message, ClientID clientID)
+    void SendToClient(const std::vector<uint8_t>& message, ClientID clientID)
     {
         try
         {
@@ -39,18 +40,16 @@ public:
         }
     }
 
-    template<typename T>
-    void SendToAllExcept(const T& message, ClientID clientID)
+    void SendToAllExcept(const std::vector<uint8_t>& message, ClientID clientID)
     {
         for (auto client: Clients)
         {
             if (client.first != clientID)
-                SendToClient(message, client.second);
+                SendToClient(message, client.first);
         }
     }
 
-    template<typename T>
-    void SendToAll(const T& message)
+    void SendToAll(const std::vector<uint8_t>& message)
     {
         for (auto client: Clients)
         {
@@ -84,15 +83,29 @@ private:
             try
             {
                 std::vector<uint8_t> message = std::vector<uint8_t>(recv_buffer.data(), recv_buffer.data() + bytes_transferred);
+                Stream stream = Stream(message);
 
-                ClientID clientID = GetClientID(remote_endpoint);
+                if (message.size() == 0)
+                {
+                    //Accept client to join
 
-                std::string response = "Received message from some client";
-                SendToAll<std::vector<uint8_t>>(std::vector<uint8_t>(response.begin(), response.end()));
-                //SendToAll(message);
+                    ClientID clientID = GetClientID(remote_endpoint);
+                    std::vector<uint8_t> clientIDBytes(4);
+                    std::memcpy(clientIDBytes.data(), &clientID, 4);
 
-                //if (!message.empty())
-                //    incomingMessages.push(message);
+                    SendToAll(clientIDBytes);
+                }
+                else if (ClientID clientID = stream.ReadUInt32(); VerifyClientID(remote_endpoint, clientID))
+                {
+                    SendToAll(message);
+                    //if (!message.empty())
+                    //    incomingMessages.push(message);
+                }
+                else
+                {
+                    Warning("Received message with invalid client ID: ", clientID);
+                    throw std::runtime_error("Message has invalid client ID");
+                }
             }
             catch (const std::exception& exception)
             {
@@ -112,8 +125,7 @@ private:
         StartReceive();
     }
 
-    template<typename T>
-    void Send(const T& message, Client client)
+    void Send(const std::vector<uint8_t>& message, Client client)
     {
         auto data = std::make_shared<std::vector<uint8_t>>(message); //.Serialize()
 
@@ -191,6 +203,11 @@ private:
         Clients[++nextClientID] = endpoint;
         Debug("Accepted new client: ", nextClientID);
         return nextClientID;
+    }
+
+    bool VerifyClientID(Client client, ClientID expectedID)
+    {
+        return Clients.find(expectedID) != Clients.end() && Clients[expectedID] == client;
     }
 
     size_t GetClientCount()
