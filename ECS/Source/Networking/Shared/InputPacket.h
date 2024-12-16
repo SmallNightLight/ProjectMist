@@ -2,15 +2,15 @@
 
 #include "Stream.h"
 
-struct InputPackage
+struct InputPacket
 {
-    InputPackage(u_int32_t frame, const std::vector<bool>& input)
+    InputPacket(u_int32_t frame, const std::vector<bool>& input)
     {
         Frame = frame;
         Input = input;
     }
 
-    InputPackage(Stream& stream)
+    InputPacket(Stream& stream)
     {
         Frame = stream.ReadUInt32();
 

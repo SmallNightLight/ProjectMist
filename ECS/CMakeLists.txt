@@ -74,6 +74,7 @@ add_executable(ECS Source/main.cpp
         Source/Game/Input/InputManager.h
         Source/Game/Input/Input.h
         Source/Game/Input/BaseInput.h
+        Source/Game/Input/InputCollection.h
 )
 
 add_subdirectory(Source/Math/FixedLib)

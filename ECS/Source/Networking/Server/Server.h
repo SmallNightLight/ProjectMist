@@ -11,13 +11,11 @@
 #include <asio.hpp>
 
 using asio::ip::udp;
-typedef udp::endpoint Client;
-typedef uint32_t ClientID;
 
 class Server
 {
 public:
-    Server(unsigned short localPort) : socket(io_service, Client(udp::v4(), localPort)), service_thread(&Server::RunService, this), nextClientID(0)
+    Server(unsigned short localPort) : socket(io_service, ClientEndpoint(udp::v4(), localPort)), service_thread(&Server::RunService, this), nextClientID(0)
     {
         Info("Starting server on local port ", localPort);
     }
@@ -125,9 +123,9 @@ private:
         StartReceive();
     }
 
-    void Send(const std::vector<uint8_t>& message, Client client)
+    void Send(const std::vector<uint8_t>& message, const ClientEndpoint& client)
     {
-        auto data = std::make_shared<std::vector<uint8_t>>(message); //.Serialize()
+        auto data = std::make_shared<std::vector<uint8_t>>(message);
 
         socket.async_send_to(asio::buffer(*data), client, [this, data](const std::error_code& error, std::size_t bytes_transferred)
         {
@@ -149,7 +147,7 @@ private:
         }
     }
 
-    void HandleError(const std::error_code error_code, const Client& client) //TODO: INEFFICIENT, like getID
+    void HandleError(const std::error_code error_code, const ClientEndpoint& client) //TODO: INEFFICIENT, like getID
     {
         bool found = false;
         ClientID clientID = 0;
@@ -194,7 +192,7 @@ private:
     }
 
     //Returns the client ID, and creates a new one, when it doesn't have an existing ID assigned
-    ClientID GetClientID(Client endpoint)
+    ClientID GetClientID(const ClientEndpoint& endpoint)
     {
         for (const auto& client : Clients)
             if (client.second == endpoint)
@@ -205,7 +203,7 @@ private:
         return nextClientID;
     }
 
-    bool VerifyClientID(Client client, ClientID expectedID)
+    bool VerifyClientID(const ClientEndpoint& client, ClientID expectedID)
     {
         return Clients.find(expectedID) != Clients.end() && Clients[expectedID] == client;
     }
@@ -230,12 +228,12 @@ public:
 private:
     asio::io_service io_service;
     udp::socket socket;
-    Client server_endpoint;
-    Client remote_endpoint;
+    ClientEndpoint server_endpoint;
+    ClientEndpoint remote_endpoint;
     std::array<char, NetworkBufferSize> recv_buffer { };
     std::thread service_thread;
 
-    std::map<ClientID, Client> Clients;
+    std::map<ClientID, ClientEndpoint> Clients;
     ClientID nextClientID;
 
     ThreadedQueue<std::vector<uint8_t>> incomingMessages;

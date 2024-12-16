@@ -11,7 +11,7 @@ int main()
     unsigned short localPort = 50000;
     Server server = Server(localPort);
 
-    //InputPackage p = InputPackage<();
+    //InputPacket p = InputPacket<();
 
     while (true)
     {

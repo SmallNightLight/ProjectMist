@@ -6,14 +6,17 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 #include "../Shared/Stream.h"
 #include "Client.h"
+#include "../../Game/Input/InputCollection.h"
+#include "../Shared/InputPacket.h"
 
 class ClientHandler
 {
 public:
-    ClientHandler(const std::string& serverIP, const std::string& serverPort) : client(serverIP, serverPort), running(false), clientID(0) { }
+    ClientHandler(const std::string& serverIP, const std::string& serverPort) : client(serverIP, serverPort), running(false), receivedClientID(0) { }
 
     ~ClientHandler()
     {
@@ -24,6 +27,11 @@ public:
     {
         running = true;
         clientThread = std::thread(&ClientHandler::RunClientThread, this);
+
+        if (Serverless)
+        {
+            AddClient(0);
+        }
     }
 
     void Stop()
@@ -55,9 +63,40 @@ public:
         return message;
     }
 
+    void UpdateInputCollections()
+    {
+        while(HasNewMessages())
+        {
+            std::vector<uint8_t> message = PopMessage();
+
+            Stream stream = Stream(message);
+            ClientID clientID = stream.ReadUInt32();
+
+            if (clientInputs.find(receivedClientID) == clientInputs.end())
+            {
+                //New client detected
+                AddClient(clientID);
+            }
+
+            InputPacket packet(stream);
+
+
+        }
+    }
+
+    void UpdateInput(ClientID clientID, const Input& input)
+    {
+
+    }
+
+    void AddClient(ClientID clientID)
+    {
+        clientInputs[clientID] = InputCollection(MaxRollBackFrames * 2);
+    }
+
     uint32_t GetClientID() const
     {
-        return clientID;
+        return receivedClientID;
     }
 
 private:
@@ -66,7 +105,7 @@ private:
         while (running)
         {
             //Wait for client ID during initialization
-            if (clientID == 0)
+            if (receivedClientID == 0)
             {
                 if (client.HasMessages())
                 {
@@ -74,8 +113,10 @@ private:
                     if (message.size() == 4)
                     {
                         Stream stream(message);
-                        clientID = stream.ReadUInt32();
-                        Debug("Received Client ID: ", clientID);
+                        receivedClientID = stream.ReadUInt32();
+                        AddClient(receivedClientID);
+
+                        Debug("Received Client ID: ", receivedClientID);
                     }
                 }
             }
@@ -96,10 +137,13 @@ private:
 
 private:
     Client client;
+    uint32_t receivedClientID;
+
     std::thread clientThread;
     std::atomic<bool> running;
 
-    uint32_t clientID;
     std::mutex messageMutex;
     std::vector<std::vector<uint8_t>> receivedMessages;
+
+    std::unordered_map<ClientID, InputCollection> clientInputs;
 };

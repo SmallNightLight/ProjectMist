@@ -19,11 +19,13 @@
 #include <GLFW/glfw3.h>
 
 #include "../Networking/Client/ClientHandler.h"
+#include "../Networking/Shared/InputPacket.h"
+#include "Input/InputCollection.h"
 
 class Game
 {
 public:
-    explicit Game() : worldManager(WorldManager()), playerInput(Input(playerInputKeys)), otherInput(Input(otherInputKeys)), clientHandler(ClientHandler("localhost", "50000"))
+    explicit Game() : worldManager(WorldManager()), inputCollection(InputCollection(MaxRollBackFrames * 2)), playerInput(Input(playerInputKeys)), otherInput(Input(otherInputKeys)), clientHandler(ClientHandler("localhost", "50000"))
     {
         if (InitializeOpenGL() != 0) return;
 
@@ -80,6 +82,7 @@ public:
 
         //Start client thread
         clientHandler.Start();
+        currentFrame = 0;
 
         while (!glfwWindowShouldClose(window))
         {
@@ -182,10 +185,23 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime) //TODO: Rollback debug mode always rollback
     {
+        ++currentFrame;
+
+        //Check for new input packets
+        if (clientHandler.HasNewMessages())
+        {
+            std::vector<uint8_t> message = clientHandler.PopMessage();
+            InputPacket inputPacket(message);
+        }
+
+        //Update input collection
+        if (!inputCollection.HasInput(currentFrame))
+            inputCollection.AddInput(currentFrame, playerInput);
+
         worldManager.NextFrame();
 
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        physicsWorld->Update(deltaTime, playerInput, numberGenerator);
+        physicsWorld->Update(deltaTime, inputCollection.GetInput(currentFrame), numberGenerator);
     }
 
     void Render()
@@ -205,6 +221,9 @@ private:
     WorldType physicsWorldType;
 
     GLFWwindow* window;
+
+    uint32_t currentFrame;
+    InputCollection inputCollection;
     Input playerInput;
     Input otherInput;
 

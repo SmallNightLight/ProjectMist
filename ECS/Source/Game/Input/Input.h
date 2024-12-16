@@ -14,6 +14,8 @@ static constexpr uint16_t keyNull = 255;
 
 struct Input : BaseInput
 {
+    Input() { }
+
     Input(const std::vector<uint16_t>& inputKeys)
     {
         InputManager::RegisterInput(this);
@@ -35,7 +37,7 @@ struct Input : BaseInput
         return CurrentInput;
     }
 
-    /*Input(InputPackage<KeyCount> inputPackage)
+    /*Input(InputPacket<KeyCount> inputPackage)
     {
 
     }*/
@@ -45,10 +47,15 @@ struct Input : BaseInput
         InputManager::RemoveInput(this);
     }
 
-    /*InputPackage<KeyCount> GetPackage()
+    /*InputPacket<KeyCount> GetPackage()
     {
 
     }*/
+
+    void Override(std::vector<bool> inputPacket)
+    {
+
+    }
 
     //Ket input methods
     bool GetKey(uint16_t glfwKey) override
