@@ -1,7 +1,5 @@
 #pragma once
 
-#include <bitset>
-
 #include "Stream.h"
 
 struct InputPackage

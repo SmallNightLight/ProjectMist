@@ -18,16 +18,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "../Networking/Factory.h"
-
-/*#include <asio.hpp>
-#include <asio/ts/buffer.hpp>
-#include <asio/ts/internet.hpp>*/
+#include "../Networking/Client/ClientHandler.h"
 
 class Game
 {
 public:
-    explicit Game() : worldManager(WorldManager()), playerInput(Input(playerInputKeys)), otherInput(Input(otherInputKeys))
+    explicit Game() : worldManager(WorldManager()), playerInput(Input(playerInputKeys)), otherInput(Input(otherInputKeys)), clientHandler(ClientHandler("localhost", "50000"))
     {
         if (InitializeOpenGL() != 0) return;
 
@@ -46,7 +42,7 @@ public:
             return -1;
         }
 
-        //Create adn initialize a new window
+        //Create and initialize a new window
         window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Particle System - Instancing", nullptr, nullptr);
         if (!window)
         {
@@ -72,8 +68,6 @@ public:
 
     int GameLoop()
     {
-        //NetworkingTest();
-
         isPaused = false;
         Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
         double lastTime = glfwGetTime();
@@ -83,6 +77,9 @@ public:
         //Time tracking variables
         double updateRenderTime = 0.0;
         double sleepTime = 0.0;
+
+        //Start client thread
+        clientHandler.Start();
 
         while (!glfwWindowShouldClose(window))
         {
@@ -177,88 +174,6 @@ public:
         return 0;
     }
 
-    int NetworkingTest()
-    {
-        bool isServer, isClient;
-
-        std::unique_ptr<NetworkLib::IServer> server;
-        std::unique_ptr<NetworkLib::IClient> client;
-
-        while(true)
-        {
-            std::string message("Test message");
-
-            std::cin >> message;
-
-            if (message == "server")
-            {
-                isServer = true;
-                server = NetworkLib::Factory::CreateServer(8888);
-                std::cout << "Is now server" << std::endl;
-            }
-            else if (message == "client")
-            {
-                isClient = true;
-                client = NetworkLib::Factory::CreateClient("localhost", 8888, 0);
-                std::cout << "Is now client" << std::endl;
-            }
-
-            if (server)
-            {
-                server->SendToClient(message, server->GetClientIdByIndex(0));
-            }
-
-            if (client)
-            {
-                auto receivedMessage = client->PopMessage();
-                std::cout << receivedMessage << std::endl;
-            }
-        }
-
-        return 0;
-
-        /*asio::error_code error;
-        asio::io_context context;
-
-        asio::ip::udp::endpoint endpoint(asio::ip::make_address("127.0.0.1", error), 80);
-        asio::ip::udp::socket socket(context);
-        socket.connect(endpoint, error);
-
-        if (!error)
-        {
-            std::cout << "Connected to server" << std::endl;
-        }
-        else
-        {
-            std::cout << "Failed to connect to address: " << error.message() << std::endl;
-        }
-
-        if (socket.is_open())
-        {
-            std::string sRequest =  "GET /index.html HTTP/1.1\r\n"
-                                    "Host: example.com\r\n"
-                                    "Connection: close\r\n\r\n”";
-
-           // socket.write_some(asio::buffer(sRequest.data(), sRequest.size()), error);
-
-            size_t bytes = socket.available();
-            std::cout << "Bytes received: " << bytes << std::endl;
-
-            if (bytes > 0)
-            {
-                std::vector<char> vBuffer(bytes);
-                //socket.read_some(asio::buffer(vBuffer.data(), vBuffer.size()), error);
-
-                for(auto c : vBuffer)
-                    std::cout << c;
-            }
-        }
-
-        while(true) {}
-
-        return 0;*/
-    }
-
     void AddWorlds()
     {
         physicsWorldType = worldManager.AddWorld<PhysicsWorld>();
@@ -292,6 +207,8 @@ private:
     GLFWwindow* window;
     Input playerInput;
     Input otherInput;
+
+    ClientHandler clientHandler;
 
     std::mt19937 numberGenerator;
 

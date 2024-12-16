@@ -1,7 +1,9 @@
 #include "Client.h"
+#include "../Shared/Stream.h"
 
 #include <iostream>
-#include <array>
+#include <thread>
+#include <chrono>
 #include <asio.hpp>
 
 using asio::ip::udp;
@@ -20,10 +22,48 @@ int main(int argc, char* argv[])
     std::cout << "Starting client with endpoint " << ip << ": " << port << std::endl;
 
     Client client(ip, port);
-    while(!client.HasMessages()) { }
 
-    auto message = client.PopMessage();
-    std::cout << std::string(message.begin(), message.end()) << std::endl;
+    uint32_t clientID = 0;
+
+    while (clientID == 0)
+    {
+        if (client.HasMessages())
+        {
+            std::vector<uint8_t> message = client.PopMessage();
+
+            if (message.size() != 4) continue;
+
+            Stream stream = Stream(message);
+            clientID = stream.ReadUInt32();
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    while(true)
+    {
+        std::string input;
+        std::cin >> input;
+
+        if (input == "exit") break;
+
+        std::vector<uint8_t> clientIDBytes(4);
+        std::memcpy(clientIDBytes.data(), &clientID, 4);
+        client.Send(clientIDBytes);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        if (client.HasMessages())
+        {
+            auto message = client.PopMessage();
+
+            for (auto byte : message)
+            {
+                std::cout << static_cast<int>(byte) << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
 
     return 0;
 }

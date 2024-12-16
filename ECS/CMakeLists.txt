@@ -74,14 +74,10 @@ add_executable(ECS Source/main.cpp
         Source/Game/Input/InputManager.h
         Source/Game/Input/Input.h
         Source/Game/Input/BaseInput.h
-        Source/Networking/Client.cpp
-        Source/Networking/Factory.cpp
-        Source/Networking/Server.cpp
-        Source/Networking/Statistics.cpp
-        Source/Networking/Shared/Log.h
 )
 
 add_subdirectory(Source/Math/FixedLib)
+add_subdirectory(Source/Networking/Client)
 add_subdirectory(Source/Networking/Server)
 
 include_directories(${CMAKE_SOURCE_DIR}/Includes)

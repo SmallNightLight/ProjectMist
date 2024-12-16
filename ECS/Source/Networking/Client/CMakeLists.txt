@@ -11,6 +11,7 @@ add_executable(Client main.cpp
         ../Shared/Log.h
 
         ../../Game/Input/Input.h
+        ClientHandler.h
 )
 
 #Asio
