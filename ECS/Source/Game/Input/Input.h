@@ -10,6 +10,8 @@
 #include <map>
 #include <algorithm>
 
+#include "../../Networking/Shared/InputPacket.h"
+
 static constexpr uint16_t keyNull = 255;
 
 struct Input : BaseInput
@@ -32,30 +34,30 @@ struct Input : BaseInput
         }
     }
 
-    std::vector<bool> GetPacket()
+    Input(const std::vector<uint16_t>& inputKeys, InputPacket inputPackage) : Input(inputKeys)
     {
-        return CurrentInput;
+        Overwrite(inputPackage);
     }
-
-    /*Input(InputPacket<KeyCount> inputPackage)
-    {
-
-    }*/
 
     ~Input() override
     {
         InputManager::RemoveInput(this);
     }
 
-    /*InputPacket<KeyCount> GetPackage()
+    InputPacket GetPacket(uint32_t frame)
     {
+        return InputPacket(frame, CurrentInput);
+    }
 
-    }*/
-
-    void Override(std::vector<bool> inputPacket)
+    void Overwrite(InputPacket inputPacket)
     {
+        CurrentInput = inputPacket.Input;
+        LastInput = inputPacket.LastInput;
+
+        auto a = mouseX.raw_value();
 
     }
+
 
     //Ket input methods
     bool GetKey(uint16_t glfwKey) override

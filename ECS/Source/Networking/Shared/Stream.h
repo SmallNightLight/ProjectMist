@@ -17,11 +17,14 @@ public:
         buffer.push_back(value ? 1 : 0);
     }
 
-    void WriteUint32(u_int32_t value)
+    template <typename T>
+    void WriteInteger(T value)
     {
-        for (size_t i = 0; i < sizeof(value); ++i)
+        static_assert(std::is_integral_v<T>, "T must be an integral type");
+
+        for (size_t i = 0; i < sizeof(T); ++i)
         {
-            buffer.push_back(static_cast<char>((value >> (i * 8)) & 0xFF));
+            buffer.push_back(static_cast<unsigned char>((value >> (i * 8)) & 0xFF));
         }
     }
 
@@ -36,17 +39,21 @@ public:
         return value;
     }
 
-    u_int32_t ReadUInt32()
+    template <typename T>
+    T ReadInteger()
     {
-        if (currentIndex + sizeof(u_int32_t) > buffer.size())
+        static_assert(std::is_integral_v<T>, "T must be an integral type");
+
+        if (currentIndex + sizeof(T) > buffer.size())
             throw std::out_of_range("Stream underflow");
 
-       u_int32_t value = 0;
-        for (size_t i = 0; i < sizeof(u_int32_t); ++i)
+        T value = 0;
+        for (size_t i = 0; i < sizeof(T); ++i)
         {
-            value |= (static_cast<u_int32_t>(static_cast<unsigned char>(buffer[currentIndex + i])) << (i * 8));
+            value |= static_cast<T>(static_cast<unsigned char>(buffer[currentIndex + i])) << (i * 8);
         }
-        currentIndex += sizeof(u_int32_t);
+
+        currentIndex += sizeof(T);
         return value;
     }
 

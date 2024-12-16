@@ -11,74 +11,57 @@ typedef std::vector<bool> RawInput;
 class InputCollection
 {
 public:
-    InputCollection(uint32_t size = 15) : saveCount(size), inputs(size), frames(size, 0), startIndex(0), count(0)
+    InputCollection(const std::vector<uint16_t>& inputKeys, uint32_t size = 15) : baseInput(Input(inputKeys)), saveCount(size), inputs(size), oldestFrame(1), startIndex(0)
     {
         if (size == 0)
             throw std::invalid_argument("saveCount must be greater than 0.");
     }
 
-    void AddInput(uint32_t frame, const Input& input)
+    void AddInput(uint32_t frame, const RawInput& input)
     {
-        assert(frame != 0 && "Frame can't be 0 - invalid frame");
+        assert(frame >= oldestFrame && frame < oldestFrame + saveCount && "Frame is outside the valid range of the buffer.");
 
-        //Check if the frame already exists and update it if found
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            uint32_t index = (startIndex + i) % saveCount;
-            if (frames[index] == frame)
-            {
-                //Update input for the frame
-                inputs[index] = input;
-                return;
-            }
-        }
-
-        //If the frame does not exist, add it
-        uint32_t index = (startIndex + count) % saveCount;
-
-        if (count < saveCount)
-        {
-            //Increment count if buffer isn't full
-            ++count;
-        }
-        else
-        {
-            //Overwrite the oldest entry
-            startIndex = (startIndex + 1) % saveCount;
-        }
-
-        frames[index] = frame;
+        uint32_t index = GetIndex(frame);
         inputs[index] = input;
+
+        //Update the oldest frame if we're adding a frame beyond the current range
+        if (frame >= oldestFrame + saveCount)
+        {
+            oldestFrame = frame - saveCount + 1;
+            startIndex = GetIndex(oldestFrame);
+        }
     }
 
     //Retrieves the input for a specific frame
-    Input& GetInput(uint32_t frame)
+    const Input& GetInput(uint32_t frame)
     {
-        for (uint32_t i = 0; i < count; ++i)
+        if (!HasInput(frame))
         {
-            uint32_t index = (startIndex + i) % saveCount;
-            if (frames[index] == frame)
-                return inputs[index];
+            throw std::out_of_range("Input for the requested frame not found");
         }
 
-        throw std::out_of_range("Input for the requested frame not found.");
+        baseInput.Overwrite(inputs[GetIndex(frame)]);
+
+        return baseInput;
     }
 
-    bool HasInput(uint32_t frame) const //TODO: BAD!! optimize
+    bool HasInput(uint32_t frame) const
     {
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            uint32_t index = (startIndex + i) % saveCount;
-            if (frames[index] == frame)
-                return true;
-        }
-        return false;
+        //Check if the frame is within the range of the buffer
+        return frame >= oldestFrame && frame < oldestFrame + saveCount; //TODO: NOT AT BEGINNIGN
     }
 
 private:
+    uint32_t GetIndex(uint32_t frame) const
+    {
+        return (startIndex + (frame - oldestFrame)) % saveCount;
+    }
+
+private:
+    Input baseInput;
+
     uint32_t saveCount;                 //Maximum number of frames to save
-    std::vector<Input> inputs;          //Stores the inputs in a circular manner
-    std::vector<uint32_t> frames;       //Stores frame numbers (0 indicates an empty slot)
-    uint32_t startIndex;                //Index of the oldest frame
-    uint32_t count;                     //Number of frames currently stored
+    std::vector<RawInput> inputs;       //Stores the inputs
+    uint32_t oldestFrame;               //oldest frame where the input it still saved
+    uint32_t startIndex;                //Index of the oldest frame in the inputs, since it is circular
 };
