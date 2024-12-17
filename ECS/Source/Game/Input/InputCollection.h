@@ -84,7 +84,7 @@ private:
 
     uint32_t saveCount;                     //Maximum number of frames to save
     std::vector<InputPacket> inputs;        //Stores the inputs
-    uint32_t oldestFrame;                   //oldest frame where the input it still saved
+    uint32_t oldestFrame;                   //Oldest frame where the input it still saved
     uint32_t startIndex;                    //Index of the oldest frame in the inputs, since it is circular
     uint32_t frameCount;                    //Number of frames currently stored in the buffer
     uint32_t lastCompletedFrame;            //The highest frame where all previous inputs are known

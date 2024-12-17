@@ -2,6 +2,12 @@ Report structure
 
 
 Introduction
+- Fighting game origin, 
+- goal: game idea
+- advantages of C++
+- what do I want to learn
+- why I picked this project
+- broad overview
 
 Framework
 - Architecture (Needs for deterministic physics, advantages for an ECS (quick iteration)
@@ -21,11 +27,32 @@ Networking
 - Architecture
 - Rollback Netcode
 
+End
+- did I meet the learning goals
+- conclusion
+
+
+can use me (with reflection) 
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+class diagram (no methods)
+figures with explanation
+many diagrams
+scientific formulas
 
 
 
