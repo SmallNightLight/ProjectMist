@@ -1,4 +1,5 @@
 if(WIN32)
+    add_compile_definitions(_WIN32_WINNT=0x0A00)
     set(CMAKE_TOOLCHAIN_FILE "C:/Matthias/Study/VStudio/LibariesCPP/vcpkg/scripts/buildsystems/vcpkg.cmake")
 elseif(UNIX)
     if(DEFINED ENV{VCPKG_DEFAULT_TRIPLET} AND NOT DEFINED VCPKG_TARGET_TRIPLET)

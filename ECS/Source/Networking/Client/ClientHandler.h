@@ -42,7 +42,7 @@ public:
             clientThread.join();
     }
 
-    void SendMessage(const std::vector<uint8_t>& message)
+    void Send(const std::vector<uint8_t>& message)
     {
         client.Send(message);
     }
@@ -91,9 +91,18 @@ public:
         clientInputs.at(clientID).AddInput(inputPacket);
     }
 
-    void SendInput(const InputPacket& inputPacket)
+    void SendInput(InputPacket& inputPacket)
     {
+        if (receivedClientID == 0) return;
+
+        if (inputPacket.Input[0])
+            int i = 0;
+
         Stream stream = Stream();
+        stream.WriteInteger<int32_t>(receivedClientID);
+
+        inputPacket.Serialize(stream);
+        Send(stream.GetBuffer());
     }
 
     void AddClient(ClientID clientID)

@@ -31,8 +31,15 @@ public:
         else if (input.Frame >= oldestFrame + saveCount)
         {
             //Update the oldest frame if the frame is added beyond the current range
+            //oldestFrame = input.Frame - saveCount + 1;
+            //startIndex = GetIndex(oldestFrame);
+
+            //Calculate how many frames the buffer is advancing
+            uint32_t framesAdvanced = input.Frame - (oldestFrame + saveCount - 1);
+
+            //Update the oldestFrame and adjust startIndex accordingly
             oldestFrame = input.Frame - saveCount + 1;
-            startIndex = GetIndex(oldestFrame);
+            startIndex = (startIndex + framesAdvanced) % saveCount;
         }
 
         //Update the last complete frame if the new input fills a gap
@@ -80,5 +87,5 @@ private:
     uint32_t oldestFrame;                   //oldest frame where the input it still saved
     uint32_t startIndex;                    //Index of the oldest frame in the inputs, since it is circular
     uint32_t frameCount;                    //Number of frames currently stored in the buffer
-    uint32_t lastCompletedFrame;             //The highest frame where all previous inputs are known
+    uint32_t lastCompletedFrame;            //The highest frame where all previous inputs are known
 };

@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.27)
 project(Server)
 
+set(CMAKE_CXX_STANDARD 17)
+
+if(WIN32)
+    add_compile_definitions(_WIN32_WINNT=0x0A00)
+endif()
+
 add_executable(Server main.cpp
         Server.h
         UDPServer.h

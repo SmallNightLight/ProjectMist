@@ -9,9 +9,7 @@
 int main()
 {
     unsigned short localPort = 50000;
-    Server server = Server(localPort);
-
-    //InputPacket p = InputPacket<();
+    Server server(localPort);
 
     while (true)
     {

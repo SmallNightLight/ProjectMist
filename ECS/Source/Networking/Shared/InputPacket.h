@@ -2,13 +2,14 @@
 
 #include "Stream.h"
 
+#include <cstdint>
 #include <cassert>
 
 struct InputPacket
 {
     InputPacket() : Frame(0), MouseX(0), MouseY(0) { }
 
-    InputPacket(u_int32_t frame, const std::vector<bool>& input, const std::vector<bool>& lastInput, int32_t mouseX, int32_t mouseY)
+    InputPacket(uint32_t frame, const std::vector<bool>& input, const std::vector<bool>& lastInput, int32_t mouseX, int32_t mouseY)
     {
         Frame = frame;
         Input = input;
@@ -71,7 +72,7 @@ struct InputPacket
         }
     }
 
-    u_int32_t Frame;
+    uint32_t Frame;
     std::vector<bool> Input;
     std::vector<bool> LastInput;
     std::int32_t MouseX, MouseY;

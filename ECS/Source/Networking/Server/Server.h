@@ -93,16 +93,19 @@ private:
 
                     SendToAll(clientIDBytes);
                 }
-                else if (ClientID clientID = stream.ReadInteger<uint32_t>(); VerifyClientID(remote_endpoint, clientID))
-                {
-                    SendToAll(message);
-                    //if (!message.empty())
-                    //    incomingMessages.push(message);
-                }
                 else
                 {
-                    Warning("Received message with invalid client ID: ", clientID);
-                    throw std::runtime_error("Message has invalid client ID");
+                    ClientID clientID = stream.ReadInteger<uint32_t>();
+
+                    if (VerifyClientID(remote_endpoint, clientID))
+                    {
+                        SendToAll(message);
+                    }
+                    else
+                    {
+                        Warning("Received message with invalid client ID: ", clientID);
+                        throw std::runtime_error("Message has invalid client ID");
+                    }
                 }
             }
             catch (const std::exception& exception)
@@ -215,7 +218,7 @@ private:
 
     void OnClientDisconnect(ClientID clientID)
     {
-        Debug("Client disconnected: " + clientID);
+        Debug("Client disconnected: ", clientID);
 
         for (auto& handler : OnDisconnectHandlers)
             if (handler)
