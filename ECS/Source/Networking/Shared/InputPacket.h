@@ -6,6 +6,8 @@
 
 struct InputPacket
 {
+    InputPacket() : Frame(0), MouseX(0), MouseY(0) { }
+
     InputPacket(u_int32_t frame, const std::vector<bool>& input, const std::vector<bool>& lastInput, int32_t mouseX, int32_t mouseY)
     {
         Frame = frame;

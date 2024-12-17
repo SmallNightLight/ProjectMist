@@ -93,7 +93,7 @@ private:
 
                     SendToAll(clientIDBytes);
                 }
-                else if (ClientID clientID = stream.ReadUInt32(); VerifyClientID(remote_endpoint, clientID))
+                else if (ClientID clientID = stream.ReadInteger<uint32_t>(); VerifyClientID(remote_endpoint, clientID))
                 {
                     SendToAll(message);
                     //if (!message.empty())

@@ -79,7 +79,7 @@ public:
         }
     }
 
-    void Update(Fixed16_16 deltaTime, std::vector<BaseInput>& inputs, std::mt19937& numberGenerator)
+    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs, std::mt19937& numberGenerator)
     {
         UpdateDebug(inputs, numberGenerator);
 
@@ -92,23 +92,23 @@ public:
         }
     }
 
-    void UpdateDebug(std::vector<BaseInput>& inputs, std::mt19937& numberGenerator)
+    void UpdateDebug(std::vector<Input*>& inputs, std::mt19937& numberGenerator)
     {
-        for(BaseInput& input : inputs)
+        for(Input* input : inputs)
         {
-            if (input.GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
+            if (input->GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
             {
-                PhysicsUtils::CreateRandomCircleFromPosition(layer, numberGenerator, input.GetMousePosition(camera));
+                PhysicsUtils::CreateRandomCircleFromPosition(layer, numberGenerator, input->GetMousePosition(camera));
             }
 
-            if (input.GetKeyDown(GLFW_MOUSE_BUTTON_RIGHT))
+            if (input->GetKeyDown(GLFW_MOUSE_BUTTON_RIGHT))
             {
-                PhysicsUtils::CreateRandomBoxFromPosition(layer, numberGenerator, input.GetMousePosition(camera));
+                PhysicsUtils::CreateRandomBoxFromPosition(layer, numberGenerator, input->GetMousePosition(camera));
             }
 
-            if (input.GetKeyDown(GLFW_MOUSE_BUTTON_MIDDLE))
+            if (input->GetKeyDown(GLFW_MOUSE_BUTTON_MIDDLE))
             {
-                PhysicsUtils::CreateRandomPolygonFromPosition(layer, numberGenerator, input.GetMousePosition(camera));
+                PhysicsUtils::CreateRandomPolygonFromPosition(layer, numberGenerator, input->GetMousePosition(camera));
             }
         }
     }

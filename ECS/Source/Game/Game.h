@@ -25,7 +25,7 @@
 class Game
 {
 public:
-    explicit Game() : worldManager(WorldManager()), inputCollection(InputCollection(MaxRollBackFrames * 2)), playerInput(Input(playerInputKeys)), otherInput(Input(otherInputKeys)), clientHandler(ClientHandler("localhost", "50000"))
+    explicit Game() : worldManager(WorldManager()), playerInput(Input(playerInputKeys)), otherInput(Input(otherInputKeys)), clientHandler(ClientHandler("localhost", "50000"))
     {
         if (InitializeOpenGL() != 0) return;
 
@@ -185,23 +185,20 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime) //TODO: Rollback debug mode always rollback
     {
-        ++currentFrame;
+        InputPacket input = playerInput.GetPacket(currentFrame);
 
-        //Check for new input packets
-        if (clientHandler.HasNewMessages())
-        {
-            std::vector<uint8_t> message = clientHandler.PopMessage();
-            InputPacket inputPacket(message);
-        }
+        clientHandler.SendInput(input);
+        clientHandler.UpdateInput(clientHandler.GetClientID(), input);
+        clientHandler.UpdateInputCollections();
 
-        //Update input collection
-        if (!inputCollection.HasInput(currentFrame))
-            inputCollection.AddInput(currentFrame, playerInput);
+        std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
 
         worldManager.NextFrame();
 
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        physicsWorld->Update(deltaTime, inputCollection.GetInput(currentFrame), numberGenerator);
+        physicsWorld->Update(deltaTime, inputs, numberGenerator);
+
+        ++currentFrame;
     }
 
     void Render()
@@ -216,14 +213,13 @@ private:
         glViewport(0, 0, width, height);
     }
 
-
+private:
     WorldManager worldManager;
     WorldType physicsWorldType;
 
     GLFWwindow* window;
 
     uint32_t currentFrame;
-    InputCollection inputCollection;
     Input playerInput;
     Input otherInput;
 

@@ -1,26 +1,28 @@
 #pragma once
 
-#include "BaseInput.h"
-#include "InputManager.h"
 #include "../../Math/FixedTypes.h"
 #include "../../Components/Camera.h"
+#include "../../ECS/ECSSettings.h"
 
 #include <array>
 #include <vector>
 #include <map>
-#include <algorithm>
+#include <cstdint>
+#include <GLFW/glfw3.h>
 
 #include "../../Networking/Shared/InputPacket.h"
 
 static constexpr uint16_t keyNull = 255;
 
-struct Input : BaseInput
+class InputManager;
+
+struct Input
 {
     Input() { }
 
     Input(const std::vector<uint16_t>& inputKeys)
     {
-        InputManager::RegisterInput(this);
+        RegisterInput();
 
         CurrentInput.resize(inputKeys.size(), false);
         LastInput.resize(inputKeys.size(), false);
@@ -39,44 +41,44 @@ struct Input : BaseInput
         Overwrite(inputPackage);
     }
 
-    ~Input() override
+    ~Input()
     {
-        InputManager::RemoveInput(this);
+        RemoveInput();
     }
 
-    InputPacket GetPacket(uint32_t frame)
+    InputPacket GetPacket(uint32_t frame) const
     {
-        return InputPacket(frame, CurrentInput);
+        return InputPacket(frame, CurrentInput, LastInput, mouseX.raw_value(), mouseY.raw_value());
     }
 
-    void Overwrite(InputPacket inputPacket)
+    void Overwrite(const InputPacket& inputPacket)
     {
         CurrentInput = inputPacket.Input;
         LastInput = inputPacket.LastInput;
 
-        auto a = mouseX.raw_value();
-
+        mouseX = Fixed16_16::from_raw_value(inputPacket.MouseX);
+        mouseY = Fixed16_16::from_raw_value(inputPacket.MouseY);
     }
 
 
     //Ket input methods
-    bool GetKey(uint16_t glfwKey) override
+    bool GetKey(uint16_t glfwKey)
     {
         return CurrentInput[keyIndexes[glfwKey]];
     }
 
-    bool GetKeyDown(uint16_t glfwKey) override
+    bool GetKeyDown(uint16_t glfwKey)
     {
         return CurrentInput[keyIndexes[glfwKey]] && !LastInput[keyIndexes[glfwKey]];
     }
 
-    bool GetKeyUp(uint16_t glfwKey) override
+    bool GetKeyUp(uint16_t glfwKey)
     {
         return !CurrentInput[keyIndexes[glfwKey]] && LastInput[keyIndexes[glfwKey]];
     }
 
     //Mouse position methods
-    Vector2 GetMousePosition(Camera* camera) const override
+    Vector2 GetMousePosition(Camera* camera) const
     {
         Fixed16_16 normalizedX = (mouseX) / Fixed16_16(SCREEN_WIDTH);
         Fixed16_16 normalizedY = (Fixed16_16(SCREEN_HEIGHT) - mouseY) / Fixed16_16(SCREEN_HEIGHT);
@@ -87,12 +89,12 @@ struct Input : BaseInput
         return Vector2 { worldX, worldY };
     }
 
-    void Update() override
+    void Update()
     {
         LastInput = CurrentInput;
     }
 
-    void SetKeyState(uint16_t glfwKey, bool isDown) override
+    void SetKeyState(uint16_t glfwKey, bool isDown)
     {
         if (keyIndexes[glfwKey] == keyNull) return;
 
@@ -100,12 +102,17 @@ struct Input : BaseInput
         CurrentInput[keyIndexes[glfwKey]] = isDown;
     }
 
-    void SetMousePosition(double x, double y) override
+    void SetMousePosition(double x, double y)
     {
         mouseX = Fixed16_16::FromFloat<double>(x);
         mouseY = Fixed16_16::FromFloat<double>(y);
     }
 
+private:
+    void RegisterInput();
+    void RemoveInput();
+
+public:
     std::vector<bool> CurrentInput { };
     std::vector<bool> LastInput { };
     Fixed16_16 mouseX = Fixed16_16(0), mouseY = Fixed16_16(0);

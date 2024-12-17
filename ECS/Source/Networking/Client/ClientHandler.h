@@ -5,6 +5,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -70,7 +71,7 @@ public:
             std::vector<uint8_t> message = PopMessage();
 
             Stream stream = Stream(message);
-            ClientID clientID = stream.ReadUInt32();
+            ClientID clientID = stream.ReadInteger<uint32_t>();
 
             if (clientInputs.find(receivedClientID) == clientInputs.end())
             {
@@ -79,24 +80,62 @@ public:
             }
 
             InputPacket packet(stream);
-
-
+            UpdateInput(clientID, packet);
         }
     }
 
-    void UpdateInput(ClientID clientID, const Input& input)
+    void UpdateInput(ClientID clientID, const InputPacket& inputPacket)
     {
+        if (clientInputs.find(clientID) == clientInputs.end()) return;
 
+        clientInputs.at(clientID).AddInput(inputPacket);
+    }
+
+    void SendInput(const InputPacket& inputPacket)
+    {
+        Stream stream = Stream();
     }
 
     void AddClient(ClientID clientID)
     {
-        clientInputs[clientID] = InputCollection(MaxRollBackFrames * 2);
+        clientIDs.insert(clientID);
+        clientInputs.emplace(clientID, InputCollection(playerInputKeys, MaxRollBackFrames * 2));
     }
 
-    uint32_t GetClientID() const
+    ClientID GetClientID() const
     {
         return receivedClientID;
+    }
+
+    const std::set<ClientID>& GetAllClientIDs() const
+    {
+        return clientIDs;
+    }
+
+    Input* GetClientInput(ClientID clientID, uint32_t frame)
+    {
+        if (clientInputs.find(clientID) == clientInputs.end())
+        {
+            throw std::invalid_argument("clientID not found");
+        }
+
+        return &clientInputs.at(clientID).GetInput(frame);
+    }
+
+    std::vector<Input*> GetAllClientInputs(uint32_t frame)
+    {
+        std::set<ClientID> clientIDSet = GetAllClientIDs();
+
+        std::vector<Input*> result(clientIDSet.size());
+
+        int i = 0;
+        for (ClientID clientID : clientIDSet)
+        {
+            result[i] = GetClientInput(clientID, frame);
+            ++i;
+        }
+
+        return result;
     }
 
 private:
@@ -113,7 +152,7 @@ private:
                     if (message.size() == 4)
                     {
                         Stream stream(message);
-                        receivedClientID = stream.ReadUInt32();
+                        receivedClientID = stream.ReadInteger<uint32_t>();
                         AddClient(receivedClientID);
 
                         Debug("Received Client ID: ", receivedClientID);
@@ -145,5 +184,6 @@ private:
     std::mutex messageMutex;
     std::vector<std::vector<uint8_t>> receivedMessages;
 
+    std::set<ClientID> clientIDs { };
     std::unordered_map<ClientID, InputCollection> clientInputs;
 };

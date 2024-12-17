@@ -1,9 +1,9 @@
 #pragma once
 
-#include "BaseInput.h"
-
 #include <vector>
 #include <GLFW/glfw3.h>
+
+#include "Input.h"
 
 class InputManager
 {
@@ -13,12 +13,12 @@ public:
 
     }
 
-    static void RegisterInput(BaseInput* input)
+    static void RegisterInput(Input* input)
     {
         instances.push_back(input);
     }
 
-    static void RemoveInput(BaseInput* input)
+    static void RemoveInput(Input* input)
     {
         instances.erase(std::remove(instances.begin(), instances.end(), input), instances.end());
     }
@@ -35,7 +35,7 @@ private:
     {
         if (key < 0 || key > GLFW_KEY_LAST) return;
 
-        for (BaseInput* input : instances)
+        for (Input* input : instances)
         {
             input->SetKeyState(key, action != GLFW_RELEASE);
         }
@@ -45,7 +45,7 @@ private:
     {
         if (button < 0 || button > GLFW_KEY_LAST) return;
 
-        for (BaseInput* input : instances)
+        for (Input* input : instances)
         {
             input->SetKeyState(button, action != GLFW_RELEASE);
         }
@@ -53,12 +53,11 @@ private:
 
     static void CursorPositionCallback(GLFWwindow* window, double x, double y)
     {
-        for (BaseInput* input : instances)
+        for (Input* input : instances)
         {
             input->SetMousePosition(x, y);
         }
     }
 
-    inline static std::vector<BaseInput*> instances;
-
+    inline static std::vector<Input*> instances;
 };
