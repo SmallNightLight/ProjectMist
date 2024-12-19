@@ -67,10 +67,20 @@ public:
         return baseInput;
     }
 
+    bool NeedsPrediction(uint32_t frame)
+    {
+        return !HasInput(frame);
+    }
+
     bool HasInput(uint32_t frame) const
     {
         //Check if the frame is within the range of the buffer
         return frame >= oldestFrame && frame < oldestFrame + frameCount && frameCount > 0;
+    }
+
+    uint32_t GetRollbackFrame(uint32_t currentFrame) const
+    {
+
     }
 
 private:

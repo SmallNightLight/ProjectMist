@@ -197,7 +197,6 @@ public:
 
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         physicsWorld->Update(deltaTime, inputs, numberGenerator);
-
         ++currentFrame;
     }
 
@@ -226,6 +225,8 @@ private:
     ClientHandler clientHandler;
 
     std::mt19937 numberGenerator;
+
+
 
     bool isPaused;
 };

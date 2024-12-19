@@ -109,6 +109,7 @@ public:
     {
         clientIDs.insert(clientID);
         clientInputs.emplace(clientID, InputCollection(playerInputKeys, MaxRollBackFrames * 2));
+        //lastInputFrame[clientID] =
     }
 
     ClientID GetClientID() const
@@ -128,7 +129,17 @@ public:
             throw std::invalid_argument("clientID not found");
         }
 
-        return &clientInputs.at(clientID).GetInput(frame);
+        InputCollection& inputCollection= clientInputs.at(clientID);
+
+        if (inputCollection.NeedsPrediction(frame))
+        {
+            return &inputCollection.GetPredictedInput();
+        }
+        else
+        {
+            lastInputFrame[clientID] = frame;
+            return &inputCollection.GetInput(frame);
+        }
     }
 
     std::vector<Input*> GetAllClientInputs(uint32_t frame)
@@ -145,6 +156,16 @@ public:
         }
 
         return result;
+    }
+
+    void CheckRollbacks()
+    {
+        uint32_t rollback = 0;
+
+        for (auto clientInput : clientInputs)
+        {
+            //clientInput.second.
+        }
     }
 
 private:
@@ -195,4 +216,5 @@ private:
 
     std::set<ClientID> clientIDs { };
     std::unordered_map<ClientID, InputCollection> clientInputs;
+    std::unordered_map<ClientID, uint32_t> lastInputFrame;
 };

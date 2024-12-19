@@ -8,8 +8,8 @@
 
 class WorldManager
 {
-public: //TODO: MaxRollBackFrames ḿodf
-    WorldManager() : currentFrame(0), lastLayerIndex(0), rollbackCount(MaxRollBackFrames - 1), worldCount(0) //TODO: ACTUALLY - 1? or 2
+public:
+    WorldManager() : currentFrame(0), lastLayerIndex(0), rollbackCount(MaxRollBackFrames - 1), worldCount(0)
     {
         for(short layer = 0; layer < MaxRollBackFrames; ++layer)
         {
@@ -89,5 +89,4 @@ private:
     int worldCount;
     std::array<Layer, MaxRollBackFrames> layers;
     std::array<std::array<std::shared_ptr<World>, MaxRollBackFrames>, MAXWORLDS> worlds { };
-
 };
