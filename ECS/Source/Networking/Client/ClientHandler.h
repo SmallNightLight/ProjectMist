@@ -9,7 +9,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "../Shared/Stream.h"
+#include "../../Math/Stream.h"
 #include "Client.h"
 #include "../../Game/Input/InputCollection.h"
 #include "../Shared/InputPacket.h"

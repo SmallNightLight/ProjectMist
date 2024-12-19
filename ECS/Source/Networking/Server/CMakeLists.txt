@@ -13,10 +13,13 @@ add_executable(Server main.cpp
 
         ../Shared/Log.h
         ../Shared/InputPacket.h
-        ../Shared/Stream.h
         ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
 )
+
+if(TARGET CLIENT)
+    add_subdirectory(../../Math ${CMAKE_BINARY_DIR}/MathBuild)
+endif()
 
 #Asio
 find_package(asio CONFIG REQUIRED)

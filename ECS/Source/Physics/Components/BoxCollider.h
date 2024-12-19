@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../Math/Stream.h"
+
 struct BoxCollider
 {
     Fixed16_16 Width;
@@ -28,8 +30,10 @@ private:
         };
     }
 
-    /*static std::array<std::uint8_t, 6> GetBoxTriangles()
+public:
+
+    void Serialize(Stream& stream)
     {
-        return std::array<std::uint8_t, 6> {0, 1, 2, 0, 2, 3};
-    }*/
+        //stream.WriteInteger<()
+    }
 };

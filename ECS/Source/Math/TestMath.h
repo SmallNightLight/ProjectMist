@@ -1,9 +1,8 @@
 #pragma once
+
 #pragma optimize("", off)
 
 #include "FixedTypes.h"
-
-
 #include "FixedLib/include/fixedmath/fixed_math.hpp"
 #include "FixedLib/include/fixedmath/iostream.h"
 
@@ -11,7 +10,9 @@
 #include <iomanip>
 #include <cassert>
 #include <chrono>
+
 #define FIXEDMATH_ENABLE_SQRT_ABACUS_ALGO
+
 using fixedmath::operator""_fix;
 
 class TestMath
@@ -308,4 +309,5 @@ public:
         return 0;
     }
 };
+
 #pragma optimize("", on)

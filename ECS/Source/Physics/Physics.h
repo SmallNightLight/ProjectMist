@@ -28,5 +28,4 @@
 
 #include "Systems/MovingSystem.h"
 
-#include "OldPhysicsWorld.h"
 #include "PhysicsUtils.h"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Shared/Stream.h"
+#include "../../Math/Stream.h"
 #include "../Shared/ThreadedQueue.h"
 #include "../Shared/NetworkingSettings.h"
 #include "../Shared/Log.h"

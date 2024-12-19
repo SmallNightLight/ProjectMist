@@ -1,5 +1,5 @@
 #include "Client.h"
-#include "../Shared/Stream.h"
+#include "../../Math/Stream.h"
 
 #include <iostream>
 #include <thread>
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
             if (message.size() != 4) continue;
 
             Stream stream = Stream(message);
-            clientID = stream.ReadUInt32();
+            clientID = stream.ReadInteger<uint32_t>();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));

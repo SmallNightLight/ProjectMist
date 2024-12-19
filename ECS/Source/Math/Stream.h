@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include "FixedTypes.h"
+
 class Stream
 {
 public:
@@ -26,6 +28,17 @@ public:
         {
             buffer.push_back(static_cast<unsigned char>((value >> (i * 8)) & 0xFF));
         }
+    }
+
+    void WriteFixed(Fixed16_16 value)
+    {
+        WriteInteger<int32_t>(value.raw_value());
+    }
+
+    void WriteVector2(Vector2 value)
+    {
+        WriteInteger<int32_t>(value.X.raw_value());
+        WriteInteger<int32_t>(value.Y.raw_value());
     }
 
     //Read from stream
@@ -60,6 +73,16 @@ public:
     std::vector<uint8_t> GetBuffer()
     {
         return buffer;
+    }
+
+    Fixed16_16 ReadFixed16()
+    {
+        return Fixed16_16::from_raw_value(ReadInteger<int32_t>());
+    }
+
+    Vector2 ReadVector2()
+    {
+        return Vector2(Fixed16_16::from_raw_value(ReadInteger<int32_t>()), Fixed16_16::from_raw_value(ReadInteger<int32_t>()));
     }
 
 private:

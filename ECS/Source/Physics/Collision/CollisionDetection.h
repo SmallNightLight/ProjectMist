@@ -507,6 +507,4 @@ private:
       ComponentCollection<CircleCollider>* circleColliderCollection;
       ComponentCollection<BoxCollider>* boxColliderCollection;
       ComponentCollection<PolygonCollider>* polygonColliderCollection;
-
-      static constexpr Fixed16_16 SmallNumber = Fixed16_16::from_raw_value(16);
 };

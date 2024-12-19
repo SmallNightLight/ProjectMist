@@ -23,10 +23,6 @@ add_executable(ECS Source/main.cpp
         Source/ECS/Layer.h
         Source/Components/ComponentHeaders.h
         Source/Systems/SystemHeader.h
-        Source/Math/FPM/fixed.hpp
-        Source/Math/FPM/math.hpp
-        Source/Math/FPM/ios.hpp
-        Source/Math/FixedVector2.h
         Source/Components/Transform.h
         Source/Systems/Movement.h
         Source/Components/Velocity.h
@@ -35,16 +31,8 @@ add_executable(ECS Source/main.cpp
         Source/Components/Boid.h
         Source/Systems/BoidMovement.h
         Source/Systems/BoidRenderer.h
-        Source/Math/Quadtree.h
-        Source/Math/Rect.h
-        Source/Math/PartitionGrid.h
-        Source/Math/PartitionGrid2.h
         Source/Components/Lifetime.h
         Source/Systems/BlinkingParticles.h
-        Source/Math/FixedTypes.h
-        Source/Math/TestMath.h
-        Source/Math/IntVector2.h
-        Source/Math/FixedRandom.h
         Source/Physics/Physics.h
         Source/Physics/Components/ColliderTransform.h
         Source/Physics/Components/RigidBodyData.h
@@ -61,8 +49,6 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Systems/MovingSystem.h
         Source/Physics/Collision/CollisionDetection.h
         Source/Physics/Collision/CollisionInfo.h
-        Source/Physics/OldPhysicsWorld.h
-        Source/Math/AABB.h
         Source/Physics/Components/PolygonCollider.h
         Source/Physics/Systems/PolygonColliderRenderer.h
         Source/Game/Game.h
@@ -78,7 +64,7 @@ add_executable(ECS Source/main.cpp
         Source/Game/Input/Input.cpp
 )
 
-add_subdirectory(Source/Math/FixedLib)
+add_subdirectory(Source/Math)
 add_subdirectory(Source/Networking/Client)
 add_subdirectory(Source/Networking/Server)
 

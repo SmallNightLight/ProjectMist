@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Stream.h"
+#include "../../Math/Stream.h"
 
 #include <cstdint>
 #include <cassert>

@@ -30,10 +30,6 @@ public:
         }
         else if (input.Frame >= oldestFrame + saveCount)
         {
-            //Update the oldest frame if the frame is added beyond the current range
-            //oldestFrame = input.Frame - saveCount + 1;
-            //startIndex = GetIndex(oldestFrame);
-
             //Calculate how many frames the buffer is advancing
             uint32_t framesAdvanced = input.Frame - (oldestFrame + saveCount - 1);
 

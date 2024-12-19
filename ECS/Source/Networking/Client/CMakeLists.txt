@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 3.27)
 project(Client)
 
+set(CMAKE_CXX_STANDARD 17)
+
+if(WIN32)
+    add_compile_definitions(_WIN32_WINNT=0x0A00)
+endif()
+
 add_executable(Client main.cpp
         Client.h
 
         ../Shared/InputPacket.h
-        ../Shared/Stream.h
         ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
         ../Shared/Log.h
@@ -13,6 +18,10 @@ add_executable(Client main.cpp
         ../../Game/Input/Input.h
         ClientHandler.h
 )
+
+if(TARGET CLIENT)
+    add_subdirectory(../../Math ${CMAKE_BINARY_DIR}/MathBuild)
+endif()
 
 #Asio
 find_package(asio CONFIG REQUIRED)
