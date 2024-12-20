@@ -70,9 +70,9 @@ public:
 
     //Registers the component T to the component manager
     template<typename T>
-    void RegisterComponent()
+    std::shared_ptr<ComponentCollection<T>> RegisterComponent()
     {
-        componentManager.RegisterComponent<T>();
+        return componentManager.RegisterComponent<T>();
     }
 
     //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature

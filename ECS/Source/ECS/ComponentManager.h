@@ -24,7 +24,7 @@ public:
 
     //Registers the component of type T by using the type name as a hash and creates a new ComponentCollection filled with components of type T
 	template<typename T>
-	void RegisterComponent()
+	std::shared_ptr<ComponentCollection<T>> RegisterComponent()
 	{
 		const char* typeName = typeid(T).name();
 
@@ -34,8 +34,11 @@ public:
 		componentTypes.insert({ typeName, nextComponentType });
 
 		//Create a componentArray pointer and add it to the component array map
-		componentArrays[componentTypes[typeName]] = std::make_unique<ComponentCollection<T>>();
+		auto componentCollection = std::make_shared<ComponentCollection<T>>();
+		componentArrays[componentTypes[typeName]] = componentCollection;
 		nextComponentType++;
+
+		return componentCollection;
 	}
 
     //Gets the unique component type ID for the component type T
@@ -109,6 +112,6 @@ public:
 
 private:
 	std::unordered_map<const char*, ComponentType> componentTypes { };
-    std::array<std::unique_ptr<IComponentCollection>, MAXCOMPONENTS> componentArrays { };
+    std::array<std::shared_ptr<IComponentCollection>, MAXCOMPONENTS> componentArrays { };
 	ComponentType nextComponentType { };
 };

@@ -5,6 +5,7 @@
 #include "../World.h"
 #include "../../Physics/Physics.h"
 #include "../Input/Input.h"
+#include "../../Math/Stream.h"
 
 class PhysicsWorld : public World
 {
@@ -15,18 +16,17 @@ public:
         RegisterSystems();
 
         camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
-
     }
 
     void RegisterComponents()
     {
-        layer.RegisterComponent<ColliderTransform>();
-        layer.RegisterComponent<RigidBodyData>();
-        layer.RegisterComponent<Movable>();
-        layer.RegisterComponent<ColliderRenderData>();
-        layer.RegisterComponent<CircleCollider>();
-        layer.RegisterComponent<BoxCollider>();
-        layer.RegisterComponent<PolygonCollider>();
+        colliderTransformCollection =  layer.RegisterComponent<ColliderTransform>();
+        rigidBodyDataCollection = layer.RegisterComponent<RigidBodyData>();
+        circleColliderCollection = layer.RegisterComponent<CircleCollider>();
+        boxColliderCollection = layer.RegisterComponent<BoxCollider>();
+        polygonColliderCollection = layer.RegisterComponent<PolygonCollider>();
+        colliderRenderDataCollection = layer.RegisterComponent<ColliderRenderData>();
+        movableCollection = layer.RegisterComponent<Movable>();
 
         //REMOVE
         layer.RegisterComponent<Camera>();
@@ -136,14 +136,29 @@ public:
         }
     }
 
+    void Serialize(Stream& stream) const
+    {
+
+    }
+
 private:
     Layer& layer;
 
+    //Systems
     std::shared_ptr<RigidBody> rigidBodySystem;
     std::shared_ptr<MovingSystem> movingSystem;
     std::shared_ptr<CircleColliderRenderer> circleColliderRenderer;
     std::shared_ptr<BoxColliderRenderer> boxColliderRenderer;
     std::shared_ptr<PolygonColliderRenderer> polygonColliderRenderer;
+
+    //Components
+    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
+    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
+    std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
+    std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
+    std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
+    std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
+    std::shared_ptr<ComponentCollection<Movable>> movableCollection;
 
     //REMOVE
     std::shared_ptr<CameraSystem> cameraSystem;
