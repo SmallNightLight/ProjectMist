@@ -3,7 +3,7 @@
 class PhysicsUtils
 {
 public:
-    static Entity CreateCircle(Layer& layer, const Vector2& position, const Fixed16_16& radius, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
+    static Entity CreateCircle(Layer& layer, const Vector2& position, const Fixed16_16& radius, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
     {
         Entity entity = layer.CreateEntity();
 
@@ -28,7 +28,7 @@ public:
         return CreateCircle(layer, Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(1), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateBox(Layer& layer, const Vector2& position, const Fixed16_16& width, const Fixed16_16& height, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
+    static Entity CreateBox(Layer& layer, const Vector2& position, const Fixed16_16& width, const Fixed16_16& height, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
     {
         Entity entity = layer.CreateEntity();
 
@@ -53,7 +53,7 @@ public:
         return CreateBox(layer, Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreatePolygon(Layer& layer, const Vector2& position, const std::vector<Vector2>& vertices, RigidBodyType shape = Dynamic, float r = 1.0f, float g = 1.0f, float b = 1.0f)
+    static Entity CreatePolygon(Layer& layer, const Vector2& position, const std::vector<Vector2>& vertices, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
     {
         Entity entity = layer.CreateEntity();
 
@@ -101,9 +101,9 @@ public:
         return vertices;
     }
 
-    static float GetRandomColor(std::mt19937& numberGenerator)
+    static uint8_t GetRandomColor(std::mt19937& numberGenerator)
     {
-        std::uniform_real_distribution<float> randomColor(0.0, 1.0);
+        std::uniform_int_distribution<uint8_t> randomColor(0, 255);
         return randomColor(numberGenerator);
     }
 };

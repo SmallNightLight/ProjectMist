@@ -59,7 +59,7 @@ struct RigidBodyData
         return RigidBodyData {area * density, restitution, area, GetRotationalInertiaBox(mass, width, height), staticFriction, dynamicFriction};
     }
 
-    constexpr static RigidBodyData CreatePolygonRigidBody(const std::vector<Vector2>& vertices, const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
+    static RigidBodyData CreatePolygonRigidBody(const std::vector<Vector2>& vertices, const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
     {
         Fixed16_16 area = GetPolygonArea(vertices);
         assert(area > Fixed16_16(0) && density > Fixed16_16(0) && restitution >= Fixed16_16(0) && restitution <= Fixed16_16(1) && "Invalid properties of rigidBody");
@@ -78,7 +78,7 @@ struct RigidBodyData
         return 1 / InverseMass;
     }
 
-    static Fixed16_16 GetPolygonArea(const std::vector<Vector2>& vertices) //TODO: Make it constexpr
+    static Fixed16_16 GetPolygonArea(const std::vector<Vector2>& vertices)
     {
         if (vertices.size() < 3)
         {

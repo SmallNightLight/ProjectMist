@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../ECS/ECS.h"
+
 class PolygonColliderRenderer : public System
 {
 public:
@@ -31,7 +33,7 @@ public:
             std::vector<Vector2> vertices = transform.GetTransformedVertices(polygonCollider.TransformedVertices, polygonCollider.Vertices);
 
             //Draw filled polygon
-            glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
+            glColor3ub(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
             glBegin(GL_POLYGON);
             for (const auto& vertex : vertices)
             {
@@ -40,7 +42,7 @@ public:
             glEnd();
 
             //Draw white outline
-            glColor3f(1.0f, 1.0f, 1.0f);
+            glColor3ub(255, 255, 255);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
             for (const auto& vertex : vertices)
@@ -52,7 +54,7 @@ public:
             //Draw point at the position (center)
             glBegin(GL_POINTS);
             glPointSize(10);
-            glColor3f(1.0f, 1.0f, 1.0f);
+            glColor3ub(255, 255, 255);
             glVertex2f(transform.Position.X.ToFloating<float>(), transform.Position.Y.ToFloating<float>());
             glEnd();
         }
@@ -65,7 +67,7 @@ public:
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
             PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
 
-            glColor3f(0.5f, 0.5f, 0.5f);
+            glColor3ub(128, 128, 128);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 

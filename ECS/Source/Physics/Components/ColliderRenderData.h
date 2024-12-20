@@ -1,9 +1,24 @@
 #pragma once
 
+#include "../../Math/Stream.h"
+
 struct ColliderRenderData
 {
-    float R, G, B;
+    uint8_t R, G, B;
 
-    ColliderRenderData() : R(1.0f), G(1.0f), B(1.0f) { }
-    ColliderRenderData(float r, float g, float b) : R(r), G(g), B(b) { }
+    ColliderRenderData() : R(255), G(255), B(255) { }
+    ColliderRenderData(uint8_t r, uint8_t g, uint8_t b) : R(r), G(g), B(b) { }
+    explicit ColliderRenderData(Stream& stream)
+    {
+        R = stream.ReadInteger<uint8_t>();
+        G = stream.ReadInteger<uint8_t>();
+        B = stream.ReadInteger<uint8_t>();
+    }
+
+    void Serialize(Stream& stream) const
+    {
+        stream.WriteInteger<uint8_t>(R);
+        stream.WriteInteger<uint8_t>(G);
+        stream.WriteInteger<uint8_t>(B);
+    }
 };

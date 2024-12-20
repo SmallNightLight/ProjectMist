@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../ECS/ECS.h"
+
 class BoxColliderRenderer : public System
 {
 public:
@@ -28,7 +30,7 @@ public:
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
             //Draw filled rectangle
-            glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
+            glColor3ub(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
 
             std::vector<Vector2> vertices = transform.GetTransformedVertices(boxCollider.TransformedVertices, boxCollider.Vertices);
 
@@ -40,7 +42,7 @@ public:
             glEnd();
 
             //Draw white outline
-            glColor3f(1.0f, 1.0f, 1.0f);
+            glColor3ub(255, 255, 255);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
             for (const auto& vertex : vertices)
@@ -58,7 +60,7 @@ public:
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
             BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
 
-            glColor3f(0.5f, 0.5f, 0.5f);
+            glColor3ub(128, 128, 128);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 

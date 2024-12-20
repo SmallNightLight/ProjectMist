@@ -74,10 +74,10 @@ public:
         return frame >= oldestFrame && frame < oldestFrame + frameCount && frameCount > 0;
     }
 
-    uint32_t GetRollbackFrame(uint32_t currentFrame) const
+    /*uint32_t GetRollbackFrame(uint32_t currentFrame) const
     {
 
-    }
+    }*/
 
 private:
     uint32_t GetIndex(uint32_t frame) const

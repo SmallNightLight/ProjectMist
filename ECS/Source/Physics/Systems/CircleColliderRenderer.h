@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../ECS/ECS.h"
+
 class CircleColliderRenderer : public System
 {
 public:
@@ -36,7 +38,7 @@ public:
             int numSegments = 100;
 
             //Draw filled circle
-            glColor3f(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
+            glColor3ub(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
             glBegin(GL_TRIANGLE_FAN);
             glVertex2f(x, y); // Center point
             for (int i = 0; i <= numSegments; ++i)
@@ -49,7 +51,7 @@ public:
             glEnd();
 
             //Draw white outline
-            glColor3f(1.0f, 1.0f, 1.0f);
+            glColor3ub(255, 255, 255);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
             for (int i = 0; i < numSegments; ++i)
@@ -69,7 +71,7 @@ public:
             v2 = transform.Transform(v2);
 
             glLineWidth(2.0f);
-            glColor3f(1.0f, 1.0f, 1.0f);
+            glColor3ub(255, 255, 255);
             glBegin(GL_LINES);
             glVertex2f(v1.X.ToFloating<float>(), v1.Y.ToFloating<float>());
             glVertex2f(v2.X.ToFloating<float>(), v2.Y.ToFloating<float>());
@@ -87,7 +89,7 @@ public:
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
             CircleCollider& circleCollider = circleColliderCollection->GetComponent(entity);
 
-            glColor3f(0.5f, 0.5f, 0.5f);
+            glColor3ub(128, 128, 128);
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
