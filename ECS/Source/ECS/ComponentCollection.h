@@ -90,6 +90,11 @@ public:
         return entity < MAXENTITIES && entityToIndex[entity] != ENTITYNULL;
     }
 
+    std::uint32_t GetEntityCount() const
+    {
+        return entityCount;
+    }
+
     //Removes the component from the entity if possible
     void DestroyEntity(Entity entity) override
     {
@@ -111,6 +116,11 @@ public:
         indexToEntity = collection->indexToEntity;
         entityToIndex = collection->entityToIndex;
         entityCount = collection->entityCount;
+    }
+
+    std::vector<std::uint8_t> Serialize() const
+    {
+        auto a = components.data();
     }
 
 private:

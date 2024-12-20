@@ -58,11 +58,16 @@ public:
 	}
 
     //Gets the signature of the given entity
-	Signature GetSignature(Entity entity)
+	Signature GetSignature(Entity entity) const
 	{
 		assert(entity < MAXENTITIES && "Entity out of range");
 
 		return signatures[entity];
+	}
+
+	uint32_t GetLivingEntityCount() const
+	{
+		return livingEntityCount;
 	}
 
 private:

@@ -18,6 +18,11 @@ public:
         camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
+    explicit PhysicsWorld(Stream& stream, Layer& layer) : PhysicsWorld(layer)
+    {
+        DeserializeSystem<RigidBody>();
+    }
+
     void RegisterComponents()
     {
         colliderTransformCollection =  layer.RegisterComponent<ColliderTransform>();
@@ -35,10 +40,10 @@ public:
     void RegisterSystems()
     {
         rigidBodySystem = layer.RegisterSystem<RigidBody>();
-        movingSystem = layer.RegisterSystem<MovingSystem>();
         circleColliderRenderer = layer.RegisterSystem<CircleColliderRenderer>();
         boxColliderRenderer = layer.RegisterSystem<BoxColliderRenderer>();
         polygonColliderRenderer = layer.RegisterSystem<PolygonColliderRenderer>();
+        movingSystem = layer.RegisterSystem<MovingSystem>();
 
         //REMOVE
         cameraSystem = layer.RegisterSystem<CameraSystem>();
@@ -138,7 +143,63 @@ public:
 
     void Serialize(Stream& stream) const
     {
+        //Write all systems
+        SerializeSystem(stream, rigidBodySystem);
+        SerializeSystem(stream, circleColliderRenderer);
+        SerializeSystem(stream, boxColliderRenderer);
+        SerializeSystem(stream, polygonColliderRenderer);
+        SerializeSystem(stream, movingSystem);
 
+        //Write all component data
+        SerializeSystem(stream, colliderTransformCollection);
+        SerializeSystem(stream, rigidBodyDataCollection);
+        SerializeSystem(stream, circleColliderCollection);
+        SerializeSystem(stream, boxColliderCollection);
+        SerializeSystem(stream, polygonColliderCollection);
+        SerializeSystem(stream, colliderRenderDataCollection);
+        SerializeSystem(stream, movableCollection);
+    }
+
+    template<typename SystemType>
+    static void SerializeSystem(Stream& stream, SystemType system)
+    {
+        //Write size of entities set
+        stream.WriteInteger<Entity>(system->Entities.size());
+
+        //Write all entities
+        for (Entity entity : system->Entities)
+        {
+            stream.WriteInteger<Entity>(entity);
+        }
+    }
+
+    template<typename SystemType, typename ComponentCollectionType>
+    static void SerializeComponentCollection(Stream& stream, SystemType system, ComponentCollectionType componentCollection)
+    {
+        //Write component collection size (without unused buffer)
+        stream.WriteInteger<uint32_t>(componentCollection->GetEntityCount());
+
+        for(Entity entity : system.Entites)
+        {
+            componentCollection->GetComponent(entity).Serialize(stream);
+        }
+    }
+
+    template<typename SystemType>
+    void DeserializeSystem(Stream& stream, std::set<Entity>& entities)
+    {
+        //Read the entities that have the specified system
+        Entity entityCount = stream.ReadInteger<Entity>();
+        for (int i = 0; i < entityCount; ++i)
+        {
+            entities.insert(stream.ReadInteger<Entity>());
+        }
+    }
+
+    template<typename SystemType, typename ComponentCollectionType>
+    static void DeserializeComponentCollection(Stream& stream, SystemType system, ComponentCollectionType componentCollection, std::set<Entity>& entities)
+    {
+        componentCollection->AddComponent()
     }
 
 private:
@@ -146,10 +207,10 @@ private:
 
     //Systems
     std::shared_ptr<RigidBody> rigidBodySystem;
-    std::shared_ptr<MovingSystem> movingSystem;
     std::shared_ptr<CircleColliderRenderer> circleColliderRenderer;
     std::shared_ptr<BoxColliderRenderer> boxColliderRenderer;
     std::shared_ptr<PolygonColliderRenderer> polygonColliderRenderer;
+    std::shared_ptr<MovingSystem> movingSystem;
 
     //Components
     std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
