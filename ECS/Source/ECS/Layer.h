@@ -59,11 +59,29 @@ public:
     }
 
     //Unsafe method to instantly remove an entities with it components and systems
-    void ImmediatlyDestroyEntity(Entity entity)
+    void ImmediatelyDestroyEntity(Entity entity)
     {
         entityManager.DestroyEntity(entity);
         componentManager.DestroyEntity(entity);
         systemManager.DestroyEntity(entity);
+    }
+
+    //Returns the count of all current active entities
+    uint32_t GetEntityCount() const
+    {
+        return entityManager.GetEntityCount();
+    }
+
+    //Gets the signature of the given entity
+    Signature GetSignature(Entity entity) const
+    {
+        return entityManager.GetSignature(entity);
+    }
+
+    //Returns a vector of signatures of all active entities
+    std::vector<Signature> GetActiveEntities() const
+    {
+        return entityManager.GetActiveSignatures();
     }
 
     //Component methods

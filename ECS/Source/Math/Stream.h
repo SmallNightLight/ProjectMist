@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bitset>
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
@@ -50,6 +51,23 @@ public:
         WriteInteger<T>(static_cast<T>(value));
     }
 
+    template <std::size_t N>
+    void WriteBitset(const std::bitset<N>& value)
+    {
+        //Round up to nearest byte
+        size_t numBytes = (N + 7) / 8;
+
+        for (size_t byteIndex = 0; byteIndex < numBytes; ++byteIndex)
+        {
+            uint8_t byte = 0;
+            for (size_t bitIndex = 0; bitIndex < 8 && byteIndex * 8 + bitIndex < N; ++bitIndex)
+            {
+                byte |= value[byteIndex * 8 + bitIndex] << bitIndex;
+            }
+            buffer.push_back(byte);
+        }
+    }
+
     //Read from stream
     bool ReadBool()
     {
@@ -91,7 +109,9 @@ public:
 
     Vector2 ReadVector2()
     {
-        return Vector2(Fixed16_16::from_raw_value(ReadInteger<int32_t>()), Fixed16_16::from_raw_value(ReadInteger<int32_t>()));
+        Fixed16_16 x = Fixed16_16::from_raw_value(ReadInteger<int32_t>());
+        Fixed16_16 y = Fixed16_16::from_raw_value(ReadInteger<int32_t>());
+        return Vector2(x, y);
     }
 
     //Writes an enum to the buffer with T being an integer type that can hold all possible values of the enum
@@ -101,6 +121,28 @@ public:
         static_assert(std::is_integral_v<T>, "T must be an integral type");
 
         return static_cast<Enum>(ReadInteger<T>());
+    }
+
+    template <std::size_t N>
+    std::bitset<N> ReadBitset()
+    {
+        size_t numBytes = (N + 7) / 8;
+
+        if (currentIndex + numBytes > buffer.size())
+            throw std::out_of_range("Stream underflow");
+
+        std::bitset<N> result;
+        for (size_t byteIndex = 0; byteIndex < numBytes; ++byteIndex)
+        {
+            uint8_t byte = buffer[currentIndex + byteIndex];
+            for (size_t bitIndex = 0; bitIndex < 8 && (byteIndex * 8 + bitIndex) < N; ++bitIndex)
+            {
+                result[byteIndex * 8 + bitIndex] = (byte >> bitIndex) & 1;
+            }
+        }
+
+        currentIndex += numBytes;
+        return result;
     }
 
 private:

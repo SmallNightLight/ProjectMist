@@ -22,7 +22,7 @@ public:
 
 	void Overwrite(const EntityManager& other)
 	{
-		livingEntityCount = other.livingEntityCount;
+		activeEntityCount = other.activeEntityCount;
 		signatures = other.signatures;
 		availableEntities = other.availableEntities;
 	}
@@ -30,11 +30,11 @@ public:
     //Creates a new entity and returns the entity ID
 	Entity CreateEntity()
 	{
-		assert(livingEntityCount < MAXENTITIES && "Too many entities. Extend the buffer size");
+		assert(activeEntityCount < MAXENTITIES && "Too many entities. Extend the buffer size");
 
 		Entity id = availableEntities.front();
 		availableEntities.pop();
-		livingEntityCount++;
+		activeEntityCount++;
 
 		return id;
 	}
@@ -46,7 +46,7 @@ public:
 
 		signatures[entity].reset();
 		availableEntities.push(entity);
-		livingEntityCount--;
+		activeEntityCount--;
 	}
 
     //Assigns a signature to the entity
@@ -65,13 +65,31 @@ public:
 		return signatures[entity];
 	}
 
-	uint32_t GetLivingEntityCount() const
+	//Returns the count of all current active entities
+	uint32_t GetEntityCount() const
 	{
-		return livingEntityCount;
+		return activeEntityCount;
+	}
+
+	//Returns a vector of signatures of all active entities
+	std::vector<Signature> GetActiveSignatures() const
+	{
+		std::vector<Signature> signatures;
+		signatures.reserve(activeEntityCount);
+
+		for (Entity entity = 0; entity < MAXENTITIES; ++entity)
+		{
+			if (signatures[entity].any())
+			{
+				signatures.push_back(GetSignature(entity));
+			}
+		}
+
+		return signatures;
 	}
 
 private:
-	uint32_t livingEntityCount { };
+	uint32_t activeEntityCount { };
 	std::array<Signature, MAXENTITIES> signatures { };
 	std::queue<Entity> availableEntities { };
 };

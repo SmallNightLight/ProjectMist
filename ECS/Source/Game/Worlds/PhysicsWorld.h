@@ -143,6 +143,9 @@ public:
 
     void Serialize(Stream& stream) const
     {
+        //Write the signatures of all active entities
+        SerializeEntities(stream);
+
         //Write all systems
         SerializeSystem(stream, rigidBodySystem);
         SerializeSystem(stream, circleColliderRenderer);
@@ -158,6 +161,20 @@ public:
         SerializeSystem(stream, polygonColliderCollection);
         SerializeSystem(stream, colliderRenderDataCollection);
         SerializeSystem(stream, movableCollection);
+    }
+
+    void SerializeEntities(Stream& stream) const
+    {
+        auto signatures = layer.GetActiveEntities();
+
+        //Write the entity count
+        stream.WriteInteger<Entity>(signatures.size());
+
+        //Write the signatures of all active entities
+        for (Signature signature : signatures)
+        {
+            stream.WriteBitset()
+        }
     }
 
     template<typename SystemType>
@@ -186,7 +203,7 @@ public:
     }
 
     template<typename SystemType>
-    void DeserializeSystem(Stream& stream, std::set<Entity>& entities)
+    static void DeserializeSystem(Stream& stream, std::set<Entity>& entities)
     {
         //Read the entities that have the specified system
         Entity entityCount = stream.ReadInteger<Entity>();

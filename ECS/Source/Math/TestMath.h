@@ -3,10 +3,13 @@
 #pragma optimize("", off)
 
 #include "FixedTypes.h"
+#include "Stream.h"
 #include "FixedLib/include/fixedmath/fixed_math.hpp"
 #include "FixedLib/include/fixedmath/iostream.h"
 
 #include <iostream>
+#include <bitset>
+#include <vector>
 #include <iomanip>
 #include <cassert>
 #include <chrono>
@@ -20,8 +23,17 @@ class TestMath
 public:
     TestMath() = default;
 
+    enum class TestEnum
+    {
+        Value1 = 1,
+        Value2 = 2,
+        Value3 = 3
+    };
+
     static int Test()
     {
+        TestStream();
+
         //Fixed numbers
         std::cout << "Testing TestMath" << std::endl;
 
@@ -307,6 +319,51 @@ public:
 
 
         return 0;
+    }
+
+    static void TestStream()
+    {
+        Stream stream;
+
+        //Test WriteBool and ReadBool
+        stream.WriteBool(true);
+        stream.WriteBool(false);
+        assert(stream.ReadBool() == true);
+        assert(stream.ReadBool() == false);
+
+        //Test WriteInteger and ReadInteger (for int32_t)
+        int32_t intVal = 123456;
+        stream.WriteInteger(intVal);
+        assert(stream.ReadInteger<int32_t>() == intVal);
+
+        //Test WriteFixed and ReadFixed (using Fixed16_16)
+        Fixed16_16 fixedVal(1000);
+        stream.WriteFixed(fixedVal);
+        assert(stream.ReadFixed().raw_value() == fixedVal.raw_value());
+
+        //Test WriteVector2 and ReadVector2
+        Vector2 vectorVal(Fixed16_16(100), Fixed16_16(200));
+        stream.WriteVector2(vectorVal);
+        Vector2 vectorValRead = stream.ReadVector2();
+        assert(vectorValRead.X.raw_value() == vectorVal.X.raw_value());
+        assert(vectorValRead.Y.raw_value() == vectorVal.Y.raw_value());
+
+        //Test WriteEnum and ReadEnum
+        TestEnum enumVal = TestEnum::Value2;
+        stream.WriteEnum<TestEnum, int>(enumVal);
+        TestEnum enumValRead = stream.ReadEnum<TestEnum, int>();
+        assert(enumValRead == enumVal);
+
+        //Test WriteBitset and ReadBitset (bitset<16>)
+        std::bitset<16> bitsetVal(0b1010101010101010);
+        stream.WriteBitset<16>(bitsetVal);
+        assert(stream.ReadBitset<16>() == bitsetVal);
+
+        //Check the buffer size to verify correctness (optional)
+        std::vector<uint8_t> buffer = stream.GetBuffer();
+        std::cout << "Stream buffer size: " << buffer.size() << " bytes" << std::endl;
+
+        std::cout << "Passed stream tests" << std::endl;
     }
 };
 
