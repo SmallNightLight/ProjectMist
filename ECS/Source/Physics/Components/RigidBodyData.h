@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Math/FixedTypes.h"
+#include "../../Math/Stream.h"
 
 #include <cassert>
 
@@ -12,12 +13,11 @@ struct RigidBodyData
 
     Fixed16_16 InverseMass;
     Fixed16_16 Restitution;
-    Fixed16_16 Area; //TODO: Remove area?
     Fixed16_16 InverseInertia;
     Fixed16_16 StaticFriction; //TODO: add materials and only save the index instead of he entire friction value (Restitution, StaticFriction, DynamicFriction)
     Fixed16_16 DynamicFriction;
 
-    RigidBodyData() : Velocity(0, 0), AngularVelocity(0, 0), Force(0, 0), InverseMass(1), Restitution(0, 5), Area(0), InverseInertia(1), StaticFriction(0, 6), DynamicFriction(0, 4) { }
+    RigidBodyData() : Velocity(0, 0), AngularVelocity(0, 0), Force(0, 0), InverseMass(1), Restitution(0, 5), InverseInertia(1), StaticFriction(0, 6), DynamicFriction(0, 4) { }
 
     constexpr RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area, const Fixed16_16& inertia, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
         : Velocity(0, 0),
@@ -25,10 +25,21 @@ struct RigidBodyData
           Force(0, 0),
           InverseMass(1 / mass),
           Restitution(restitution),
-          Area(area),
           InverseInertia(1 / inertia),
           StaticFriction(staticFriction),
           DynamicFriction(dynamicFriction) { }
+
+    explicit RigidBodyData(Stream& stream)
+    {
+        Velocity = stream.ReadVector2();
+        AngularVelocity = stream.ReadFixed();
+        Force = stream.ReadVector2();
+        InverseMass = stream.ReadFixed();
+        Restitution = stream.ReadFixed();
+        InverseInertia = stream.ReadFixed();
+        StaticFriction = stream.ReadFixed();
+        DynamicFriction = stream.ReadFixed();
+    }
 
     constexpr static RigidBodyData CreateCircleRigidBody(const Fixed16_16 radius, const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
     {
@@ -48,7 +59,7 @@ struct RigidBodyData
         return RigidBodyData {area * density, restitution, area, GetRotationalInertiaBox(mass, width, height), staticFriction, dynamicFriction};
     }
 
-    static RigidBodyData CreatePolygonRigidBody(const std::vector<Vector2>& vertices, const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
+    constexpr static RigidBodyData CreatePolygonRigidBody(const std::vector<Vector2>& vertices, const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
     {
         Fixed16_16 area = GetPolygonArea(vertices);
         assert(area > Fixed16_16(0) && density > Fixed16_16(0) && restitution >= Fixed16_16(0) && restitution <= Fixed16_16(1) && "Invalid properties of rigidBody");
@@ -143,5 +154,17 @@ struct RigidBodyData
 
         inertia = abs(inertia) / (Fixed16_16(12) * area);
         return mass * inertia;
+    }
+
+    void Serialize(Stream& stream) const
+    {
+        stream.WriteVector2(Velocity);
+        stream.WriteFixed(AngularVelocity);
+        stream.WriteVector2(Force);
+        stream.WriteFixed(InverseMass);
+        stream.WriteFixed(Restitution);
+        stream.WriteFixed(InverseInertia);
+        stream.WriteFixed(StaticFriction);
+        stream.WriteFixed(DynamicFriction);
     }
 };

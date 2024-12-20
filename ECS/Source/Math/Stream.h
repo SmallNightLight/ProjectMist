@@ -41,6 +41,15 @@ public:
         WriteInteger<int32_t>(value.Y.raw_value());
     }
 
+    //Writes an enum to the buffer with T being an integer type that can hold all possible values of the enum
+    template <typename Enum, typename T>
+    void WriteEnum(Enum value)
+    {
+        static_assert(std::is_integral_v<T>, "T must be an integral type");
+
+        WriteInteger<T>(static_cast<T>(value));
+    }
+
     //Read from stream
     bool ReadBool()
     {
@@ -75,7 +84,7 @@ public:
         return buffer;
     }
 
-    Fixed16_16 ReadFixed16()
+    Fixed16_16 ReadFixed()
     {
         return Fixed16_16::from_raw_value(ReadInteger<int32_t>());
     }
@@ -83,6 +92,15 @@ public:
     Vector2 ReadVector2()
     {
         return Vector2(Fixed16_16::from_raw_value(ReadInteger<int32_t>()), Fixed16_16::from_raw_value(ReadInteger<int32_t>()));
+    }
+
+    //Writes an enum to the buffer with T being an integer type that can hold all possible values of the enum
+    template <typename Enum, typename T>
+    Enum ReadEnum()
+    {
+        static_assert(std::is_integral_v<T>, "T must be an integral type");
+
+        return static_cast<Enum>(ReadInteger<T>());
     }
 
 private:

@@ -1,9 +1,7 @@
 #pragma once
 
 #include "../../Math/FixedTypes.h"
-
-#include "BoxCollider.h"
-#include "CircleCollider.h"
+#include "../../Math/Stream.h"
 
 enum ColliderType
 {
@@ -37,6 +35,26 @@ struct ColliderTransform
     {
     }
 
+    explicit ColliderTransform(Stream& stream)
+    {
+        //Read object data
+        Position = stream.ReadVector2();
+        Rotation = stream.ReadFixed();
+        Shape = stream.ReadEnum<ColliderType, uint8_t>();
+
+        //Read rigidBody type
+        IsStatic = stream.ReadBool();
+        IsKinematic = stream.ReadBool();
+        IsDynamic = stream.ReadBool();
+
+        //Since the transform and bounding box have been updated before serialization they should be correct
+        TransformUpdateRequired = false;
+        AABBUpdateRequired = false;
+
+        //Read bounding box
+        BoundingBox = AABB(stream.ReadVector2(), stream.ReadVector2());
+    }
+
     constexpr void SetRigidBodyType(RigidBodyType type)
     {
         IsStatic = type == Static;
@@ -65,7 +83,7 @@ struct ColliderTransform
         AABBUpdateRequired = true;
     }
 
-    const std::vector<Vector2>& GetTransformedVertices(std::vector<Vector2>& transformedVertices, std::vector<Vector2>& vertices)
+    const std::vector<Vector2>& GetTransformedVertices(std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)
     {
         if (TransformUpdateRequired)
         {
@@ -91,7 +109,7 @@ struct ColliderTransform
         return BoundingBox;
     }
 
-    const AABB& GetAABB(std::vector<Vector2>& transformedVertices, std::vector<Vector2>& vertices)
+    const AABB& GetAABB(std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)
     {
         if (AABBUpdateRequired)
         {
@@ -139,12 +157,34 @@ struct ColliderTransform
         return BoundingBox;
     }
 
-    [[nodiscard]] Vector2 Transform (Vector2 vector) const
+    [[nodiscard]] Vector2 Transform (const Vector2 vector) const
     {
         Fixed16_16 sin = fpm::sin(Rotation);
         Fixed16_16 cos = fpm::cos(Rotation);
 
         return Vector2{cos * vector.X - sin * vector.Y + Position.X, sin * vector.X + cos * vector.Y + Position.Y};
+    }
+
+    //Serializes data into the stream and modifies the transformedVertices and bounding box to be up to date. Call this method before any other collider serialization
+    void Serialize(Stream& stream, std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)
+    {
+        //Write object data
+        stream.WriteVector2(Position);
+        stream.WriteFixed(Rotation);
+        stream.WriteEnum<ColliderType, uint8_t>(Shape);
+
+        //Write rigidBody type
+        stream.WriteBool(IsStatic);
+        stream.WriteBool(IsKinematic);
+        stream.WriteBool(IsDynamic);
+
+        //Update transform and box so it does not need to be updated
+        GetAABB(transformedVertices, vertices);
+        assert(!TransformUpdateRequired && "TransformUpdateRequired needs to be false for serialization");
+        assert(!AABBUpdateRequired && "AABBUpdateRequired needs to be false for serialization");
+
+        stream.WriteVector2(BoundingBox.Min);
+        stream.WriteVector2(BoundingBox.Max);
     }
 
 private:
