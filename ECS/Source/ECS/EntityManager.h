@@ -72,14 +72,16 @@ public:
 	}
 
 	//Returns a vector of signatures of all active entities
-	std::vector<Signature> GetActiveSignatures() const
+	std::vector<Signature> GetActiveSignatures(Signature includedComponents, std::vector<Entity>& entities) const
 	{
+		std::pair<Entity, Signature> signaturePair;
 		std::vector<Signature> signatures;
 		signatures.reserve(activeEntityCount);
+		entities.reserve(activeEntityCount);
 
 		for (Entity entity = 0; entity < MAXENTITIES; ++entity)
 		{
-			if (signatures[entity].any())
+			if ((signatures[entity] & includedComponents).any())
 			{
 				signatures.push_back(GetSignature(entity));
 			}

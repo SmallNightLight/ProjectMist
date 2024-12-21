@@ -79,9 +79,9 @@ public:
     }
 
     //Returns a vector of signatures of all active entities
-    std::vector<Signature> GetActiveEntities() const
+    std::vector<Signature> GetActiveEntities(Signature includedComponents, std::vector<Entity>& entities) const
     {
-        return entityManager.GetActiveSignatures();
+        return entityManager.GetActiveSignatures(includedComponents, entities);
     }
 
     //Component methods

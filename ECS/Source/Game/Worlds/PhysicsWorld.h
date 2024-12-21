@@ -154,13 +154,13 @@ public:
         SerializeSystem(stream, movingSystem);
 
         //Write all component data
-        SerializeSystem(stream, colliderTransformCollection);
-        SerializeSystem(stream, rigidBodyDataCollection);
-        SerializeSystem(stream, circleColliderCollection);
-        SerializeSystem(stream, boxColliderCollection);
-        SerializeSystem(stream, polygonColliderCollection);
-        SerializeSystem(stream, colliderRenderDataCollection);
-        SerializeSystem(stream, movableCollection);
+        //SerializeComponentCollection(stream, colliderTransformCollection);
+        //SerializeComponentCollection(stream, rigidBodyDataCollection);
+        //SerializeComponentCollection(stream, circleColliderCollection);
+        //SerializeComponentCollection(stream, boxColliderCollection);
+        //SerializeComponentCollection(stream, polygonColliderCollection);
+        //SerializeComponentCollection(stream, colliderRenderDataCollection);
+        //SerializeComponentCollection(stream, movableCollection);
     }
 
     void SerializeEntities(Stream& stream) const
@@ -173,7 +173,14 @@ public:
         //Write the signatures of all active entities
         for (Signature signature : signatures)
         {
-            stream.WriteBitset()
+            stream.WriteBitset<MAXCOMPONENTS>(signature);
+
+
+
+            //Dont send signatures
+            //send entity for every send component construct signature here when adding the components
+            //Disable automatic system adding during this time
+            //At the end enable automatic system and call the updatesystems on set the signature on every entity
         }
     }
 
@@ -190,13 +197,13 @@ public:
         }
     }
 
-    template<typename SystemType, typename ComponentCollectionType>
-    static void SerializeComponentCollection(Stream& stream, SystemType system, ComponentCollectionType componentCollection)
+    template<typename ComponentCollectionType>
+    static void SerializeComponentCollection(Stream& stream, ComponentCollectionType componentCollection, std::set<Entity> entities)
     {
         //Write component collection size (without unused buffer)
         stream.WriteInteger<uint32_t>(componentCollection->GetEntityCount());
 
-        for(Entity entity : system.Entites)
+        for(Entity entity : entities)
         {
             componentCollection->GetComponent(entity).Serialize(stream);
         }
@@ -216,7 +223,7 @@ public:
     template<typename SystemType, typename ComponentCollectionType>
     static void DeserializeComponentCollection(Stream& stream, SystemType system, ComponentCollectionType componentCollection, std::set<Entity>& entities)
     {
-        componentCollection->AddComponent()
+        //componentCollection->AddComponent()
     }
 
 private:
