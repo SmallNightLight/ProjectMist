@@ -134,6 +134,20 @@ public:
                 worldManager.Rollback(1);
             }
 
+            if (otherInput.GetKey(GLFW_KEY_LEFT_CONTROL) && otherInput.GetKeyDown(GLFW_KEY_S))
+            {
+                //Serialize current game state
+                std::cout << "Serializing Game State";
+                Serialize();
+            }
+
+            if (hasSerializedStream && otherInput.GetKey(GLFW_KEY_LEFT_CONTROL) && otherInput.GetKeyDown(GLFW_KEY_V))
+            {
+                //Deserialize the saved game state amd override the current game state
+                std::cout << "Deserializing Game State";
+                Deserialize();
+            }
+
             while (accumulator >= fixedDelta)
             {
                 if (!isPaused)
@@ -206,6 +220,20 @@ public:
         physicsWorld->Render();
     }
 
+    void Serialize()
+    {
+        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+        serializedStream.Clear();
+        hasSerializedStream = true;
+        physicsWorld->Serialize(serializedStream);
+    }
+
+    void Deserialize()
+    {
+        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+        physicsWorld->Deserialize(serializedStream);
+    }
+
 private:
     static void SetFrameSize(GLFWwindow* window, int width, int height)
     {
@@ -226,7 +254,9 @@ private:
 
     std::mt19937 numberGenerator;
 
-
+    //Debug
+    bool hasSerializedStream;
+    Stream serializedStream;
 
     bool isPaused;
 };

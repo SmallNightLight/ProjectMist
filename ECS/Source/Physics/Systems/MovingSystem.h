@@ -55,7 +55,7 @@ public:
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
-    ComponentCollection<RigidBodyData>* rigidBodyCollection;
-    ComponentCollection<Movable>* movableCollection;
+    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
+    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyCollection;
+    std::shared_ptr<ComponentCollection<Movable>> movableCollection;
 };

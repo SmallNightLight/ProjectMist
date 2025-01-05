@@ -75,7 +75,7 @@ public:
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
-    ComponentCollection<BoxCollider>* boxColliderCollection;
-    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
+    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
+    std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
+    std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
 };

@@ -97,9 +97,16 @@ public:
     template<typename T>
     T* AddComponent(Entity entity, T component)
     {
+        return AddComponent(entity, component, componentManager.GetComponentType<T>());
+    }
+
+    //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
+    template<typename T>
+    T* AddComponent(Entity entity, T component, ComponentType componentType)
+    {
         //Render the signature of the entity by including the new component
         Signature signature = entityManager.GetSignature(entity);
-        signature.set(componentManager.GetComponentType<T>(), true);
+        signature.set(componentType, true);
         entityManager.SetSignature(entity, signature);
 
         //Notify the system manager about the new signature
@@ -108,7 +115,7 @@ public:
             systemManager.EntitySignatureChanged(entity, signature);
         }
 
-        return componentManager.AddComponent<T>(entity, component);
+        return componentManager.AddComponent<T>(entity, component, componentType);
     }
 
     //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
@@ -126,7 +133,7 @@ public:
             systemManager.EntitySignatureChanged(entity, signature);
         }
 
-        return componentCollection.AddComponent(entity, component);
+        return componentCollection->AddComponent(entity, component);
     }
 
     //Removes the component of type T from the entity, updates the signature and updates on which systems the entity is registered based on the signature
@@ -155,13 +162,13 @@ public:
     }
 
     template<typename T>
-    ComponentCollection<T>* GetComponentCollection()
+    std::shared_ptr<ComponentCollection<T>> GetComponentCollection()
     {
         return componentManager.GetComponentCollection<T>();
     }
 
     template<typename T>
-    ComponentCollection<T>* GetComponentCollection(ComponentType componentType)
+    std::shared_ptr<ComponentCollection<T>> GetComponentCollection(ComponentType componentType)
     {
         return componentManager.GetComponentCollection<T>(componentType);
     }

@@ -104,7 +104,7 @@ public:
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
-    ComponentCollection<CircleCollider>* circleColliderCollection;
-    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
+    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
+    std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
+    std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
 };

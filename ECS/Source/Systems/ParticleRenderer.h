@@ -42,8 +42,8 @@ public:
     }
 
 private:
-    ComponentCollection<Transform>* transformCollection;
-    ComponentCollection<Velocity>* velocityCollection;
+    std::shared_ptr<ComponentCollection<Transform>> transformCollection;
+    std::shared_ptr<ComponentCollection<Velocity>> velocityCollection;
 
     Shader shader;
 

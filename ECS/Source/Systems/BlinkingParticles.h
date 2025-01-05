@@ -50,5 +50,5 @@ public:
     }
 
 private:
-    ComponentCollection<Lifetime>* lifeTimeCollection;
+    std::shared_ptr<ComponentCollection<Lifetime>> lifeTimeCollection;
 };

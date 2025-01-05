@@ -54,6 +54,6 @@ public:
         glEnd();
     }
 
-    ComponentCollection<Transform>* transformCollection;
-    ComponentCollection<Boid>* boidCollection;
+    std::shared_ptr<ComponentCollection<Transform>> transformCollection;
+    std::shared_ptr<ComponentCollection<Boid>> boidCollection;
 };

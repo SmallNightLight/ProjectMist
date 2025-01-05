@@ -29,5 +29,5 @@ public:
     }
 
 private:
-    ComponentCollection<Camera>* cameraCollection;
+    std::shared_ptr<ComponentCollection<Camera>> cameraCollection;
 };

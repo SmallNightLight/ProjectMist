@@ -17,44 +17,6 @@ public:
         InitializeCamera();
     }
 
-    ///Deserializes the stream and overwrites the layer data. Only use this methode in a try loop
-    explicit PhysicsWorld(Layer& layer, Stream& stream) : baseLayer (layer)
-    {
-        //Create a new layer and then Overwrite the existing layer with the new layer
-        Layer newLayer = Layer();
-        RegisterComponents(newLayer);
-        RegisterSystems(newLayer);
-
-        std::vector<Entity> entities;
-        std::vector<Signature> signatures;
-
-        //Read the signatures of all active entities
-        DeserializeEntities(stream, entities, signatures);
-
-        AddEntities(newLayer, entities);
-        newLayer.IgnoreSignatureChanged(true);
-
-        //Write all component data
-        DeserializeComponentCollection<ColliderTransform>(stream, newLayer, colliderTransformCollection, entities, signatures);
-        DeserializeComponentCollection<RigidBodyData>(stream, newLayer, rigidBodyDataCollection, entities, signatures);
-        DeserializeComponentCollection<CircleCollider>(stream, newLayer, circleColliderCollection, entities, signatures);
-        DeserializeComponentCollection<BoxCollider>(stream,newLayer,  boxColliderCollection, entities, signatures);
-        DeserializeComponentCollection<PolygonCollider>(stream, newLayer, polygonColliderCollection, entities, signatures);
-        DeserializeComponentCollection<ColliderRenderData>(stream, newLayer, colliderRenderDataCollection, entities, signatures);
-        DeserializeComponentCollection<Movable>(stream, newLayer, movableCollection, entities, signatures);
-
-        //Add the entities to the systems
-        AddEntitiesToSystems(newLayer, entities, signatures);
-
-        //Call the default constructor
-        RegisterComponents(baseLayer);
-        RegisterSystems(baseLayer);
-        InitializeCamera();
-
-        //Overwrite the layer with the new layer that holds the received data
-        baseLayer.Overwrite(newLayer);
-    }
-
     ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
     void RegisterComponents(Layer& layer)
     {
@@ -79,6 +41,18 @@ public:
         includedComponents.set(layer.GetComponentType<Camera>(), true); //Camera?
     }
 
+    ///Registers all components to the layer
+    static void RegisterComponentsForLayer(Layer& layer)
+    {
+        layer.RegisterComponent<ColliderTransform>();
+        layer.RegisterComponent<RigidBodyData>();
+        layer.RegisterComponent<CircleCollider>();
+        layer.RegisterComponent<BoxCollider>();
+        layer.RegisterComponent<PolygonCollider>();
+        layer.RegisterComponent<ColliderRenderData>();
+        layer.RegisterComponent<Movable>();
+    }
+
     void RegisterSystems(Layer& layer)
     {
         rigidBodySystem = layer.RegisterSystem<RigidBody>();
@@ -89,6 +63,15 @@ public:
 
         //REMOVE
         cameraSystem = layer.RegisterSystem<CameraSystem>();
+    }
+
+    static void RegisterSystemsForLayer(Layer& layer)
+    {
+        layer.RegisterSystem<RigidBody>();
+        layer.RegisterSystem<CircleColliderRenderer>();
+        layer.RegisterSystem<BoxColliderRenderer>();
+        layer.RegisterSystem<PolygonColliderRenderer>();
+        layer.RegisterSystem<MovingSystem>();
     }
 
     void InitializeCamera()
@@ -221,6 +204,41 @@ public:
         SerializeComponentCollection<Movable>(stream, movableCollection, entities, signatures);
     }
 
+    ///Deserializes the stream and overwrites the layer data. Only use this methode in a try loop
+    void Deserialize(Stream& stream)
+    {
+        //Create a new layer and then Overwrite the existing layer with the new layer
+        Layer layer = Layer();
+        RegisterComponentsForLayer(layer);
+        RegisterSystemsForLayer(layer);
+
+        std::vector<Entity> entities;
+        std::vector<Signature> signatures;
+
+        //Read the signatures of all active entities
+        DeserializeEntities(stream, entities, signatures);
+
+        AddEntities(layer, entities);
+        layer.IgnoreSignatureChanged(true);
+
+        //Write all component data
+        DeserializeComponentCollection<ColliderTransform>(stream, layer, entities, signatures);
+        DeserializeComponentCollection<RigidBodyData>(stream, layer, entities, signatures);
+        DeserializeComponentCollection<CircleCollider>(stream, layer, entities, signatures);
+        DeserializeComponentCollection<BoxCollider>(stream, layer, entities, signatures);
+        DeserializeComponentCollection<PolygonCollider>(stream, layer, entities, signatures);
+        DeserializeComponentCollection<ColliderRenderData>(stream, layer, entities, signatures);
+        DeserializeComponentCollection<Movable>(stream, layer, entities, signatures);
+
+        //Add the entities to the systems
+        AddEntitiesToSystems(layer, entities, signatures);
+
+        //Overwrite the layer with the new layer that holds the received data
+        baseLayer.Overwrite(layer);
+    }
+
+private:
+
     ///Write the entities and their signatures to the stream //TODO: make all ///
     void SerializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<Signature>& signatures) const
     {
@@ -339,7 +357,7 @@ public:
     }
 
     template<typename Component>
-    static void DeserializeComponentCollection(Stream& stream, Layer& layer, std::shared_ptr<ComponentCollection<Component>> componentCollection, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
+    static void DeserializeComponentCollection(Stream& stream, Layer& layer, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
     {
         //Read the componentType and verify
         ComponentType componentType = stream.ReadInteger<ComponentType>();
@@ -354,6 +372,8 @@ public:
         //Read the entity count of the component collection
         uint32_t entityCount = stream.ReadInteger<uint32_t>();
         uint32_t signaturesCount = signatures.size();
+
+        std::shared_ptr<ComponentCollection<Component>> componentCollection = layer.GetComponentCollection<Component>(componentType);
 
         //Read the entity and the component Data
         for (int i = 0; i < entityCount; ++i)
@@ -371,7 +391,7 @@ public:
             }
 
             //Create new component from the stream using the specified constructor
-            componentCollection->AddComponent(entity, Component(stream));
+            layer.AddComponent(entity, Component(stream), componentType, componentCollection);
         }
     }
 

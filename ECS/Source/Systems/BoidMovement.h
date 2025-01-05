@@ -288,6 +288,6 @@ private:
     std::mt19937 random;
     PartitionGrid2 partitionGrid = PartitionGrid2();
 
-    ComponentCollection<Transform>* transformCollection;
-    ComponentCollection<Boid>* boidCollection;
+    std::shared_ptr<ComponentCollection<Transform>> transformCollection;
+    std::shared_ptr<ComponentCollection<Boid>> boidCollection;
 };

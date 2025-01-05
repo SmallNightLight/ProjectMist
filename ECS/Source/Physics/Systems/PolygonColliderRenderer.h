@@ -7,9 +7,9 @@ class PolygonColliderRenderer : public System
 public:
     explicit PolygonColliderRenderer(Layer* world) : System(world)
     {
-            colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
-            polygonColliderCollection = layer->GetComponentCollection<PolygonCollider>();
-            colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
+        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
+        polygonColliderCollection = layer->GetComponentCollection<PolygonCollider>();
+        colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
     }
 
     [[nodiscard]] Signature GetSignature() const override
@@ -82,7 +82,7 @@ public:
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
-    ComponentCollection<PolygonCollider>* polygonColliderCollection;
-    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
+    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
+    std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
+    std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
 };

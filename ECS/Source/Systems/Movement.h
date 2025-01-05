@@ -44,6 +44,6 @@ private:
     Fixed16_16 gravity = Fixed16_16::FromFixed(2000, 0);
     Fixed16_16 softening = Fixed16_16::FromFixed(0, 5);
 
-    ComponentCollection<Transform>* transformCollection;
-    ComponentCollection<Velocity>* velocityCollection;
+    std::shared_ptr<ComponentCollection<Transform>> transformCollection;
+    std::shared_ptr<ComponentCollection<Velocity>> velocityCollection;
 };

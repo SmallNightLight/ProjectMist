@@ -503,8 +503,8 @@ private:
       }
 
 private:
-      ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
-      ComponentCollection<CircleCollider>* circleColliderCollection;
-      ComponentCollection<BoxCollider>* boxColliderCollection;
-      ComponentCollection<PolygonCollider>* polygonColliderCollection;
+      std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
+      std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
+      std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
+      std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
 };

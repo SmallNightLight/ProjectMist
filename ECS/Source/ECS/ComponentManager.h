@@ -59,6 +59,13 @@ public:
         return GetComponentCollection<T>(GetComponentType<T>())->AddComponent(entity, component);
 	}
 
+	//Adds the component of type T to the given entity
+	template<typename T>
+	T* AddComponent(Entity entity, T component, ComponentType componentType)
+	{
+		return GetComponentCollection<T>(componentType)->AddComponent(entity, component);
+	}
+
     //Removes the component of type T from the given entity
     template<typename T>
     void RemoveComponent(Entity entity)
@@ -93,21 +100,18 @@ public:
 
 	//Gets the component collection for a specific component of type T
 	template<typename T>
-	ComponentCollection<T>* GetComponentCollection(ComponentType componentType)
+	std::shared_ptr<ComponentCollection<T>> GetComponentCollection()
 	{
-		assert(componentArrays[componentType] && "Component not yet registered");
-
-		return static_cast<ComponentCollection<T>*>(componentArrays[componentType].get());
+		return GetComponentCollection<T>(GetComponentType<T>());
 	}
 
+	//Gets the component collection for a specific component of type T
 	template<typename T>
-	ComponentCollection<T>* GetComponentCollection()
+	std::shared_ptr<ComponentCollection<T>> GetComponentCollection(ComponentType componentType)
 	{
-		ComponentType componentType = GetComponentType<T>();
-
 		assert(componentArrays[componentType] && "Component not yet registered");
 
-		return static_cast<ComponentCollection<T>*>(componentArrays[componentType].get());
+		return std::static_pointer_cast<ComponentCollection<T>>(componentArrays[componentType]);
 	}
 
 private:

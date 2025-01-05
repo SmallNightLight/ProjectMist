@@ -14,6 +14,12 @@ public:
 
     Stream(const std::vector<uint8_t>& _buffer) : buffer(_buffer), currentIndex(0) { }
 
+    void Clear()
+    {
+        buffer.clear();
+        currentIndex = 0;
+    }
+
     //Write to stream
     void WriteBool(bool value)
     {
