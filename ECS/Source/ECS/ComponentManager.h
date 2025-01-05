@@ -28,7 +28,7 @@ public:
 	{
 		const char* typeName = typeid(T).name();
 
-		assert(componentTypes.find(typeName) == componentTypes.end() && "Component already registered");
+		assert(componentTypes.find(typeName) == componentTypes.end() && "Component already registered"); //Todo: allow this case, since multiple worlds might want to register the same system
 
 		//Add the component type to the component map
 		componentTypes.insert({ typeName, nextComponentType });

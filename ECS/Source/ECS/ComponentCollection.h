@@ -90,6 +90,7 @@ public:
         return entity < MAXENTITIES && entityToIndex[entity] != ENTITYNULL;
     }
 
+    //Returns the entity count (all entities that have this component type attached)
     std::uint32_t GetEntityCount() const
     {
         return entityCount;
@@ -116,11 +117,6 @@ public:
         indexToEntity = collection->indexToEntity;
         entityToIndex = collection->entityToIndex;
         entityCount = collection->entityCount;
-    }
-
-    std::vector<std::uint8_t> Serialize() const
-    {
-        auto a = components.data();
     }
 
 private:

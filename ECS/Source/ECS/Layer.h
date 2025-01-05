@@ -12,7 +12,7 @@
 class Layer
 {
 public:
-    Layer()
+    Layer() : ignoreSignatureChanged(false)
     {
         //Initializes the ECS managers (EntityManager, ComponentManager and SystemManager)
         entityManager = EntityManager();
@@ -78,10 +78,10 @@ public:
         return entityManager.GetSignature(entity);
     }
 
-    //Returns a vector of signatures of all active entities
-    std::vector<Signature> GetActiveEntities(Signature includedComponents, std::vector<Entity>& entities) const
+    //Gives a vector with all active entities that have at least one component that is included and its signature (excluding components that are not included)
+    void GetActiveEntities(Signature includedComponents, std::vector<Entity>& entities, std::vector<Signature>& signatures) const
     {
-        return entityManager.GetActiveSignatures(includedComponents, entities);
+        return entityManager.GetActiveEntities(includedComponents, entities, signatures);
     }
 
     //Component methods
@@ -103,9 +103,30 @@ public:
         entityManager.SetSignature(entity, signature);
 
         //Notify the system manager about the new signature
-        systemManager.EntitySignatureChanged(entity, signature);
+        if (!ignoreSignatureChanged)
+        {
+            systemManager.EntitySignatureChanged(entity, signature);
+        }
 
         return componentManager.AddComponent<T>(entity, component);
+    }
+
+    //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
+    template<typename T>
+    T* AddComponent(Entity entity, T component, ComponentType componentType, std::shared_ptr<ComponentCollection<T>> componentCollection)
+    {
+        //Render the signature of the entity by including the new component
+        Signature signature = entityManager.GetSignature(entity);
+        signature.set(componentType, true);
+        entityManager.SetSignature(entity, signature);
+
+        //Notify the system manager about the new signature
+        if (!ignoreSignatureChanged)
+        {
+            systemManager.EntitySignatureChanged(entity, signature);
+        }
+
+        return componentCollection.AddComponent(entity, component);
     }
 
     //Removes the component of type T from the entity, updates the signature and updates on which systems the entity is registered based on the signature
@@ -120,7 +141,10 @@ public:
         entityManager.SetSignature(entity, signature);
 
         //Notify the system manager about the new signature
-        systemManager.EntitySignatureChanged(entity, signature);
+        if (!ignoreSignatureChanged)
+        {
+            systemManager.EntitySignatureChanged(entity, signature);
+        }
     }
 
     //Gets a reference to the component of type T for the given entity
@@ -171,15 +195,27 @@ public:
         return systemManager.RegisterSystemType<T>(this);
     }
 
+    //When batch-adding new systems (with ignoreSignatureChanged = true) call this function after to add all systems based on the current signature
+    void FinalizeEntitySystems(Entity entity)
+    {
+        systemManager.EntitySignatureChanged(entity, entityManager.GetSignature(entity));
+        ignoreSignatureChanged = false;
+    }
+
+    void IgnoreSignatureChanged(bool value)
+    {
+        ignoreSignatureChanged = value;
+    }
+
 private:
     EntityManager entityManager;
     ComponentManager componentManager;
     SystemManager systemManager;
 
     std::vector<Entity> entitiesToDestroy { }; //bitset lol
+    bool ignoreSignatureChanged;
 };
 
 //Ideas to improve:
-// - when adding entities only call EntitySignatureChanged() when finished adding all components
 // - don't always erase or insert into the system entity set in EntitySignatureChanged()
 // - Archetype ECS

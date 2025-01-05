@@ -12,41 +12,77 @@ class PhysicsWorld : public World
 public:
     explicit PhysicsWorld(Layer& pLayer) : layer(pLayer)
     {
-        RegisterComponents();
-        RegisterSystems();
+        RegisterComponents(pLayer);
+        RegisterSystems(pLayer);
 
         camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
-    explicit PhysicsWorld(Stream& stream, Layer& layer) : PhysicsWorld(layer)
+    ///Deserializes the stream and overwrites the layer data. Only use this methode in a try loop
+    explicit PhysicsWorld(Layer& layer, Stream& stream) : PhysicsWorld(layer)
     {
-        DeserializeSystem<RigidBody>();
+        //Create a new layer and then Overwrite the existing layer with the new layer
+        Layer newLayer = Layer();
+
+        std::vector<Entity> entities;
+        std::vector<Signature> signatures;
+
+        //Read the signatures of all active entities
+        DeserializeEntities(stream, entities, signatures);
+
+        AddEntities(newLayer, entities);
+        newLayer.IgnoreSignatureChanged(true);
+
+        //Write all component data
+        DeserializeComponentCollection<ColliderTransform>(stream, newLayer, colliderTransformCollection, entities, signatures);
+        DeserializeComponentCollection<RigidBodyData>(stream, newLayer, rigidBodyDataCollection, entities, signatures);
+        DeserializeComponentCollection<CircleCollider>(stream, newLayer, circleColliderCollection, entities, signatures);
+        DeserializeComponentCollection<BoxCollider>(stream,newLayer,  boxColliderCollection, entities, signatures);
+        DeserializeComponentCollection<PolygonCollider>(stream, newLayer, polygonColliderCollection, entities, signatures);
+        DeserializeComponentCollection<ColliderRenderData>(stream, newLayer, colliderRenderDataCollection, entities, signatures);
+        DeserializeComponentCollection<Movable>(stream, newLayer, movableCollection, entities, signatures);
+
+        //Add the entities to the systems
+        AddEntitiesToSystems(newLayer, entities, signatures);
+
+        //Overwrite the layer with the new layer that holds the received data
+        layer.Overwrite(newLayer);
     }
 
-    void RegisterComponents()
+    ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
+    void RegisterComponents(Layer& pLayer)
     {
-        colliderTransformCollection =  layer.RegisterComponent<ColliderTransform>();
-        rigidBodyDataCollection = layer.RegisterComponent<RigidBodyData>();
-        circleColliderCollection = layer.RegisterComponent<CircleCollider>();
-        boxColliderCollection = layer.RegisterComponent<BoxCollider>();
-        polygonColliderCollection = layer.RegisterComponent<PolygonCollider>();
-        colliderRenderDataCollection = layer.RegisterComponent<ColliderRenderData>();
-        movableCollection = layer.RegisterComponent<Movable>();
+        colliderTransformCollection =  pLayer.RegisterComponent<ColliderTransform>();
+        rigidBodyDataCollection = pLayer.RegisterComponent<RigidBodyData>();
+        circleColliderCollection = pLayer.RegisterComponent<CircleCollider>();
+        boxColliderCollection = pLayer.RegisterComponent<BoxCollider>();
+        polygonColliderCollection = pLayer.RegisterComponent<PolygonCollider>();
+        colliderRenderDataCollection = pLayer.RegisterComponent<ColliderRenderData>();
+        movableCollection = pLayer.RegisterComponent<Movable>();
+        pLayer.RegisterComponent<Camera>(); //Todo: Camera?
 
-        //REMOVE
-        layer.RegisterComponent<Camera>();
+        //Create a signature that has all component flags
+        includedComponents = 0;
+        includedComponents.set(pLayer.GetComponentType<ColliderTransform>(), true);
+        includedComponents.set(pLayer.GetComponentType<RigidBodyData>(), true);
+        includedComponents.set(pLayer.GetComponentType<CircleCollider>(), true);
+        includedComponents.set(pLayer.GetComponentType<BoxCollider>(), true);
+        includedComponents.set(pLayer.GetComponentType<PolygonCollider>(), true);
+        includedComponents.set(pLayer.GetComponentType<ColliderRenderData>(), true);
+        includedComponents.set(pLayer.GetComponentType<Movable>(), true);
+        includedComponents.set(pLayer.GetComponentType<Camera>(), true); //Camera?
     }
 
-    void RegisterSystems()
+    void RegisterSystems(Layer& pLayer)
     {
-        rigidBodySystem = layer.RegisterSystem<RigidBody>();
-        circleColliderRenderer = layer.RegisterSystem<CircleColliderRenderer>();
-        boxColliderRenderer = layer.RegisterSystem<BoxColliderRenderer>();
-        polygonColliderRenderer = layer.RegisterSystem<PolygonColliderRenderer>();
-        movingSystem = layer.RegisterSystem<MovingSystem>();
+        rigidBodySystem = pLayer.RegisterSystem<RigidBody>();
+        circleColliderRenderer = pLayer.RegisterSystem<CircleColliderRenderer>();
+        boxColliderRenderer = pLayer.RegisterSystem<BoxColliderRenderer>();
+        polygonColliderRenderer = pLayer.RegisterSystem<PolygonColliderRenderer>();
+        movingSystem = pLayer.RegisterSystem<MovingSystem>();
 
         //REMOVE
-        cameraSystem = layer.RegisterSystem<CameraSystem>();
+        cameraSystem = pLayer.RegisterSystem<CameraSystem>();
     }
 
     void AddObjects(std::mt19937& numberGenerator)
@@ -90,7 +126,7 @@ public:
 
         Fixed16_16 stepTime = deltaTime / PhysicsIterations;
 
-        for(int i = 0; i < PhysicsIterations; ++i)
+        for (int i = 0; i < PhysicsIterations; ++i)
         {
             rigidBodySystem->ApplyVelocity(stepTime);
             rigidBodySystem->DetectCollisions();
@@ -99,7 +135,7 @@ public:
 
     void UpdateDebug(std::vector<Input*>& inputs, std::mt19937& numberGenerator)
     {
-        for(Input* input : inputs)
+        for (Input* input : inputs)
         {
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
             {
@@ -141,89 +177,205 @@ public:
         }
     }
 
+    //Serialization
+
+    //First the entity count is written and then every entity ID with its signature
+    //
+    //Send entity for every send component construct signature here when adding the components
+    //Disable automatic system adding during this time
+    //At the end enable automatic system and call UpdateSystems() on set the signature on every entity
+    //
+    //Entities
+    //Component ID - Entity Count - (Entity - ComponentData)
+    //Systems have no data that needs to be sent
+
     void Serialize(Stream& stream) const
     {
-        //Write the signatures of all active entities
-        SerializeEntities(stream);
+        std::vector<Entity> entities;
+        std::vector<Signature> signatures;
 
-        //Write all systems
-        SerializeSystem(stream, rigidBodySystem);
-        SerializeSystem(stream, circleColliderRenderer);
-        SerializeSystem(stream, boxColliderRenderer);
-        SerializeSystem(stream, polygonColliderRenderer);
-        SerializeSystem(stream, movingSystem);
+        //Write the signatures of all active entities
+        SerializeEntities(stream, entities, signatures);
+
+        //Update bounding box and transformed vertices
+        UpdateTransform(entities, signatures);
 
         //Write all component data
-        //SerializeComponentCollection(stream, colliderTransformCollection);
-        //SerializeComponentCollection(stream, rigidBodyDataCollection);
-        //SerializeComponentCollection(stream, circleColliderCollection);
-        //SerializeComponentCollection(stream, boxColliderCollection);
-        //SerializeComponentCollection(stream, polygonColliderCollection);
-        //SerializeComponentCollection(stream, colliderRenderDataCollection);
-        //SerializeComponentCollection(stream, movableCollection);
+        SerializeComponentCollection<ColliderTransform>(stream, colliderTransformCollection, entities, signatures);
+        SerializeComponentCollection<RigidBodyData>(stream, rigidBodyDataCollection, entities, signatures);
+        SerializeComponentCollection<CircleCollider>(stream, circleColliderCollection, entities, signatures);
+        SerializeComponentCollection<BoxCollider>(stream, boxColliderCollection, entities, signatures);
+        SerializeComponentCollection<PolygonCollider>(stream, polygonColliderCollection, entities, signatures);
+        SerializeComponentCollection<ColliderRenderData>(stream, colliderRenderDataCollection, entities, signatures);
+        SerializeComponentCollection<Movable>(stream, movableCollection, entities, signatures);
     }
 
-    void SerializeEntities(Stream& stream) const
+    ///Write the entities and their signatures to the stream //TODO: make all ///
+    void SerializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<Signature>& signatures) const
     {
-        auto signatures = layer.GetActiveEntities();
+        layer.GetActiveEntities(includedComponents, entities, signatures);
+
+        Entity entityCount = entities.size();
 
         //Write the entity count
-        stream.WriteInteger<Entity>(signatures.size());
+        stream.WriteInteger<Entity>(entityCount);
 
-        //Write the signatures of all active entities
-        for (Signature signature : signatures)
+        //Write the entities and their signatures
+        for (uint32_t i = 0; i < entityCount; ++i)
         {
-            stream.WriteBitset<MAXCOMPONENTS>(signature);
-
-
-
-            //Dont send signatures
-            //send entity for every send component construct signature here when adding the components
-            //Disable automatic system adding during this time
-            //At the end enable automatic system and call the updatesystems on set the signature on every entity
+            stream.WriteInteger(entities[i]);
+            stream.WriteBitset<MAXCOMPONENTS>(signatures[i]);
         }
     }
 
-    template<typename SystemType>
-    static void SerializeSystem(Stream& stream, SystemType system)
+    void UpdateTransform(const std::vector<Entity>& entities, const std::vector<Signature>& signatures) const
     {
-        //Write size of entities set
-        stream.WriteInteger<Entity>(system->Entities.size());
+        ComponentType circleColliderComponentType = layer.GetComponentType<CircleCollider>();
+        ComponentType boxColliderComponentType = layer.GetComponentType<BoxCollider>();
+        ComponentType polygonColliderComponentType = layer.GetComponentType<PolygonCollider>();
 
-        //Write all entities
-        for (Entity entity : system->Entities)
+        for (int i = 0; i < entities.size(); ++i)
         {
-            stream.WriteInteger<Entity>(entity);
+            Entity entity = entities[i];
+            Signature signature = signatures[i];
+
+            if (signature.test(circleColliderComponentType))
+            {
+                auto circleCollider = circleColliderCollection->GetComponent(entity);
+                colliderTransformCollection->GetComponent(entities[i]).GetAABB(circleCollider.Radius);
+            }
+
+            if (signature.test(boxColliderComponentType))
+            {
+                auto boxCollider = boxColliderCollection->GetComponent(entity);
+                colliderTransformCollection->GetComponent(entities[i]).GetAABB(boxCollider.TransformedVertices, boxCollider.Vertices);
+            }
+
+            if (signature.test(polygonColliderComponentType))
+            {
+                auto polygonCollider = polygonColliderCollection->GetComponent(entity);
+                colliderTransformCollection->GetComponent(entities[i]).GetAABB(polygonCollider.TransformedVertices, polygonCollider.Vertices);
+            }
         }
     }
 
-    template<typename ComponentCollectionType>
-    static void SerializeComponentCollection(Stream& stream, ComponentCollectionType componentCollection, std::set<Entity> entities)
+    template<typename Component>
+    void SerializeComponentCollection(Stream& stream, std::shared_ptr<ComponentCollection<Component>> componentCollection, const std::vector<Entity>& entities, const std::vector<Signature>& signatures) const
     {
-        //Write component collection size (without unused buffer)
-        stream.WriteInteger<uint32_t>(componentCollection->GetEntityCount());
+        //Write the componentType
+        ComponentType componentType = layer.GetComponentType<Component>();
+        Signature componentSignature = 0;
+        componentSignature.set(componentType, true);
+        stream.WriteInteger(componentType);
 
-        for(Entity entity : entities)
+        //Write the entity count of the component collection
+        stream.WriteInteger(componentCollection->GetEntityCount());
+
+        //Write the entity and the component Data
+        for (int i = 0; i < entities.size(); ++i)
         {
-            componentCollection->GetComponent(entity).Serialize(stream);
+            if ((signatures[i] & componentSignature).any())
+            {
+                stream.WriteInteger(entities[i]);
+                componentCollection->GetComponent(entities[i]).Serialize(stream);
+            }
         }
     }
 
-    template<typename SystemType>
-    static void DeserializeSystem(Stream& stream, std::set<Entity>& entities)
+    //Deserialization
+
+    static void DeserializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<Signature>& signatures)
     {
-        //Read the entities that have the specified system
+        //Read the entity count
         Entity entityCount = stream.ReadInteger<Entity>();
+
+        if (entityCount > MAXENTITIES)
+        {
+            throw "Entity count larger then MAXENTITIES";
+        }
+
+        entities.resize(entityCount);
+        signatures.resize(entityCount);
+
+        //Read the entities and their signatures
+        for (uint32_t i = 0; i < entityCount; ++i)
+        {
+            entities[i] = stream.ReadInteger<Entity>();
+            signatures[i] = stream.ReadBitset<MAXCOMPONENTS>();
+        }
+    }
+
+    ///Add entities to the layer
+    static void AddEntities(Layer& pLayer, const std::vector<Entity>& entities)
+    {
+        for (Entity entity = 0; entity < MAXENTITIES; ++entity)
+        {
+            pLayer.CreateEntity();
+        }
+
+        std::bitset<MAXENTITIES> entityPresent;
+
+        for (Entity entity : entities)
+        {
+            entityPresent.set(entity, true);
+        }
+
+        for (Entity entity = 0; entity < MAXENTITIES; ++entity)
+        {
+            if (!entityPresent.test(entity))
+                pLayer.ImmediatelyDestroyEntity(entity);
+        }
+    }
+
+    template<typename Component>
+    static void DeserializeComponentCollection(Stream& stream, Layer& layer, std::shared_ptr<ComponentCollection<Component>> componentCollection, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
+    {
+        //Read the componentType and verify
+        ComponentType componentType = stream.ReadInteger<ComponentType>();
+        Signature componentSignature = 0;
+        componentSignature.set(componentType, true);
+
+        if (componentType != layer.GetComponentType<Component>())
+        {
+            throw "Component type mismatch";
+        }
+
+        //Read the entity count of the component collection
+        uint32_t entityCount = stream.ReadInteger<uint32_t>();
+        uint32_t signaturesCount = signatures.size();
+
+        //Read the entity and the component Data
         for (int i = 0; i < entityCount; ++i)
         {
-            entities.insert(stream.ReadInteger<Entity>());
+            Entity entity = stream.ReadInteger<Entity>();
+
+            if (entityCount > signaturesCount)
+            {
+                throw "Entity out of range of signatures";
+            }
+
+            if ((signatures[entity] & componentSignature).none())
+            {
+                throw "Signature does not match component type";
+            }
+
+            //Create new component from the stream using the specified constructor
+            componentCollection->AddComponent(entity, Component(stream));
         }
     }
 
-    template<typename SystemType, typename ComponentCollectionType>
-    static void DeserializeComponentCollection(Stream& stream, SystemType system, ComponentCollectionType componentCollection, std::set<Entity>& entities)
+    ///Adds the entities to the systems
+    static void AddEntitiesToSystems(Layer& pLayer, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
     {
-        //componentCollection->AddComponent()
+        for (uint32_t i = 0; i < entities.size(); ++i)
+        {
+            if (pLayer.GetSignature(entities[i]) != signatures[i])
+            {
+                throw "The received signature does not match the signature from the registered components";
+            }
+
+            pLayer.FinalizeEntitySystems(entities[i]);
+        }
     }
 
 private:
@@ -244,6 +396,8 @@ private:
     std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
     std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
     std::shared_ptr<ComponentCollection<Movable>> movableCollection;
+
+    Signature includedComponents;
 
     //REMOVE
     std::shared_ptr<CameraSystem> cameraSystem;

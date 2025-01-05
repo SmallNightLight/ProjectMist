@@ -63,8 +63,6 @@ public:
     //When the signatures do not match the entity gets removes from the system entity set
 	void EntitySignatureChanged(Entity entity, Signature newSignature)
 	{
-		if (ignoreSignatureChanged) return;
-
 		for (unsigned int i = 0; i < systemCount; ++i)
 		{
 			auto& [signature, system] = systems[i];
@@ -82,14 +80,7 @@ public:
 		}
 	}
 
-	void IgnoreSignatureChanged(bool value)
-	{
-		ignoreSignatureChanged = value;
-	}
-
 private:
 	unsigned int systemCount = 0;
 	std::array<std::pair<Signature, std::shared_ptr<System>>, MAXSYSTEMS> systems;
-
-	bool ignoreSignatureChanged;
 };

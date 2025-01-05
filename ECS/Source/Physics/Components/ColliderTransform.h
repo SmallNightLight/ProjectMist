@@ -165,8 +165,8 @@ struct ColliderTransform
         return Vector2{cos * vector.X - sin * vector.Y + Position.X, sin * vector.X + cos * vector.Y + Position.Y};
     }
 
-    //Serializes data into the stream and modifies the transformedVertices and bounding box to be up to date. Call this method before any other collider serialization
-    void Serialize(Stream& stream, std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)
+    //Serializes data into the stream, considering that the bounding box and transformed vertices are already updated
+    void Serialize(Stream& stream) const
     {
         //Write object data
         stream.WriteVector2(Position);
@@ -178,8 +178,6 @@ struct ColliderTransform
         stream.WriteBool(IsKinematic);
         stream.WriteBool(IsDynamic);
 
-        //Update transform and box so it does not need to be updated
-        GetAABB(transformedVertices, vertices);
         assert(!TransformUpdateRequired && "TransformUpdateRequired needs to be false for serialization");
         assert(!AABBUpdateRequired && "AABBUpdateRequired needs to be false for serialization");
 
