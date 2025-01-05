@@ -10,19 +10,20 @@
 class PhysicsWorld : public World
 {
 public:
-    explicit PhysicsWorld(Layer& pLayer) : layer(pLayer)
+    explicit PhysicsWorld(Layer& layer) : baseLayer(layer)
     {
-        RegisterComponents(pLayer);
-        RegisterSystems(pLayer);
-
-        camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
+        RegisterComponents(layer);
+        RegisterSystems(layer);
+        InitializeCamera();
     }
 
     ///Deserializes the stream and overwrites the layer data. Only use this methode in a try loop
-    explicit PhysicsWorld(Layer& layer, Stream& stream) : PhysicsWorld(layer)
+    explicit PhysicsWorld(Layer& layer, Stream& stream) : baseLayer (layer)
     {
         //Create a new layer and then Overwrite the existing layer with the new layer
         Layer newLayer = Layer();
+        RegisterComponents(newLayer);
+        RegisterSystems(newLayer);
 
         std::vector<Entity> entities;
         std::vector<Signature> signatures;
@@ -45,78 +46,88 @@ public:
         //Add the entities to the systems
         AddEntitiesToSystems(newLayer, entities, signatures);
 
+        //Call the default constructor
+        RegisterComponents(baseLayer);
+        RegisterSystems(baseLayer);
+        InitializeCamera();
+
         //Overwrite the layer with the new layer that holds the received data
-        layer.Overwrite(newLayer);
+        baseLayer.Overwrite(newLayer);
     }
 
     ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
-    void RegisterComponents(Layer& pLayer)
+    void RegisterComponents(Layer& layer)
     {
-        colliderTransformCollection =  pLayer.RegisterComponent<ColliderTransform>();
-        rigidBodyDataCollection = pLayer.RegisterComponent<RigidBodyData>();
-        circleColliderCollection = pLayer.RegisterComponent<CircleCollider>();
-        boxColliderCollection = pLayer.RegisterComponent<BoxCollider>();
-        polygonColliderCollection = pLayer.RegisterComponent<PolygonCollider>();
-        colliderRenderDataCollection = pLayer.RegisterComponent<ColliderRenderData>();
-        movableCollection = pLayer.RegisterComponent<Movable>();
-        pLayer.RegisterComponent<Camera>(); //Todo: Camera?
+        colliderTransformCollection =  layer.RegisterComponent<ColliderTransform>();
+        rigidBodyDataCollection = layer.RegisterComponent<RigidBodyData>();
+        circleColliderCollection = layer.RegisterComponent<CircleCollider>();
+        boxColliderCollection = layer.RegisterComponent<BoxCollider>();
+        polygonColliderCollection = layer.RegisterComponent<PolygonCollider>();
+        colliderRenderDataCollection = layer.RegisterComponent<ColliderRenderData>();
+        movableCollection = layer.RegisterComponent<Movable>();
+        layer.RegisterComponent<Camera>(); //Todo: Camera?
 
         //Create a signature that has all component flags
         includedComponents = 0;
-        includedComponents.set(pLayer.GetComponentType<ColliderTransform>(), true);
-        includedComponents.set(pLayer.GetComponentType<RigidBodyData>(), true);
-        includedComponents.set(pLayer.GetComponentType<CircleCollider>(), true);
-        includedComponents.set(pLayer.GetComponentType<BoxCollider>(), true);
-        includedComponents.set(pLayer.GetComponentType<PolygonCollider>(), true);
-        includedComponents.set(pLayer.GetComponentType<ColliderRenderData>(), true);
-        includedComponents.set(pLayer.GetComponentType<Movable>(), true);
-        includedComponents.set(pLayer.GetComponentType<Camera>(), true); //Camera?
+        includedComponents.set(layer.GetComponentType<ColliderTransform>(), true);
+        includedComponents.set(layer.GetComponentType<RigidBodyData>(), true);
+        includedComponents.set(layer.GetComponentType<CircleCollider>(), true);
+        includedComponents.set(layer.GetComponentType<BoxCollider>(), true);
+        includedComponents.set(layer.GetComponentType<PolygonCollider>(), true);
+        includedComponents.set(layer.GetComponentType<ColliderRenderData>(), true);
+        includedComponents.set(layer.GetComponentType<Movable>(), true);
+        includedComponents.set(layer.GetComponentType<Camera>(), true); //Camera?
     }
 
-    void RegisterSystems(Layer& pLayer)
+    void RegisterSystems(Layer& layer)
     {
-        rigidBodySystem = pLayer.RegisterSystem<RigidBody>();
-        circleColliderRenderer = pLayer.RegisterSystem<CircleColliderRenderer>();
-        boxColliderRenderer = pLayer.RegisterSystem<BoxColliderRenderer>();
-        polygonColliderRenderer = pLayer.RegisterSystem<PolygonColliderRenderer>();
-        movingSystem = pLayer.RegisterSystem<MovingSystem>();
+        rigidBodySystem = layer.RegisterSystem<RigidBody>();
+        circleColliderRenderer = layer.RegisterSystem<CircleColliderRenderer>();
+        boxColliderRenderer = layer.RegisterSystem<BoxColliderRenderer>();
+        polygonColliderRenderer = layer.RegisterSystem<PolygonColliderRenderer>();
+        movingSystem = layer.RegisterSystem<MovingSystem>();
 
         //REMOVE
-        cameraSystem = pLayer.RegisterSystem<CameraSystem>();
+        cameraSystem = layer.RegisterSystem<CameraSystem>();
+    }
+
+    void InitializeCamera()
+    {
+        camera = baseLayer.AddComponent(baseLayer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
     void AddObjects(std::mt19937& numberGenerator)
     {
         //Add a ground
-        PhysicsUtils::CreateBox(layer, Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(2), Static);
+        PhysicsUtils::CreateBox(baseLayer, Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(2), Static);
 
         //Add walls
-        PhysicsUtils::CreateBox(layer, Vector2(camera->Left, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
-        PhysicsUtils::CreateBox(layer, Vector2(camera->Right, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
+        PhysicsUtils::CreateBox(baseLayer, Vector2(camera->Left, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
+        PhysicsUtils::CreateBox(baseLayer, Vector2(camera->Right, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
 
         //Create rotated objects
-        Entity e1 = PhysicsUtils::CreateBox(layer, Vector2(10, 0), Fixed16_16(25), Fixed16_16(1), Static);
-        layer.GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
+        Entity e1 = PhysicsUtils::CreateBox(baseLayer, Vector2(10, 0), Fixed16_16(25), Fixed16_16(1), Static);
+        baseLayer.GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
 
-        Entity e2 = PhysicsUtils::CreateBox(layer, Vector2(-10, -10), Fixed16_16(25), Fixed16_16(1), Static);
-        layer.GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
+        Entity e2 = PhysicsUtils::CreateBox(baseLayer, Vector2(-10, -10), Fixed16_16(25), Fixed16_16(1), Static);
+        baseLayer.GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomCircle(layer, numberGenerator, camera);
+            PhysicsUtils::CreateRandomCircle(baseLayer, numberGenerator, camera);
         }
 
-        layer.AddComponent(10, Movable(Fixed16_16(20)));
+        baseLayer.AddComponent(10, Movable(Fixed16_16(20)));
 
         //Add boxes/
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomBox(layer, numberGenerator, camera);
+            PhysicsUtils::CreateRandomBox(baseLayer, numberGenerator, camera);
         }
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomPolygon(layer, numberGenerator, camera);
+            PhysicsUtils::CreateRandomPolygon(baseLayer, numberGenerator, camera);
         }
     }
 
@@ -139,17 +150,17 @@ public:
         {
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
             {
-                PhysicsUtils::CreateRandomCircleFromPosition(layer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomCircleFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_RIGHT))
             {
-                PhysicsUtils::CreateRandomBoxFromPosition(layer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomBoxFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_MIDDLE))
             {
-                PhysicsUtils::CreateRandomPolygonFromPosition(layer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomPolygonFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
             }
         }
     }
@@ -213,7 +224,7 @@ public:
     ///Write the entities and their signatures to the stream //TODO: make all ///
     void SerializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<Signature>& signatures) const
     {
-        layer.GetActiveEntities(includedComponents, entities, signatures);
+        baseLayer.GetActiveEntities(includedComponents, entities, signatures);
 
         Entity entityCount = entities.size();
 
@@ -230,9 +241,9 @@ public:
 
     void UpdateTransform(const std::vector<Entity>& entities, const std::vector<Signature>& signatures) const
     {
-        ComponentType circleColliderComponentType = layer.GetComponentType<CircleCollider>();
-        ComponentType boxColliderComponentType = layer.GetComponentType<BoxCollider>();
-        ComponentType polygonColliderComponentType = layer.GetComponentType<PolygonCollider>();
+        ComponentType circleColliderComponentType = baseLayer.GetComponentType<CircleCollider>();
+        ComponentType boxColliderComponentType = baseLayer.GetComponentType<BoxCollider>();
+        ComponentType polygonColliderComponentType = baseLayer.GetComponentType<PolygonCollider>();
 
         for (int i = 0; i < entities.size(); ++i)
         {
@@ -263,7 +274,7 @@ public:
     void SerializeComponentCollection(Stream& stream, std::shared_ptr<ComponentCollection<Component>> componentCollection, const std::vector<Entity>& entities, const std::vector<Signature>& signatures) const
     {
         //Write the componentType
-        ComponentType componentType = layer.GetComponentType<Component>();
+        ComponentType componentType = baseLayer.GetComponentType<Component>();
         Signature componentSignature = 0;
         componentSignature.set(componentType, true);
         stream.WriteInteger(componentType);
@@ -306,11 +317,11 @@ public:
     }
 
     ///Add entities to the layer
-    static void AddEntities(Layer& pLayer, const std::vector<Entity>& entities)
+    static void AddEntities(Layer& layer, const std::vector<Entity>& entities)
     {
         for (Entity entity = 0; entity < MAXENTITIES; ++entity)
         {
-            pLayer.CreateEntity();
+            layer.CreateEntity();
         }
 
         std::bitset<MAXENTITIES> entityPresent;
@@ -323,7 +334,7 @@ public:
         for (Entity entity = 0; entity < MAXENTITIES; ++entity)
         {
             if (!entityPresent.test(entity))
-                pLayer.ImmediatelyDestroyEntity(entity);
+                layer.ImmediatelyDestroyEntity(entity);
         }
     }
 
@@ -365,21 +376,21 @@ public:
     }
 
     ///Adds the entities to the systems
-    static void AddEntitiesToSystems(Layer& pLayer, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
+    static void AddEntitiesToSystems(Layer& layer, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
     {
         for (uint32_t i = 0; i < entities.size(); ++i)
         {
-            if (pLayer.GetSignature(entities[i]) != signatures[i])
+            if (layer.GetSignature(entities[i]) != signatures[i])
             {
                 throw "The received signature does not match the signature from the registered components";
             }
 
-            pLayer.FinalizeEntitySystems(entities[i]);
+            layer.FinalizeEntitySystems(entities[i]);
         }
     }
 
 private:
-    Layer& layer;
+    Layer& baseLayer;
 
     //Systems
     std::shared_ptr<RigidBody> rigidBodySystem;
