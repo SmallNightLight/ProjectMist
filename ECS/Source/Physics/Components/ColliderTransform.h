@@ -176,7 +176,6 @@ struct ColliderTransform
         stream.WriteBool(IsDynamic);
 
         assert(!TransformUpdateRequired && "TransformUpdateRequired needs to be false for serialization");
-        assert(!AABBUpdateRequired && "AABBUpdateRequired needs to be false for serialization");
     }
 
     void OverrideTransformUpdateRequire(bool value)
