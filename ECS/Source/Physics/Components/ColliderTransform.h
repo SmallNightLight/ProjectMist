@@ -49,10 +49,7 @@ struct ColliderTransform
 
         //Since the transform and bounding box have been updated before serialization they should be correct
         TransformUpdateRequired = false;
-        AABBUpdateRequired = false;
-
-        //Read bounding box
-        BoundingBox = AABB(stream.ReadVector2(), stream.ReadVector2());
+        AABBUpdateRequired = true;
     }
 
     constexpr void SetRigidBodyType(RigidBodyType type)
@@ -105,8 +102,6 @@ struct ColliderTransform
             BoundingBox = AABB{Vector2(Position.X - radius, Position.Y - radius), Vector2(Position.X + radius, Position.Y + radius)};
             AABBUpdateRequired = false;
         }
-
-        TransformUpdateRequired = false;
 
         return BoundingBox;
     }
@@ -182,9 +177,16 @@ struct ColliderTransform
 
         assert(!TransformUpdateRequired && "TransformUpdateRequired needs to be false for serialization");
         assert(!AABBUpdateRequired && "AABBUpdateRequired needs to be false for serialization");
+    }
 
-        stream.WriteVector2(BoundingBox.Min);
-        stream.WriteVector2(BoundingBox.Max);
+    void OverrideTransformUpdateRequire(bool value)
+    {
+        TransformUpdateRequired = value;
+    }
+
+    void OverrideAABBUpdateRequired(bool value)
+    {
+        AABBUpdateRequired = value;
     }
 
 private:

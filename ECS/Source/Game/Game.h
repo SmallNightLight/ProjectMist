@@ -233,6 +233,7 @@ public:
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         Stream temporaryStream = Stream(serializedStream);
         physicsWorld->Deserialize(temporaryStream);
+        worldManager.PreventFurtherRollback();
     }
 
 private:

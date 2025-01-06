@@ -160,13 +160,10 @@ public:
         polygonColliderRenderer->Render();
 
         //Debug
-        /*if (RenderDebugInfo)
+        if (PhysicsDebugMode)
         {
             RenderDebugInfo(rigidBodySystem->collisionsRE);
-        }*/
 
-        if (RenderBoundingBoxes)
-        {
             circleColliderRenderer->RenderAABB();
             boxColliderRenderer->RenderAABB();
             polygonColliderRenderer->RenderAABB();
@@ -184,12 +181,6 @@ public:
     //Entities
     //Component ID - Entity Count - (Entity - ComponentData)
     //Systems have no data that needs to be sent
-
-    //Signatures
-    //43 box
-    //39 circle
-    //51 polygon
-    //128 camera
 
     void Serialize(Stream& stream) const
     {
@@ -244,13 +235,6 @@ public:
 
         //Overwrite the layer with the new layer that holds the received data
         baseLayer.Overwrite(layer);
-
-        //Debug
-        colliderTransformCollection->HasComponent(1);
-        layer.GetComponentCollection<ColliderTransform>()->HasComponent(1);
-
-        boxColliderCollection->HasComponent(1);
-        layer.GetComponentCollection<BoxCollider>()->HasComponent(1);
     }
 
 private:
@@ -286,20 +270,19 @@ private:
 
             if (signature.test(circleColliderComponentType))
             {
-                auto circleCollider = circleColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetAABB(circleCollider.Radius);
+                 colliderTransformCollection->GetComponent(entities[i]).OverrideTransformUpdateRequire(false);
             }
 
             if (signature.test(boxColliderComponentType))
             {
                 auto boxCollider = boxColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetAABB(boxCollider.TransformedVertices, boxCollider.Vertices);
+                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(boxCollider.TransformedVertices, boxCollider.Vertices);
             }
 
             if (signature.test(polygonColliderComponentType))
             {
                 auto polygonCollider = polygonColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetAABB(polygonCollider.TransformedVertices, polygonCollider.Vertices);
+                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(polygonCollider.TransformedVertices, polygonCollider.Vertices);
             }
         }
     }
@@ -428,6 +411,77 @@ private:
             }
 
             layer.FinalizeEntitySystems(entities[i]);
+        }
+    }
+
+    static void RenderDebugInfo(std::vector<CollisionInfo>& collisions)
+    {
+        for (CollisionInfo collision : collisions)
+        {
+            //Render normal of collision
+            float normalLength = 1 + collision.Depth.ToFloating<float>();
+            glLineWidth(2.0f);
+            glColor3f(1.0f, 0.0f, 0.0f);
+            glBegin(GL_LINES);
+            glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
+            glVertex2f(collision.Contact1.X.ToFloating<float>() + collision.Normal.X.ToFloating<float>() * normalLength, collision.Contact1.Y.ToFloating<float>() + collision.Normal.Y.ToFloating<float>() * normalLength);
+            glEnd();
+
+            //Render contact points
+            float size = 0.4f;
+            if (collision.ContactCount > 0)
+            {
+                glLineWidth(2.0f);
+                glColor3f(0.5f, 0.5f, 0.5f);
+                glBegin(GL_LINES);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() + size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() + size);
+                glEnd();
+            }
+            if (collision.ContactCount > 1)
+            {
+                glLineWidth(2.0f);
+                glBegin(GL_LINES);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() + size);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() - size);
+                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() + size);
+                glEnd();
+            }
+
+            if (collision.ContactCount > 0)
+            {
+                if (collision.IsDynamic1)
+                {
+                    glColor3f(0.0f, 1.0f, 0.0f);
+                }
+                else
+                {
+                    glColor3f(0.0f, 0.0f, 1.0f);
+                }
+
+                glBegin(GL_POINTS);
+                glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
+                glEnd();
+
+                if (collision.IsDynamic2)
+                {
+                    glColor3f(0.0f, 1.0f, 0.0f);
+                }
+                else
+                {
+                    glColor3f(0.0f, 0.0f, 1.0f);
+                }
+
+                if (collision.ContactCount > 1)
+                {
+                    glBegin(GL_POINTS);
+                    glVertex2f(collision.Contact2.X.ToFloating<float>(), collision.Contact2.Y.ToFloating<float>());
+                    glEnd();
+                }
+            }
         }
     }
 

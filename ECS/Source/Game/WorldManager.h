@@ -58,13 +58,11 @@ public:
     //Rollback the amount of specified frames from the current frame
     bool Rollback(unsigned int frames)
     {
-        if (frames >= MaxRollBackFrames || rollbackCount + frames >= MaxRollBackFrames)
-            return false;
+        if (rollbackCount + frames >= MaxRollBackFrames) return false;
 
         lastLayerIndex -= frames;
         lastLayerIndex = (lastLayerIndex % MaxRollBackFrames + MaxRollBackFrames) % MaxRollBackFrames;
         rollbackCount += frames;
-
 
         if (lastLayerIndex == -1)
         {
@@ -80,6 +78,11 @@ public:
         if (frame > currentFrame) return false;
 
         return Rollback(currentFrame - frame);
+    }
+
+    void PreventFurtherRollback()
+    {
+        rollbackCount = MaxRollBackFrames - 1;
     }
 
 private:
