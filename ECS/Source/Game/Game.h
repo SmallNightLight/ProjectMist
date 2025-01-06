@@ -134,7 +134,7 @@ public:
                 worldManager.Rollback(1);
             }
 
-            if (otherInput.GetKey(GLFW_KEY_LEFT_CONTROL) && otherInput.GetKeyDown(GLFW_KEY_S))
+            if (otherInput.GetKey(GLFW_KEY_LEFT_CONTROL) && otherInput.GetKeyDown(GLFW_KEY_C))
             {
                 //Serialize current game state
                 std::cout << "Serializing Game State";
@@ -231,7 +231,8 @@ public:
     void Deserialize()
     {
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        physicsWorld->Deserialize(serializedStream);
+        Stream temporaryStream = Stream(serializedStream);
+        physicsWorld->Deserialize(temporaryStream);
     }
 
 private:

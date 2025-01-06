@@ -16,7 +16,7 @@ public:
 
 	void Overwrite(const ComponentManager& other)
 	{
-		for(int i = 0; i < nextComponentType; ++i)
+		for(int i = 0; i < other.nextComponentType; ++i)
 		{
 			componentArrays[i]->Overwrite(other.componentArrays[i].get());
 		}

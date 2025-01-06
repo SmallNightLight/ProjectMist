@@ -12,7 +12,13 @@ class Stream
 public:
     Stream() : currentIndex(0) { }
 
-    Stream(const std::vector<uint8_t>& _buffer) : buffer(_buffer), currentIndex(0) { }
+    explicit Stream(const std::vector<uint8_t>& _buffer) : buffer(_buffer), currentIndex(0) { }
+
+    Stream(const Stream& other)
+    {
+        buffer = other.buffer;
+        currentIndex = other.currentIndex;
+    }
 
     void Clear()
     {

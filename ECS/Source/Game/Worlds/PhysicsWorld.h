@@ -7,6 +7,9 @@
 #include "../Input/Input.h"
 #include "../../Math/Stream.h"
 
+#include <vector>
+#include <array>
+
 class PhysicsWorld : public World
 {
 public:
@@ -38,7 +41,6 @@ public:
         includedComponents.set(layer.GetComponentType<PolygonCollider>(), true);
         includedComponents.set(layer.GetComponentType<ColliderRenderData>(), true);
         includedComponents.set(layer.GetComponentType<Movable>(), true);
-        includedComponents.set(layer.GetComponentType<Camera>(), true); //Camera?
     }
 
     ///Registers all components to the layer
@@ -183,6 +185,12 @@ public:
     //Component ID - Entity Count - (Entity - ComponentData)
     //Systems have no data that needs to be sent
 
+    //Signatures
+    //43 box
+    //39 circle
+    //51 polygon
+    //128 camera
+
     void Serialize(Stream& stream) const
     {
         std::vector<Entity> entities;
@@ -214,27 +222,35 @@ public:
 
         std::vector<Entity> entities;
         std::vector<Signature> signatures;
+        std::array<uint32_t, MAXENTITIES> entityIndexes;
 
         //Read the signatures of all active entities
         DeserializeEntities(stream, entities, signatures);
 
-        AddEntities(layer, entities);
+        AddEntities(layer, entities, entityIndexes);
         layer.IgnoreSignatureChanged(true);
 
         //Write all component data
-        DeserializeComponentCollection<ColliderTransform>(stream, layer, entities, signatures);
-        DeserializeComponentCollection<RigidBodyData>(stream, layer, entities, signatures);
-        DeserializeComponentCollection<CircleCollider>(stream, layer, entities, signatures);
-        DeserializeComponentCollection<BoxCollider>(stream, layer, entities, signatures);
-        DeserializeComponentCollection<PolygonCollider>(stream, layer, entities, signatures);
-        DeserializeComponentCollection<ColliderRenderData>(stream, layer, entities, signatures);
-        DeserializeComponentCollection<Movable>(stream, layer, entities, signatures);
+        DeserializeComponentCollection<ColliderTransform>(stream, layer, entityIndexes, signatures);
+        DeserializeComponentCollection<RigidBodyData>(stream, layer, entityIndexes, signatures);
+        DeserializeComponentCollection<CircleCollider>(stream, layer, entityIndexes, signatures);
+        DeserializeComponentCollection<BoxCollider>(stream, layer, entityIndexes, signatures);
+        DeserializeComponentCollection<PolygonCollider>(stream, layer, entityIndexes, signatures);
+        DeserializeComponentCollection<ColliderRenderData>(stream, layer, entityIndexes, signatures);
+        DeserializeComponentCollection<Movable>(stream, layer, entityIndexes, signatures);
 
         //Add the entities to the systems
         AddEntitiesToSystems(layer, entities, signatures);
 
         //Overwrite the layer with the new layer that holds the received data
         baseLayer.Overwrite(layer);
+
+        //Debug
+        colliderTransformCollection->HasComponent(1);
+        layer.GetComponentCollection<ColliderTransform>()->HasComponent(1);
+
+        boxColliderCollection->HasComponent(1);
+        layer.GetComponentCollection<BoxCollider>()->HasComponent(1);
     }
 
 private:
@@ -335,7 +351,7 @@ private:
     }
 
     ///Add entities to the layer
-    static void AddEntities(Layer& layer, const std::vector<Entity>& entities)
+    static void AddEntities(Layer& layer, const std::vector<Entity>& entities, std::array<uint32_t, MAXENTITIES>& entityIndexes)
     {
         for (Entity entity = 0; entity < MAXENTITIES; ++entity)
         {
@@ -354,10 +370,16 @@ private:
             if (!entityPresent.test(entity))
                 layer.ImmediatelyDestroyEntity(entity);
         }
+
+        //Create a list with the entity indexes
+        for (uint32_t i = 0; i < entities.size(); ++i)
+        {
+            entityIndexes[entities[i]] = i;
+        }
     }
 
     template<typename Component>
-    static void DeserializeComponentCollection(Stream& stream, Layer& layer, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
+    static void DeserializeComponentCollection(Stream& stream, Layer& layer, std::array<uint32_t, MAXENTITIES>& entityIndexes, const std::vector<Signature>& signatures)
     {
         //Read the componentType and verify
         ComponentType componentType = stream.ReadInteger<ComponentType>();
@@ -385,7 +407,7 @@ private:
                 throw "Entity out of range of signatures";
             }
 
-            if ((signatures[entity] & componentSignature).none())
+            if ((signatures[entityIndexes[entity]] & componentSignature).none())
             {
                 throw "Signature does not match component type";
             }

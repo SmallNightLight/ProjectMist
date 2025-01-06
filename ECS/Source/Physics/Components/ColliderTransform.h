@@ -106,6 +106,8 @@ struct ColliderTransform
             AABBUpdateRequired = false;
         }
 
+        TransformUpdateRequired = false;
+
         return BoundingBox;
     }
 
@@ -191,3 +193,5 @@ private:
     bool TransformUpdateRequired;
     bool AABBUpdateRequired;
 };
+
+//ToDo: Combine TransformUpdateRequired and AABBUpdateRequired

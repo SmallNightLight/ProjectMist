@@ -85,7 +85,7 @@ public:
     }
 
     //Checks whether the given entity has the component by checking the sparse set for entity null
-    bool HasComponent(Entity entity)
+    bool HasComponent(Entity entity) const
     {
         return entity < MAXENTITIES && entityToIndex[entity] != ENTITYNULL;
     }

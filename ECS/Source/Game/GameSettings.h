@@ -15,5 +15,5 @@ static const std::vector<uint16_t> playerInputKeys =
 
 static const std::vector<uint16_t> otherInputKeys =
 {
-    GLFW_KEY_ESCAPE, GLFW_KEY_SPACE, GLFW_KEY_R, GLFW_KEY_LEFT_CONTROL, GLFW_KEY_S, GLFW_KEY_V
+    GLFW_KEY_ESCAPE, GLFW_KEY_SPACE, GLFW_KEY_R, GLFW_KEY_LEFT_CONTROL, GLFW_KEY_C, GLFW_KEY_V
 };

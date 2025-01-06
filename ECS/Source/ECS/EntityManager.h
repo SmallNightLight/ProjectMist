@@ -72,9 +72,9 @@ public:
 	}
 
 	//Gives a vector with all active entities that have at least one component that is included and its signature (excluding components that are not included)
-	void GetActiveEntities(Signature includedComponents, std::vector<Entity>& entities, std::vector<Signature>& signatures) const
+	void GetActiveEntities(Signature includedComponents, std::vector<Entity>& entities, std::vector<Signature>& outSignatures) const
 	{
-		signatures.reserve(activeEntityCount);
+		outSignatures.reserve(activeEntityCount);
 		entities.reserve(activeEntityCount);
 
 		for (Entity entity = 0; entity < MAXENTITIES; ++entity)
@@ -84,7 +84,7 @@ public:
 			if ((signature & includedComponents).any())
 			{
 				entities.push_back(entity);
-				signatures.push_back(signature & includedComponents);
+				outSignatures.push_back(signature & includedComponents);
 			}
 		}
 	}
