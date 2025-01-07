@@ -8,3 +8,13 @@ typedef uint32_t ClientID;
 typedef asio::ip::udp::endpoint ClientEndpoint;
 
 static constexpr bool Serverless = true;
+
+enum PacketType
+{
+    RequestJoinPacket, //Also with empty message
+    NewClientPacket,
+    RequestGameDataPacket,
+    GameDataPacket,
+    RequestInputPacket, //For resending input packet, input send by default
+    InputPacket
+};

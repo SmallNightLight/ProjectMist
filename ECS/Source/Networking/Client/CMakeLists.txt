@@ -9,14 +9,15 @@ endif()
 
 add_executable(Client main.cpp
         Client.h
+        ClientHandler.h
 
+        ../Shared/Packet.h
         ../Shared/InputPacket.h
         ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
         ../Shared/Log.h
 
         ../../Game/Input/Input.h
-        ClientHandler.h
 )
 
 if(TARGET CLIENT)

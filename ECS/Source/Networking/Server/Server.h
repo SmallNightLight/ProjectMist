@@ -1,13 +1,14 @@
 #pragma once
 
-#include "../../Math/Stream.h"
+#include "../Shared/Packet.h"
 #include "../Shared/ThreadedQueue.h"
 #include "../Shared/NetworkingSettings.h"
 #include "../Shared/Log.h"
+#include "../../Math/Stream.h"
 
-#include <string>
 #include <vector>
-#include <map>
+#include <set>
+#include <unordered_map>
 #include <asio.hpp>
 
 using asio::ip::udp;
@@ -22,36 +23,37 @@ public:
 
     ~Server()
     {
+        socket.cancel();
         io_service.stop();
         service_thread.join();
     }
 
-    void SendToClient(const std::vector<uint8_t>& message, ClientID clientID)
+    void SendToClient(const Packet& packet, ClientID clientID)
     {
         try
         {
-            Send(message, Clients.at(clientID));
+            Send(packet.Data.GetBuffer(), Clients.at(clientID));
         }
         catch (const std::out_of_range&)
         {
-            Error(std::string(__FUNCTION__) + ": Unknown client ID ", clientID); //TODO;: CHECK FOR __FUNC__
+            Error("Cannot send packet to client, unknown client ID ", clientID);
         }
     }
 
-    void SendToAllExcept(const std::vector<uint8_t>& message, ClientID clientID)
+    void SendToAllExcept(const Packet& packet, ClientID clientID)
     {
         for (auto client: Clients)
         {
             if (client.first != clientID)
-                SendToClient(message, client.first);
+                SendToClient(packet, client.first);
         }
     }
 
-    void SendToAll(const std::vector<uint8_t>& message)
+    void SendToAll(const Packet& packet)
     {
         for (auto client: Clients)
         {
-            SendToClient(message, client.first);
+            SendToClient(packet, client.first);
         }
     }
 
@@ -81,31 +83,60 @@ private:
             try
             {
                 std::vector<uint8_t> message = std::vector<uint8_t>(recv_buffer.data(), recv_buffer.data() + bytes_transferred);
-                Stream stream = Stream(message);
+                ClientID clientID;
+                Packet packet = Packet(message);
 
                 if (message.size() == 0)
                 {
-                    //Accept client to join
-
-                    ClientID clientID = GetClientID(remote_endpoint);
-                    std::vector<uint8_t> clientIDBytes(4);
-                    std::memcpy(clientIDBytes.data(), &clientID, 4);
-
-                    SendToAll(clientIDBytes);
+                    GetClientID(remote_endpoint, clientID, true);
+                    packet = Packet(clientID, RequestJoinPacket);
                 }
-                else
-                {
-                    ClientID clientID = stream.ReadInteger<uint32_t>();
 
-                    if (VerifyClientID(remote_endpoint, clientID))
+                if (message.size() >= Packet::DefaultSize)
+                {
+                    if (GetClientID(remote_endpoint, clientID) && packet.VerifyClientID(clientID))
                     {
-                        SendToAll(message);
+                        switch (packet.Type)
+                        {
+                            case RequestJoinPacket:  //Accept client to join
+                                SendToAll(Packet(clientID, NewClientPacket));
+                                break;
+
+                            case RequestGameDataPacket: //Continue request to all other clients
+                                clientsWaitingForGameData.insert(clientID);
+                                SendToAllExcept(packet, clientID);
+                                break;
+
+                            case GameDataPacket:  //Continue game data to the client requesting it
+                                for(ClientID receivingClient : clientsWaitingForGameData)
+                                {
+                                    SendToClient(packet, receivingClient);
+                                    clientsWaitingForGameData.erase(receivingClient);
+                                }
+                                break;
+
+                            case RequestInputPacket: //Resend an input packet
+                                Warning("RequestInputPacket not implemented");
+                                break;
+
+                            case InputPacket: //Continue the input packet to other clients
+                                SendToAll(packet);
+                                break;
+
+                            default:
+                                Warning("Received unknown packet type ", packet.Type);
+                        }
                     }
                     else
                     {
-                        Warning("Received message with invalid client ID: ", clientID);
-                        throw std::runtime_error("Message has invalid client ID");
+                        //ToDO: Let the client know that it could not process the packet
+                        Warning("Receive message with invalid client ID: ", clientID);
                     }
+                }
+                else
+                {
+                    //ToDO: Let the client know that it could not process the packet
+                    Warning("Received message with invalid size");
                 }
             }
             catch (const std::exception& exception)
@@ -150,24 +181,17 @@ private:
         }
     }
 
-    void HandleError(const std::error_code error_code, const ClientEndpoint& client) //TODO: INEFFICIENT, like getID
+    void HandleError(const std::error_code error_code, const ClientEndpoint& client)
     {
-        bool found = false;
-        ClientID clientID = 0;
+        Warning("Error while receiving a packet", error_code.message());
 
-        for (const auto& clientPair : Clients)
-        {
-            if (clientPair.second == client)
-            {
-                found = true;
-                clientID = clientPair.first;
-                break;
-            }
-        }
+        if (!ClientExists(client)) return;
 
-        if (found == false) return;
+        ClientID clientID;
+        GetClientID(client, clientID);
 
         Clients.erase(clientID);
+        Endpoints.erase(client);
         OnClientDisconnect(clientID);
     }
 
@@ -194,24 +218,39 @@ private:
         Debug("Server network thread stopped");
     }
 
-    //Returns the client ID, and creates a new one, when it doesn't have an existing ID assigned
-    ClientID GetClientID(const ClientEndpoint& endpoint)
+    bool ClientExists(const ClientEndpoint& endpoint)
     {
-        for (const auto& client : Clients)
-            if (client.second == endpoint)
-                return client.first;
+        return Endpoints.find(endpoint) != Endpoints.end();
+    }
 
+    //Returns the client ID, and creates a new one, when it doesn't have an existing ID assigned
+    bool GetClientID(const ClientEndpoint& endpoint, ClientID& clientID, bool addClient = false)
+    {
+        if (ClientExists(endpoint))
+        {
+            clientID = Endpoints.at(endpoint);
+            return true;
+        }
+
+        if (addClient)
+        {
+            clientID = AddClient(endpoint);
+            return true;
+        }
+
+        return false;
+    }
+
+    ClientID AddClient(const ClientEndpoint& endpoint)
+    {
         Clients[++nextClientID] = endpoint;
+        Endpoints[endpoint] = nextClientID;
+
         Debug("Accepted new client: ", nextClientID);
         return nextClientID;
     }
 
-    bool VerifyClientID(const ClientEndpoint& client, ClientID expectedID)
-    {
-        return Clients.find(expectedID) != Clients.end() && Clients[expectedID] == client;
-    }
-
-    size_t GetClientCount()
+    size_t GetClientCount() const
     {
         return Clients.size();
     }
@@ -236,8 +275,11 @@ private:
     std::array<char, NetworkBufferSize> recv_buffer { };
     std::thread service_thread;
 
-    std::map<ClientID, ClientEndpoint> Clients;
+    std::unordered_map<ClientID, ClientEndpoint> Clients;
+    std::unordered_map<ClientEndpoint, ClientID> Endpoints;
     ClientID nextClientID;
+
+    std::set<ClientID> clientsWaitingForGameData;
 
     ThreadedQueue<std::vector<uint8_t>> incomingMessages;
 };

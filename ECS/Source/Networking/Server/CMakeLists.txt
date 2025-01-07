@@ -9,12 +9,13 @@ endif()
 
 add_executable(Server main.cpp
         Server.h
-        UDPServer.h
 
         ../Shared/Log.h
+        ../Shared/Packet.h
         ../Shared/InputPacket.h
         ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
+        ../Shared/GameDataPacket.h
 )
 
 if(TARGET CLIENT)

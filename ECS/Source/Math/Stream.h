@@ -26,6 +26,22 @@ public:
         currentIndex = 0;
     }
 
+    void ResetIndex()
+    {
+        currentIndex = 0;
+    }
+
+    std::vector<uint8_t> GetBuffer() const
+    {
+        return buffer;
+    }
+
+    void Join(Stream&& other)
+    {
+        buffer.insert(buffer.end(), other.buffer.begin(), other.buffer.end());
+        other.Clear();
+    }
+
     //Write to stream
     void WriteBool(bool value)
     {
@@ -107,11 +123,6 @@ public:
 
         currentIndex += sizeof(T);
         return value;
-    }
-
-    std::vector<uint8_t> GetBuffer()
-    {
-        return buffer;
     }
 
     Fixed16_16 ReadFixed()

@@ -196,3 +196,22 @@ Server architecture
 - 
 
 
+
+Questions Answered by David Dehaene (the author of "Delta Rollback: New optimizations for Rollback Netcode" and Game dev behin the rollback netcode of Jewel Run)
+
+
+- What can you do when a client cant keep up with the simulation? Is pausing the only option?
+I have not tested this, but I think there could be a way to slow the simulation down as well? Depending on the game it can be more acceptable than pausing.
+You can also discard the inputs from the player that is lagging behind, though this is more easily done with a server relaying player inputs. I don't think it has ever been done in p2p, but I believe it can be done
+
+- What is a good update time for games using rollback networking (physics FPS / Networking FPS)
+Not sure in absolutes but you can slow your physics FPS down to have a huge impact on rollback performance, as less frames will get you the same latency. For Jewel Run we were able to decrease the physics FPS to 15 and I would challenge players to notice
+
+- Does rollback actually solve non-authorative cheating attempts, since only the input is transferred?
+Yes some kind of cheats are impossible with rollback, but it also opens the door to new crafty ways of cheating ^^. As all players have all the information in the game it's also very difficult to prevent cheats such as wall hacks
+
+- Why do many games struggle with rollbacks even though they their game state and physics simulation is relatively simple (like fighting games)
+I'm not so sure why a fighting game would have many issues with this, but I don't have the experience here. Maybe because networking is taken into account late(r) in development?
+
+
+

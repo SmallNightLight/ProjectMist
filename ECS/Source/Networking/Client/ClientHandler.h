@@ -17,7 +17,7 @@
 class ClientHandler
 {
 public:
-    ClientHandler(const std::string& serverIP, const std::string& serverPort) : client(serverIP, serverPort), running(false), receivedClientID(0) { }
+    ClientHandler(const std::string& serverIP, const std::string& serverPort) : client(serverIP, serverPort), running(false), receivedClientID(0), connected(false) { }
 
     ~ClientHandler()
     {
@@ -186,6 +186,7 @@ private:
                         AddClient(receivedClientID);
 
                         Debug("Received Client ID: ", receivedClientID);
+                        connected = true;
                     }
                 }
             }
@@ -217,4 +218,6 @@ private:
     std::set<ClientID> clientIDs { };
     std::unordered_map<ClientID, InputCollection> clientInputs;
     std::unordered_map<ClientID, uint32_t> lastInputFrame;
+
+    bool connected;
 };
