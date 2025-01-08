@@ -10,7 +10,7 @@
 class InputCollection
 {
 public:
-    InputCollection(const std::vector<uint16_t>& inputKeys, uint32_t size = 15) : baseInput(Input(inputKeys)), saveCount(size), inputs(size), oldestFrame(0), startIndex(0), frameCount(0), lastCompletedFrame(0)
+    InputCollection(const std::vector<uint16_t>& inputKeys, uint32_t frame = 0, uint32_t size = 15) : baseInput(Input(inputKeys)), saveCount(size), inputs(size), oldestFrame(frame), startIndex(0), frameCount(std::min(frame, size)), lastCompletedFrame(frame)
     {
         if (size == 0)
             throw std::invalid_argument("saveCount must be greater than 0");
@@ -18,6 +18,12 @@ public:
 
     void AddInput(const InputData& input)
     {
+        if (input.Frame < oldestFrame)
+        {
+            //Most likely received an old packet from another client that just started
+            return;
+        }
+
         assert(input.Frame >= oldestFrame && input.Frame < oldestFrame + saveCount * 2 && "Frame is outside the valid range of the buffer");
 
         if (HasInput(input.Frame)) return;
@@ -26,7 +32,7 @@ public:
 
         if (frameCount < saveCount)
         {
-            frameCount = std::min(input.Frame + 1, saveCount);
+            frameCount = std::min(input.Frame, saveCount);
         }
         else if (input.Frame >= oldestFrame + saveCount)
         {
@@ -47,7 +53,7 @@ public:
     {
         oldestFrame = frame;
         startIndex = 0;
-        frameCount = std::min(frame + 1, saveCount);
+        frameCount = std::min(frame, saveCount);
         lastCompletedFrame = frame;
     }
 
@@ -71,7 +77,7 @@ public:
         return baseInput;
     }
 
-    bool NeedsPrediction(uint32_t frame)
+    bool NeedsPrediction(uint32_t frame) const
     {
         return !HasInput(frame);
     }
@@ -82,10 +88,17 @@ public:
         return frame >= oldestFrame && frame < oldestFrame + frameCount && frameCount > 0;
     }
 
-    /*uint32_t GetRollbackFrame(uint32_t currentFrame) const
+    uint32_t GetRollbackFrame(uint32_t currentFrame) const
     {
+        assert(currentFrame >= lastCompletedFrame && "Current frame is in the past?");
 
-    }*/
+        return currentFrame - lastCompletedFrame;
+    }
+
+    uint32_t GetLastCompletedFrame() const
+    {
+        return lastCompletedFrame;
+    }
 
 private:
     uint32_t GetIndex(uint32_t frame) const

@@ -38,6 +38,13 @@ public:
         return std::static_pointer_cast<T>(worlds[worldType][lastLayerIndex]);
     }
 
+    template<typename T>
+    std::shared_ptr<T> GetPreviousWorld(WorldType worldType, uint32_t steps = 1)
+    {
+        int targetLayerIndex = (lastLayerIndex - steps + MaxRollBackFrames) % MaxRollBackFrames;
+        return std::static_pointer_cast<T>(worlds[worldType][targetLayerIndex]);
+    }
+
     Layer& GetCurrentLayer()
     {
         return layers[lastLayerIndex];
@@ -67,7 +74,7 @@ public:
         if (rollbackCount + frames >= MaxRollBackFrames) return false;
 
         lastLayerIndex -= frames;
-        lastLayerIndex = (lastLayerIndex % MaxRollBackFrames + MaxRollBackFrames) % MaxRollBackFrames;
+        lastLayerIndex = (lastLayerIndex % MaxRollBackFrames + MaxRollBackFrames) % MaxRollBackFrames; //Todo: lol
         rollbackCount += frames;
 
         if (lastLayerIndex == -1)

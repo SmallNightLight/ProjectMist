@@ -101,12 +101,16 @@ private:
                         {
                             case RequestJoinPacket:  //Accept client to join
                             {
-                                SendToAll(Packet(clientID, NewClientPacket));
+                                SendToAllExcept(Packet(clientID, NewClientPacket), clientID);
+                                for (auto client: Clients)
+                                {
+                                    SendToClient(Packet(client.first, NewClientPacket), clientID);
+                                }
                                 break;
                             }
                             case RequestGameDataPacket: //Continue request to all other clients
                             {
-                                if (Clients.size() > 1)
+                                if (Clients.size() > 1) //ToDO: when reconnecting on the same ip it might register even when in practice no clients are active (no heartbeats)
                                 {
                                     clientsWaitingForGameData.insert(clientID);
                                     SendToAllExcept(packet, clientID);

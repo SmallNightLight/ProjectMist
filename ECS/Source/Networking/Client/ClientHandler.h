@@ -18,6 +18,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <limits>
 
 class ClientHandler
 {
@@ -33,7 +34,7 @@ public:
     {
         running = true;
         receivedClientID = 0;
-        AddClient(0);
+        AddClient(0, 0);
 
         clientThread = std::thread(&ClientHandler::RunClientThread, this);
     }
@@ -78,14 +79,21 @@ public:
             {
                 case NewClientPacket:
                 {
-                    AddClient(packet.ID);
+                    if (receivedClientID == 0)
+                    {
+                        receivedClientID = packet.ID;
+                        RemoveClient(0);
+
+                        Debug("Received Client ID: ", receivedClientID);
+                        connected = true;
+                    }
+
+                    AddClient(packet.ID, physicsWorld->GetCurrentFrame()); //Todo:: or +1 - 1
                     break;
                 }
-                case RequestGameDataPacket: //Send back the serialized game state
+                case RequestGameDataPacket: //Mark for later serialization
                 {
-                    Stream gameData = Stream();
-                    physicsWorld->Serialize(gameData);
-                    Send(Packet(receivedClientID, GameDataPacket, 0, std::move(gameData)));
+                    sendGameData = true;
                     break;
                 }
                 case GameDataPacket:  //Deserialize the game data
@@ -114,6 +122,17 @@ public:
         }
     }
 
+    ///Send back the serialized game state
+    void SendGameData(std::shared_ptr<PhysicsWorld> physicsWorld)
+    {
+        if (!sendGameData) return;
+
+        Stream gameData = Stream();
+        physicsWorld->Serialize(gameData);
+        Send(Packet(receivedClientID, GameDataPacket, 0, std::move(gameData)));
+        sendGameData = false;
+    }
+
     void UpdateInput(ClientID clientID, const InputData& inputData)
     {
         if (clientInputs.find(clientID) == clientInputs.end()) return;
@@ -131,17 +150,16 @@ public:
         Send(packet);
     }
 
-    void AddClient(ClientID clientID)
+    void AddClient(ClientID clientID, uint32_t frame)
     {
-        if (clientInputs.find(receivedClientID) != clientInputs.end())
+        if (clientInputs.find(clientID) != clientInputs.end())
         {
             Warning("Can not add a client that already exists");
             return;
         }
 
         clientIDs.insert(clientID);
-        clientInputs.emplace(clientID, InputCollection(playerInputKeys, MaxRollBackFrames * 2));
-        //lastInputFrame[clientID] =
+        clientInputs.emplace(clientID, InputCollection(playerInputKeys, frame,MaxRollBackFrames * 2));
     }
 
     void RemoveClient(ClientID clientID)
@@ -152,7 +170,7 @@ public:
             return;
         }
 
-        if (clientInputs.find(receivedClientID) == clientInputs.end())
+        if (clientInputs.find(clientID) == clientInputs.end())
         {
             Warning("Can not remove a client that does not exists");
             return;
@@ -160,7 +178,6 @@ public:
 
         clientIDs.erase(clientID);
         clientInputs.erase(clientID);
-        lastInputFrame.erase(clientID);
     }
 
     ClientID GetClientID() const
@@ -187,7 +204,6 @@ public:
             return &inputCollection.GetPredictedInput();
         }
 
-        lastInputFrame[clientID] = frame;
         return &inputCollection.GetInput(frame);
     }
 
@@ -206,14 +222,26 @@ public:
         return result;
     }
 
-    void CheckRollbacks()
+    uint32_t GetRollbacks(uint32_t currentFrame) const
     {
-        uint32_t rollback = 0;
+        return currentFrame - GetLastConfirmedFrame();
+    }
+
+    uint32_t GetLastConfirmedFrame() const
+    {
+        uint32_t lastConfirmedFrame = std::numeric_limits<uint32_t>::max();
 
         for (auto clientInput : clientInputs)
         {
-            //clientInput.second.
+            uint32_t lastCompletedFrame = clientInput.second.GetLastCompletedFrame();
+
+            if (lastCompletedFrame < lastConfirmedFrame)
+            {
+                lastConfirmedFrame = lastCompletedFrame;
+            }
         }
+
+        return lastConfirmedFrame;
     }
 
 private:
@@ -232,12 +260,8 @@ private:
                     auto message = client.PopMessage();
                     Packet packet(message);
 
-                    receivedClientID = packet.ID;
-                    RemoveClient(0);
-                    AddClient(receivedClientID);
-
-                    Debug("Received Client ID: ", receivedClientID);
-                    connected = true;
+                    //Add packet to queue so it can be evaluated later
+                    receivedMessages.push_back(packet.Data.GetBuffer());
 
                     //Requesting game data
                     Send(Packet(receivedClientID, RequestGameDataPacket));
@@ -270,7 +294,7 @@ private:
 
     std::set<ClientID> clientIDs { };
     std::unordered_map<ClientID, InputCollection> clientInputs;
-    std::unordered_map<ClientID, uint32_t> lastInputFrame;
 
     bool connected;
+    bool sendGameData;
 };

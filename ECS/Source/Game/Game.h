@@ -206,6 +206,9 @@ public:
         InputData input = playerInput.GetInputData(currentFrame);
         clientHandler.SendInput(input);
         clientHandler.UpdateInput(clientHandler.GetClientID(), input);
+
+        //Get physicsWorld of the last completed frame
+        //auto lastCompletedWorld = worldManager.GetPreviousWorld<PhysicsWorld>(physicsWorldType, clientHandler.GetRollbacks(currentFrame));
         clientHandler.ReadMessages(physicsWorld);
 
         if (physicsWorld->GetCurrentFrame() != currentFrame)
@@ -218,8 +221,13 @@ public:
         }
         else
         {
+            uint32_t rollbackFrame = clientHandler.GetRollbacks(currentFrame);
+            std::cout << "Rollback Frames: " << rollbackFrame << std::endl;
+
             std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
             physicsWorld->Update(deltaTime, inputs, numberGenerator);
+
+            clientHandler.SendGameData(physicsWorld);
         }
     }
 
