@@ -13,7 +13,7 @@
 class PhysicsWorld : public World
 {
 public:
-    explicit PhysicsWorld(Layer& layer) : baseLayer(layer)
+    explicit PhysicsWorld(Layer& layer) : baseLayer(layer), currentFrame(1)
     {
         RegisterComponents(layer);
         RegisterSystems(layer);
@@ -81,6 +81,11 @@ public:
         camera = baseLayer.AddComponent(baseLayer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
+    void OverwriteFrame(uint32_t frame)
+    {
+        currentFrame = frame;
+    }
+
     void AddObjects(std::mt19937& numberGenerator)
     {
         //Add a ground
@@ -127,6 +132,8 @@ public:
             rigidBodySystem->ApplyVelocity(stepTime);
             rigidBodySystem->DetectCollisions();
         }
+
+        ++currentFrame;
     }
 
     void UpdateDebug(std::vector<Input*>& inputs, std::mt19937& numberGenerator)
@@ -150,7 +157,6 @@ public:
         }
     }
 
-    //REMOVE
     void Render() const
     {
         cameraSystem->Apply();
@@ -170,6 +176,11 @@ public:
         }
     }
 
+    uint32_t GetCurrentFrame() const
+    {
+        return currentFrame;
+    }
+
     //Serialization
 
     //First the entity count is written and then every entity ID with its signature
@@ -186,6 +197,8 @@ public:
     {
         std::vector<Entity> entities;
         std::vector<Signature> signatures;
+
+        stream.WriteInteger<uint32_t>(currentFrame);
 
         //Write the signatures of all active entities
         SerializeEntities(stream, entities, signatures);
@@ -214,6 +227,8 @@ public:
         std::vector<Entity> entities;
         std::vector<Signature> signatures;
         std::array<uint32_t, MAXENTITIES> entityIndexes;
+
+        currentFrame = stream.ReadInteger<uint32_t>();
 
         //Read the signatures of all active entities
         DeserializeEntities(stream, entities, signatures);
@@ -487,6 +502,7 @@ private:
 
 private:
     Layer& baseLayer;
+    uint32_t currentFrame;
 
     //Systems
     std::shared_ptr<RigidBody> rigidBodySystem;

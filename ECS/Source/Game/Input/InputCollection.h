@@ -16,11 +16,19 @@ public:
             throw std::invalid_argument("saveCount must be greater than 0");
     }
 
-    void AddInput(const InputPacket& input)
+    void AddInput(const InputData& input)
     {
         assert(input.Frame >= oldestFrame && input.Frame < oldestFrame + saveCount * 2 && "Frame is outside the valid range of the buffer");
 
-        if (HasInput(input.Frame)) return;
+        if (input.Input[0])
+        {
+            bool hasinput = HasInput(input.Frame);
+            auto index = GetIndex(input.Frame);
+            InputData a = inputs[index];
+            int i = 0;
+        }
+
+        if (HasInput(input.Frame)) return; //
 
         inputs[GetIndex(input.Frame)] = input;
 
@@ -89,7 +97,7 @@ private:
     Input baseInput;
 
     uint32_t saveCount;                     //Maximum number of frames to save
-    std::vector<InputPacket> inputs;        //Stores the inputs
+    std::vector<InputData> inputs;            //Stores the inputs
     uint32_t oldestFrame;                   //Oldest frame where the input it still saved
     uint32_t startIndex;                    //Index of the oldest frame in the inputs, since it is circular
     uint32_t frameCount;                    //Number of frames currently stored in the buffer

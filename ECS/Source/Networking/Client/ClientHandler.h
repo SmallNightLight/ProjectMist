@@ -1,5 +1,14 @@
 #pragma once
 
+#include "Client.h"
+#include "../Shared/Packet.h"
+
+#include "../../Math/Stream.h"
+#include "../../Game/Input/InputCollection.h"
+#include "../../Game/GameSettings.h"
+#include "../../Game/Worlds/PhysicsWorld.h"
+
+#include <memory>
 #include <atomic>
 #include <cstdint>
 #include <mutex>
@@ -8,11 +17,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
-
-#include "../../Math/Stream.h"
-#include "Client.h"
-#include "../../Game/Input/InputCollection.h"
-#include "../Shared/InputPacket.h"
+#include <utility>
 
 class ClientHandler
 {
@@ -27,12 +32,10 @@ public:
     void Start()
     {
         running = true;
-        clientThread = std::thread(&ClientHandler::RunClientThread, this);
+        receivedClientID = 0;
+        AddClient(0);
 
-        if (Serverless)
-        {
-            AddClient(0);
-        }
+        clientThread = std::thread(&ClientHandler::RunClientThread, this);
     }
 
     void Stop()
@@ -42,9 +45,9 @@ public:
             clientThread.join();
     }
 
-    void Send(const std::vector<uint8_t>& message)
+    void Send(const Packet& packet)
     {
-        client.Send(message);
+        client.Send(packet.Data.GetBuffer());
     }
 
     bool HasNewMessages()
@@ -64,52 +67,99 @@ public:
         return message;
     }
 
-    void UpdateInputCollections()
+    void ReadMessages(std::shared_ptr<PhysicsWorld> physicsWorld)
     {
         while(HasNewMessages())
         {
             std::vector<uint8_t> message = PopMessage();
+            Packet packet = Packet(message);
 
-            Stream stream = Stream(message);
-            ClientID clientID = stream.ReadInteger<uint32_t>();
-
-            if (clientInputs.find(receivedClientID) == clientInputs.end())
+            switch (packet.Type)
             {
-                //New client detected
-                AddClient(clientID);
+                case NewClientPacket:
+                {
+                    AddClient(packet.ID);
+                    break;
+                }
+                case RequestGameDataPacket: //Send back the serialized game state
+                {
+                    Stream gameData = Stream();
+                    physicsWorld->Serialize(gameData);
+                    Send(Packet(receivedClientID, GameDataPacket, 0, std::move(gameData)));
+                    break;
+                }
+                case GameDataPacket:  //Deserialize the game data
+                {
+                    physicsWorld->Deserialize(packet.Data);
+                    Debug("Deserialized the game data");
+                    break;
+                }
+                case RequestInputPacket: //Resend an input packet
+                {
+                    Warning("RequestInputPacket not implemented");
+                    break;
+                }
+                case InputPacket: //Deserialize the input packet from other clients
+                {
+                    InputData inputData = InputData(std::move(packet.Data));
+                    UpdateInput(packet.ID, inputData);
+                    break;
+                }
+                default:
+                {
+                    Warning("Received unknown packet type ", packet.Type);
+                }
             }
-
-            InputPacket packet(stream);
-            UpdateInput(clientID, packet);
         }
     }
 
-    void UpdateInput(ClientID clientID, const InputPacket& inputPacket)
+    void UpdateInput(ClientID clientID, const InputData& inputData)
     {
         if (clientInputs.find(clientID) == clientInputs.end()) return;
 
-        clientInputs.at(clientID).AddInput(inputPacket);
+        clientInputs.at(clientID).AddInput(inputData);
     }
 
-    void SendInput(InputPacket& inputPacket)
+    void SendInput(InputData& inputData)
     {
         if (receivedClientID == 0) return;
 
-        if (inputPacket.Input[0])
-            int i = 0;
-
         Stream stream = Stream();
-        stream.WriteInteger<int32_t>(receivedClientID);
-
-        inputPacket.Serialize(stream);
-        Send(stream.GetBuffer());
+        inputData.Serialize(stream);
+        Packet packet(receivedClientID, InputPacket, inputData.Frame, std::move(stream));
+        Send(packet);
     }
 
     void AddClient(ClientID clientID)
     {
+        if (clientInputs.find(receivedClientID) != clientInputs.end())
+        {
+            Warning("Can not add a client that already exists");
+            return;
+        }
+
         clientIDs.insert(clientID);
         clientInputs.emplace(clientID, InputCollection(playerInputKeys, MaxRollBackFrames * 2));
         //lastInputFrame[clientID] =
+    }
+
+    void RemoveClient(ClientID clientID)
+    {
+        if (clientID == receivedClientID)
+        {
+            Warning("Cannot remove itself");
+            return;
+        }
+
+        if (clientInputs.find(receivedClientID) == clientInputs.end())
+        {
+            Warning("Can not remove a client that does not exists");
+            return;
+        }
+
+        clientIDs.erase(clientID);
+        clientInputs.erase(clientID);
+        lastInputFrame.erase(clientID);
     }
 
     ClientID GetClientID() const
@@ -135,17 +185,14 @@ public:
         {
             return &inputCollection.GetPredictedInput();
         }
-        else
-        {
-            lastInputFrame[clientID] = frame;
-            return &inputCollection.GetInput(frame);
-        }
+
+        lastInputFrame[clientID] = frame;
+        return &inputCollection.GetInput(frame);
     }
 
     std::vector<Input*> GetAllClientInputs(uint32_t frame)
     {
         std::set<ClientID> clientIDSet = GetAllClientIDs();
-
         std::vector<Input*> result(clientIDSet.size());
 
         int i = 0;
@@ -171,6 +218,9 @@ public:
 private:
     void RunClientThread()
     {
+        //Connect to server
+        client.Send(std::vector<uint8_t> { });
+
         while (running)
         {
             //Wait for client ID during initialization
@@ -179,15 +229,14 @@ private:
                 if (client.HasMessages())
                 {
                     auto message = client.PopMessage();
-                    if (message.size() == 4)
-                    {
-                        Stream stream(message);
-                        receivedClientID = stream.ReadInteger<uint32_t>();
-                        AddClient(receivedClientID);
+                    Packet packet(message);
 
-                        Debug("Received Client ID: ", receivedClientID);
-                        connected = true;
-                    }
+                    receivedClientID = packet.ID;
+                    RemoveClient(0);
+                    AddClient(receivedClientID);
+
+                    Debug("Received Client ID: ", receivedClientID);
+                    connected = true;
                 }
             }
             else

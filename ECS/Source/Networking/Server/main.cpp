@@ -4,8 +4,6 @@
 #include <iostream>
 #include <string>
 
-#include "../Shared/InputPacket.h"
-
 int main()
 {
     unsigned short localPort = 50000;

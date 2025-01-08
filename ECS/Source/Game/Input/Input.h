@@ -1,16 +1,14 @@
 #pragma once
 
+#include "InputData.h"
 #include "../../Math/FixedTypes.h"
 #include "../../Components/Camera.h"
 #include "../../ECS/ECSSettings.h"
 
 #include <array>
 #include <vector>
-#include <map>
 #include <cstdint>
 #include <GLFW/glfw3.h>
-
-#include "../../Networking/Shared/InputPacket.h"
 
 static constexpr uint16_t keyNull = 255;
 
@@ -36,9 +34,9 @@ struct Input
         }
     }
 
-    Input(const std::vector<uint16_t>& inputKeys, InputPacket inputPackage) : Input(inputKeys)
+    Input(const std::vector<uint16_t>& inputKeys, InputData inputData) : Input(inputKeys)
     {
-        Overwrite(inputPackage);
+        Overwrite(inputData);
     }
 
     ~Input()
@@ -46,18 +44,18 @@ struct Input
         RemoveInput();
     }
 
-    InputPacket GetPacket(uint32_t frame) const
+    InputData GetInputData(uint32_t frame) const
     {
-        return InputPacket(frame, CurrentInput, LastInput, mouseX.raw_value(), mouseY.raw_value());
+        return InputData(frame, CurrentInput, LastInput, mouseX.raw_value(), mouseY.raw_value());
     }
 
-    void Overwrite(const InputPacket& inputPacket)
+    void Overwrite(const InputData& inputData)
     {
-        CurrentInput = inputPacket.Input;
-        LastInput = inputPacket.LastInput;
+        CurrentInput = inputData.Input;
+        LastInput = inputData.LastInput;
 
-        mouseX = Fixed16_16::from_raw_value(inputPacket.MouseX);
-        mouseY = Fixed16_16::from_raw_value(inputPacket.MouseY);
+        mouseX = Fixed16_16::from_raw_value(inputData.MouseX);
+        mouseY = Fixed16_16::from_raw_value(inputData.MouseY);
     }
 
 

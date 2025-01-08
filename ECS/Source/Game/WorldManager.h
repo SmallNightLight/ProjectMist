@@ -9,7 +9,7 @@
 class WorldManager
 {
 public:
-    WorldManager() : currentFrame(0), lastLayerIndex(0), rollbackCount(MaxRollBackFrames - 1), worldCount(0)
+    WorldManager() : lastLayerIndex(0), rollbackCount(MaxRollBackFrames - 1), worldCount(0)
     {
         for(short layer = 0; layer < MaxRollBackFrames; ++layer)
         {
@@ -43,14 +43,20 @@ public:
         return layers[lastLayerIndex];
     }
 
-    void NextFrame()
+    template<typename T>
+    void NextFrame(WorldType worldType)
     {
+        std::shared_ptr<T> currentWorld = GetWorld<T>(worldType);
         int currentLayer = lastLayerIndex;
+
         lastLayerIndex++;
         lastLayerIndex %= MaxRollBackFrames;
 
+        std::shared_ptr<T> nextWorld = GetWorld<T>(worldType);
+
         //Overwrite the layer that is (MaxRollBackFrames) frames behind
         layers[lastLayerIndex].Overwrite(layers[currentLayer]);
+        nextWorld->OverwriteFrame(currentWorld->GetCurrentFrame());
 
         if (rollbackCount > 0) rollbackCount--;
     }
@@ -72,21 +78,12 @@ public:
         return true;
     }
 
-    //Rollback to the given frame
-    bool RollbackToFrame(int frame)
-    {
-        if (frame > currentFrame) return false;
-
-        return Rollback(currentFrame - frame);
-    }
-
     void PreventFurtherRollback()
     {
         rollbackCount = MaxRollBackFrames - 1;
     }
 
 private:
-    int currentFrame;
     int lastLayerIndex;
     int rollbackCount;
     int worldCount;

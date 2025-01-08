@@ -20,7 +20,6 @@ public:
         udp::resolver resolver(io_service);
         udp::resolver::query query(udp::v4(), serverIP, serverPort);
         server_endpoint = *resolver.resolve(query);
-        Send(std::vector<uint8_t> { });
     }
 
     ~Client()

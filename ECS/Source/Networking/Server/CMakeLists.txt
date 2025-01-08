@@ -12,7 +12,6 @@ add_executable(Server main.cpp
 
         ../Shared/Log.h
         ../Shared/Packet.h
-        ../Shared/InputPacket.h
         ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
         ../Shared/GameDataPacket.h

@@ -5,11 +5,11 @@
 #include <cstdint>
 #include <cassert>
 
-struct InputPacket
+struct InputData
 {
-    InputPacket() : Frame(0), MouseX(0), MouseY(0) { }
+    InputData() : Frame(0), MouseX(0), MouseY(0) { }
 
-    InputPacket(uint32_t frame, const std::vector<bool>& input, const std::vector<bool>& lastInput, int32_t mouseX, int32_t mouseY)
+    InputData(uint32_t frame, const std::vector<bool>& input, const std::vector<bool>& lastInput, int32_t mouseX, int32_t mouseY)
     {
         Frame = frame;
         Input = input;
@@ -18,7 +18,7 @@ struct InputPacket
         MouseY = mouseY;
     }
 
-    InputPacket(Stream& stream)
+    InputData(Stream&& stream)
     {
         //Read frame
         Frame = stream.ReadInteger<uint32_t>();

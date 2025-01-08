@@ -12,7 +12,6 @@ add_executable(Client main.cpp
         ClientHandler.h
 
         ../Shared/Packet.h
-        ../Shared/InputPacket.h
         ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
         ../Shared/Log.h

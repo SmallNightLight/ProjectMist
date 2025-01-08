@@ -58,6 +58,7 @@ add_executable(ECS Source/main.cpp
         Source/Game/Worlds/PhysicsWorld.h
         Source/Physics/PhysicsUtils.h
         Source/Game/World.h
+        Source/Game/Input/InputData.h
         Source/Game/Input/InputManager.h
         Source/Game/Input/Input.h
         Source/Game/Input/InputCollection.h

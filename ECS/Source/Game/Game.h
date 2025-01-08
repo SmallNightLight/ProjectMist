@@ -9,6 +9,8 @@
 #include "GameSettings.h"
 #include "WorldManager.h"
 #include "Worlds/PhysicsWorld.h"
+
+#include "Input/InputData.h"
 #include "Input/InputManager.h"
 #include "Input/Input.h"
 
@@ -19,7 +21,6 @@
 #include <GLFW/glfw3.h>
 
 #include "../Networking/Client/ClientHandler.h"
-#include "../Networking/Shared/InputPacket.h"
 #include "Input/InputCollection.h"
 
 class Game
@@ -82,7 +83,6 @@ public:
 
         //Start client thread
         clientHandler.Start();
-        currentFrame = 0;
 
         while (!glfwWindowShouldClose(window))
         {
@@ -199,19 +199,17 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime) //TODO: Rollback debug mode always rollback
     {
-        InputPacket input = playerInput.GetPacket(currentFrame);
+        worldManager.NextFrame<PhysicsWorld>(physicsWorldType);
+        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+        uint32_t currentFrame = physicsWorld->GetCurrentFrame();
 
+        InputData input = playerInput.GetInputData(currentFrame);
         clientHandler.SendInput(input);
         clientHandler.UpdateInput(clientHandler.GetClientID(), input);
-        clientHandler.UpdateInputCollections();
+        clientHandler.ReadMessages(physicsWorld);
 
         std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-
-        worldManager.NextFrame();
-
-        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         physicsWorld->Update(deltaTime, inputs, numberGenerator);
-        ++currentFrame;
     }
 
     void Render()
@@ -248,7 +246,6 @@ private:
 
     GLFWwindow* window;
 
-    uint32_t currentFrame;
     Input playerInput;
     Input otherInput;
 
