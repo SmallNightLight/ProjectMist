@@ -96,10 +96,10 @@ public:
         PhysicsUtils::CreateBox(baseLayer, Vector2(camera->Right, Fixed16_16(0)), Fixed16_16(2), Fixed16_16(50), Static);
 
         //Create rotated objects
-        Entity e1 = PhysicsUtils::CreateBox(baseLayer, Vector2(10, 0), Fixed16_16(25), Fixed16_16(1), Static);
+        Entity e1 = PhysicsUtils::CreateBox(baseLayer, Vector2(10, 10), Fixed16_16(25), Fixed16_16(1), Static);
         baseLayer.GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
 
-        Entity e2 = PhysicsUtils::CreateBox(baseLayer, Vector2(-10, -10), Fixed16_16(25), Fixed16_16(1), Static);
+        Entity e2 = PhysicsUtils::CreateBox(baseLayer, Vector2(-10, 0), Fixed16_16(25), Fixed16_16(1), Static);
         baseLayer.GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
 
         for (int i = 0; i < 15; ++i)

@@ -14,10 +14,11 @@ add_executable(Server main.cpp
         ../Shared/Packet.h
         ../Shared/ThreadedQueue.h
         ../Shared/NetworkingSettings.h
-        ../Shared/GameDataPacket.h
+
+        ../../Math/Stream.h
 )
 
-if(TARGET CLIENT)
+if(TARGET SERVER)
     add_subdirectory(../../Math ${CMAKE_BINARY_DIR}/MathBuild)
 endif()
 

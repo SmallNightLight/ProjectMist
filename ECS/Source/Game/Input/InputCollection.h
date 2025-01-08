@@ -20,15 +20,7 @@ public:
     {
         assert(input.Frame >= oldestFrame && input.Frame < oldestFrame + saveCount * 2 && "Frame is outside the valid range of the buffer");
 
-        if (input.Input[0])
-        {
-            bool hasinput = HasInput(input.Frame);
-            auto index = GetIndex(input.Frame);
-            InputData a = inputs[index];
-            int i = 0;
-        }
-
-        if (HasInput(input.Frame)) return; //
+        if (HasInput(input.Frame)) return;
 
         inputs[GetIndex(input.Frame)] = input;
 
@@ -49,6 +41,14 @@ public:
         //Update the last complete frame if the new input fills a gap
         if (input.Frame == lastCompletedFrame + 1)
             ++lastCompletedFrame;
+    }
+
+    void JumpToFrame(uint32_t frame)
+    {
+        oldestFrame = frame;
+        startIndex = 0;
+        frameCount = std::min(frame + 1, saveCount);
+        lastCompletedFrame = frame;
     }
 
     //Retrieves the input for a specific frame
@@ -97,7 +97,7 @@ private:
     Input baseInput;
 
     uint32_t saveCount;                     //Maximum number of frames to save
-    std::vector<InputData> inputs;            //Stores the inputs
+    std::vector<InputData> inputs;          //Stores the inputs
     uint32_t oldestFrame;                   //Oldest frame where the input it still saved
     uint32_t startIndex;                    //Index of the oldest frame in the inputs, since it is circular
     uint32_t frameCount;                    //Number of frames currently stored in the buffer

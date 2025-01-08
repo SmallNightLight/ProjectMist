@@ -91,6 +91,7 @@ public:
                 case GameDataPacket:  //Deserialize the game data
                 {
                     physicsWorld->Deserialize(packet.Data);
+                    clientInputs.at(receivedClientID).JumpToFrame(physicsWorld->GetCurrentFrame());
                     Debug("Deserialized the game data");
                     break;
                 }
@@ -237,6 +238,9 @@ private:
 
                     Debug("Received Client ID: ", receivedClientID);
                     connected = true;
+
+                    //Requesting game data
+                    Send(Packet(receivedClientID, RequestGameDataPacket));
                 }
             }
             else

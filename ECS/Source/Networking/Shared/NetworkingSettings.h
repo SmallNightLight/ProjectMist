@@ -2,7 +2,7 @@
 
 #include <asio/ip/udp.hpp>
 
-static constexpr int NetworkBufferSize = 4096;
+static constexpr int NetworkBufferSize = 16384;
 
 typedef uint32_t ClientID;
 typedef asio::ip::udp::endpoint ClientEndpoint;

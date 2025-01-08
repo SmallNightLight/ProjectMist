@@ -84,53 +84,64 @@ private:
             {
                 std::vector<uint8_t> message = std::vector<uint8_t>(recv_buffer.data(), recv_buffer.data() + bytes_transferred);
                 ClientID clientID;
-                Packet packet = Packet(message);
 
                 if (message.size() == 0)
                 {
+                    //Accept client to join
                     GetClientID(remote_endpoint, clientID, true);
-                    packet = Packet(clientID, RequestJoinPacket);
+                    SendToAll(Packet(clientID, NewClientPacket));
                 }
-
-                if (message.size() >= Packet::DefaultSize)
+                else if (message.size() >= Packet::DefaultSize)
                 {
+                    Packet packet = Packet(message);
+
                     if (GetClientID(remote_endpoint, clientID) && packet.VerifyClientID(clientID))
                     {
                         switch (packet.Type)
                         {
                             case RequestJoinPacket:  //Accept client to join
+                            {
                                 SendToAll(Packet(clientID, NewClientPacket));
                                 break;
-
+                            }
                             case RequestGameDataPacket: //Continue request to all other clients
-                                clientsWaitingForGameData.insert(clientID);
-                                SendToAllExcept(packet, clientID);
+                            {
+                                if (Clients.size() > 1)
+                                {
+                                    clientsWaitingForGameData.insert(clientID);
+                                    SendToAllExcept(packet, clientID);
+                                }
                                 break;
-
+                            }
                             case GameDataPacket:  //Continue game data to the client requesting it
+                            {
                                 for(ClientID receivingClient : clientsWaitingForGameData)
                                 {
                                     SendToClient(packet, receivingClient);
-                                    clientsWaitingForGameData.erase(receivingClient);
                                 }
+                                clientsWaitingForGameData.clear();
                                 break;
-
+                            }
                             case RequestInputPacket: //Resend an input packet
+                            {
                                 Warning("RequestInputPacket not implemented");
                                 break;
-
+                            }
                             case InputPacket: //Continue the input packet to other clients
+                            {
                                 SendToAll(packet);
                                 break;
-
+                            }
                             default:
+                            {
                                 Warning("Received unknown packet type ", packet.Type);
+                            }
                         }
                     }
                     else
                     {
                         //ToDO: Let the client know that it could not process the packet
-                        Warning("Receive message with invalid client ID: ", clientID);
+                        Warning("Received message with invalid client ID: ", clientID);
                     }
                 }
                 else

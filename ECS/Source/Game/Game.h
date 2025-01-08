@@ -208,8 +208,19 @@ public:
         clientHandler.UpdateInput(clientHandler.GetClientID(), input);
         clientHandler.ReadMessages(physicsWorld);
 
-        std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-        physicsWorld->Update(deltaTime, inputs, numberGenerator);
+        if (physicsWorld->GetCurrentFrame() != currentFrame)
+        {
+            //Received new game data from another client
+            worldManager.PreventFurtherRollback();
+
+            auto inputs = std::vector<Input*>();
+            physicsWorld->Update(deltaTime, inputs , numberGenerator);
+        }
+        else
+        {
+            std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
+            physicsWorld->Update(deltaTime, inputs, numberGenerator);
+        }
     }
 
     void Render()
