@@ -77,7 +77,7 @@ public:
 
             switch (packet.Type)
             {
-                case NewClientPacket:
+                case AcceptJoin:
                 {
                     if (receivedClientID == 0)
                     {
@@ -90,8 +90,14 @@ public:
                         //Requesting game data
                         Send(Packet(receivedClientID, RequestGameDataPacket));
                     }
-
-                    AddClient(packet.ID, physicsWorld->GetCurrentFrame()); //Todo:: or +1 - 1
+                    else
+                    {
+                        Warning("Did not yet receive client ID??");
+                    }
+                }
+                case NewClientPacket:
+                {
+                    AddClient(packet.ID, physicsWorld->GetCurrentFrame());
                     break;
                 }
                 case RequestGameDataPacket: //Mark for later serialization
@@ -122,6 +128,16 @@ public:
                     Warning("Received unknown packet type ", packet.Type);
                 }
             }
+        }
+
+        if (clientsWaitingToJoin.size() > 0)
+        {
+            for (ClientID clientID : clientsWaitingToJoin)
+            {
+                AddClient(clientID, physicsWorld->GetCurrentFrame());
+            }
+
+            clientsWaitingToJoin.clear();
         }
     }
 
@@ -274,8 +290,20 @@ private:
                     auto message = client.PopMessage();
                     Packet packet(message);
 
-                    //Add packet to queue so it can be evaluated later
-                    receivedMessages.push_back(packet.Data.GetBuffer());
+                    if(packet.Type == AcceptJoin)
+                    {
+                        //Add packet to queue so it can be evaluated later
+                        receivedMessages.push_back(packet.Data.GetBuffer());
+
+                    }
+                    else if (packet.Type == NewClientPacket)
+                    {
+                        clientsWaitingToJoin.insert(packet.ID);
+                    }
+                    else
+                    {
+                        receivedMessages.push_back(packet.Data.GetBuffer());
+                    }
                 }
             }
             else
@@ -302,6 +330,7 @@ private:
 
     std::mutex messageMutex;
     std::vector<std::vector<uint8_t>> receivedMessages;
+    std::set<ClientID> clientsWaitingToJoin;
 
     std::set<ClientID> clientIDs { };
     std::unordered_map<ClientID, InputCollection> clientInputs;

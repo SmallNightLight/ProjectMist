@@ -32,8 +32,6 @@ public:
 
         InputManager::SetupCallbacks(window);
 
-        numberGenerator = std::mt19937(12);
-
         AddWorlds();
     }
 
@@ -194,7 +192,7 @@ public:
     void AddWorlds()
     {
         physicsWorldType = worldManager.AddWorld<PhysicsWorld>();
-        worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects(numberGenerator);
+        worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects();
     }
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime) //TODO: Rollback debug mode always rollback
@@ -215,11 +213,6 @@ public:
 
         if (rollbackFrames > 0)
         {
-            if (hi)
-            {
-                int i = 0;
-            }
-
             if (worldManager.Rollback(rollbackFrames))
             {
                 actualRollbacks = rollbackFrames;
@@ -236,14 +229,8 @@ public:
 
                 auto p2 = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
                 std::vector<Input*> inputs = clientHandler.GetAllClientInputs(p2->GetCurrentFrame());
-                p2->Update(deltaTime, inputs, numberGenerator);
+                p2->Update(deltaTime, inputs);
             }
-
-            hi = true;
-        }
-        else
-        {
-            hi = false;
         }
 
         worldManager.NextFrame<PhysicsWorld>(physicsWorldType);
@@ -255,17 +242,17 @@ public:
             worldManager.PreventFurtherRollback();
 
             auto inputs = std::vector<Input*>(); //Todo: get clients inputs??
-            physicsWorld->Update(deltaTime, inputs , numberGenerator);
+            physicsWorld->Update(deltaTime, inputs);
         }
         else
         {
             std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-            physicsWorld->Update(deltaTime, inputs, numberGenerator);
+            physicsWorld->Update(deltaTime, inputs);
 
             clientHandler.SendGameData(physicsWorld);
         }
     }
-bool hi = false;
+
     void Render()
     {
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
@@ -304,8 +291,6 @@ private:
     Input otherInput;
 
     ClientHandler clientHandler;
-
-    std::mt19937 numberGenerator;
 
     //Debug
     bool hasSerializedStream;

@@ -91,7 +91,20 @@ private:
                 {
                     //Accept client to join
                     GetClientID(remote_endpoint, clientID, true);
-                    SendToAll(Packet(clientID, NewClientPacket));
+
+                    //Send joining of client to other clients
+                    for (auto client: Clients)
+                    {
+                        SendToClient(Packet(clientID, clientID == client.first ? AcceptJoin : NewClientPacket), client.first);
+                    }
+
+                    //Send other existing clients to client
+                    for (auto client: Clients)
+                    {
+                        if (client.first == clientID) continue;
+
+                        SendToClient(Packet(client.first, NewClientPacket), clientID);
+                    }
                 }
                 else if (message.size() >= Packet::DefaultSize)
                 {
@@ -103,7 +116,7 @@ private:
                         {
                             case RequestJoinPacket:  //Accept client to join
                             {
-                                SendToAllExcept(Packet(clientID, NewClientPacket), clientID);
+                                SendToAll(Packet(clientID, NewClientPacket));
                                 for (auto client: Clients)
                                 {
                                     SendToClient(Packet(client.first, NewClientPacket), clientID);

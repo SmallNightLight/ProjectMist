@@ -63,7 +63,7 @@ public:
 
         //Overwrite the layer that is (MaxRollBackFrames) frames behind
         layers[lastLayerIndex].Overwrite(layers[currentLayer]);
-        nextWorld->OverwriteFrame(currentWorld->GetCurrentFrame());
+        nextWorld->OverwriteFrame(currentWorld->GetCurrentFrame(), currentWorld->GetNumberGenerator());
 
         if (rollbackCount > 0) rollbackCount--;
     }

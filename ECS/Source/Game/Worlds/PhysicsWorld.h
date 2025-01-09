@@ -13,7 +13,7 @@
 class PhysicsWorld : public World
 {
 public:
-    explicit PhysicsWorld(Layer& layer) : baseLayer(layer), currentFrame(1)
+    explicit PhysicsWorld(Layer& layer) : baseLayer(layer), currentFrame(1), numberGenerator(std::mt19937(12))
     {
         RegisterComponents(layer);
         RegisterSystems(layer);
@@ -81,12 +81,13 @@ public:
         camera = baseLayer.AddComponent(baseLayer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
-    void OverwriteFrame(uint32_t frame)
+    void OverwriteFrame(uint32_t frame, std::mt19937 otherNumberGenerator)
     {
         currentFrame = frame;
+        numberGenerator = otherNumberGenerator;
     }
 
-    void AddObjects(std::mt19937& numberGenerator)
+    void AddObjects()
     {
         //Add a ground
         PhysicsUtils::CreateBox(baseLayer, Vector2(Fixed16_16(0), camera->Bottom), camera->Right - camera->Left + Fixed16_16(10), Fixed16_16(2), Static);
@@ -121,9 +122,9 @@ public:
         }
     }
 
-    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs, std::mt19937& numberGenerator)
+    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs)
     {
-        UpdateDebug(inputs, numberGenerator);
+        UpdateDebug(inputs);
 
         Fixed16_16 stepTime = deltaTime / PhysicsIterations;
 
@@ -136,7 +137,7 @@ public:
         ++currentFrame;
     }
 
-    void UpdateDebug(std::vector<Input*>& inputs, std::mt19937& numberGenerator)
+    void UpdateDebug(std::vector<Input*>& inputs)
     {
         for (Input* input : inputs)
         {
@@ -179,6 +180,11 @@ public:
     uint32_t GetCurrentFrame() const
     {
         return currentFrame;
+    }
+
+    std::mt19937 GetNumberGenerator() const
+    {
+        return numberGenerator;
     }
 
     //Serialization
@@ -503,6 +509,7 @@ private:
 private:
     Layer& baseLayer;
     uint32_t currentFrame;
+    std::mt19937 numberGenerator;
 
     //Systems
     std::shared_ptr<RigidBody> rigidBodySystem;

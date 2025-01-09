@@ -81,7 +81,7 @@ public:
     //returns the vertices of a random convex shape
     static std::vector<Vector2> GetRandomVertices(std::mt19937& numberGenerator)
     {
-        FixedRandom16_16 randomRadius(Fixed16_16(1), Fixed16_16(5));
+        FixedRandom16_16 randomRadius(Fixed16_16(1), Fixed16_16(3));
         Fixed16_16 radius = randomRadius(numberGenerator);
 
         std::uniform_int_distribution randomSide(3, 6);

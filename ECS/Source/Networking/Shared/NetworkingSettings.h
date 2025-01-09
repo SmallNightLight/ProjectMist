@@ -10,6 +10,7 @@ typedef asio::ip::udp::endpoint ClientEndpoint;
 enum PacketType
 {
     RequestJoinPacket, //Also with empty message
+    AcceptJoin,
     NewClientPacket,
     RequestGameDataPacket,
     GameDataPacket,
