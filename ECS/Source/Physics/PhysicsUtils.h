@@ -103,7 +103,7 @@ public:
 
     static uint8_t GetRandomColor(std::mt19937& numberGenerator)
     {
-        std::uniform_int_distribution<uint8_t> randomColor(0, 255);
-        return randomColor(numberGenerator);
+        std::uniform_int_distribution<unsigned int> randomColor(0, 255);
+        return static_cast<uint8_t>(randomColor(numberGenerator));
     }
 };
