@@ -77,11 +77,6 @@ public:
         lastLayerIndex = (lastLayerIndex % MaxRollBackFrames + MaxRollBackFrames) % MaxRollBackFrames; //Todo: lol
         rollbackCount += frames;
 
-        if (lastLayerIndex == -1)
-        {
-            int i = 0;
-        }
-
         return true;
     }
 

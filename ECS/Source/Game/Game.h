@@ -199,38 +199,73 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime) //TODO: Rollback debug mode always rollback
     {
-        worldManager.NextFrame<PhysicsWorld>(physicsWorldType);
-        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        uint32_t currentFrame = physicsWorld->GetCurrentFrame();
+        auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+        uint32_t currentFrame = oldPhysicsWorld->GetCurrentFrame();
 
+        //Update the input of this client
         InputData input = playerInput.GetInputData(currentFrame);
         clientHandler.SendInput(input);
         clientHandler.UpdateInput(clientHandler.GetClientID(), input);
 
-        //Get physicsWorld of the last completed frame
-        //auto lastCompletedWorld = worldManager.GetPreviousWorld<PhysicsWorld>(physicsWorldType, clientHandler.GetRollbacks(currentFrame));
-        clientHandler.ReadMessages(physicsWorld);
+        //Update the input of other clients and handle other packets
+        clientHandler.ReadMessages(oldPhysicsWorld);
+
+        uint32_t rollbackFrames = clientHandler.GetRollbacks(oldPhysicsWorld->GetCurrentFrame());
+        uint32_t actualRollbacks = 0;
+
+        if (rollbackFrames > 0)
+        {
+            if (hi)
+            {
+                int i = 0;
+            }
+
+            if (worldManager.Rollback(rollbackFrames))
+            {
+                actualRollbacks = rollbackFrames;
+                std::cout << "Rollback " << rollbackFrames<< " frames" << std::endl;
+            }
+            else
+            {
+                std::cout << "Could not rollback this many frames:  " << rollbackFrames << std::endl;
+            }
+
+            for(int i = 0; i < actualRollbacks; ++i)
+            {
+                worldManager.NextFrame<PhysicsWorld>(physicsWorldType);
+
+                auto p2 = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+                std::vector<Input*> inputs = clientHandler.GetAllClientInputs(p2->GetCurrentFrame());
+                p2->Update(deltaTime, inputs, numberGenerator);
+            }
+
+            hi = true;
+        }
+        else
+        {
+            hi = false;
+        }
+
+        worldManager.NextFrame<PhysicsWorld>(physicsWorldType);
+        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
 
         if (physicsWorld->GetCurrentFrame() != currentFrame)
         {
             //Received new game data from another client
             worldManager.PreventFurtherRollback();
 
-            auto inputs = std::vector<Input*>();
+            auto inputs = std::vector<Input*>(); //Todo: get clients inputs??
             physicsWorld->Update(deltaTime, inputs , numberGenerator);
         }
         else
         {
-            uint32_t rollbackFrame = clientHandler.GetRollbacks(currentFrame);
-            std::cout << "Rollback Frames: " << rollbackFrame << std::endl;
-
             std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
             physicsWorld->Update(deltaTime, inputs, numberGenerator);
 
             clientHandler.SendGameData(physicsWorld);
         }
     }
-
+bool hi = false;
     void Render()
     {
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);

@@ -10,7 +10,7 @@
 class InputCollection
 {
 public:
-    InputCollection(const std::vector<uint16_t>& inputKeys, uint32_t frame = 0, uint32_t size = 15) : baseInput(Input(inputKeys)), saveCount(size), inputs(size), oldestFrame(frame), startIndex(0), frameCount(std::min(frame, size)), lastCompletedFrame(frame)
+    InputCollection(const std::vector<uint16_t>& inputKeys, uint32_t frame = 0, uint32_t size = 15) : baseInput(Input(inputKeys)), saveCount(size), inputs(size), oldestFrame(frame), startIndex(0), frameCount(0), lastCompletedFrame(frame)
     {
         if (size == 0)
             throw std::invalid_argument("saveCount must be greater than 0");
@@ -26,7 +26,13 @@ public:
 
         assert(input.Frame >= oldestFrame && input.Frame < oldestFrame + saveCount * 2 && "Frame is outside the valid range of the buffer");
 
-        if (HasInput(input.Frame)) return;
+        if (HasInput(input.Frame))
+        {
+            if (input.Frame == lastCompletedFrame + 1)
+                ++lastCompletedFrame;
+
+            return;
+        }
 
         inputs[GetIndex(input.Frame)] = input;
 

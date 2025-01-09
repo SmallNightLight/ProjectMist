@@ -30,6 +30,8 @@ public:
 
     void SendToClient(const Packet& packet, ClientID clientID)
     {
+        Debug("Sending packet: (Bytes: ", packet.Data.GetBuffer().size(), ", Receiver: ", clientID, ", Frame: ", packet.Frame, ")");
+
         try
         {
             Send(packet.Data.GetBuffer(), Clients.at(clientID));
@@ -133,7 +135,7 @@ private:
                             }
                             case InputPacket: //Continue the input packet to other clients
                             {
-                                SendToAll(packet);
+                                SendToAllExcept(packet, clientID);
                                 break;
                             }
                             default:
@@ -189,10 +191,6 @@ private:
         if (error)
         {
             Error("Send failed with error: ", error.message());
-        }
-        else
-        {
-            Debug("Successfully sent ", bytes_transferred, " bytes");
         }
     }
 

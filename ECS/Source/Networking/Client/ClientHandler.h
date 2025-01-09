@@ -23,7 +23,7 @@
 class ClientHandler
 {
 public:
-    ClientHandler(const std::string& serverIP, const std::string& serverPort) : client(serverIP, serverPort), running(false), receivedClientID(0), connected(false) { }
+    ClientHandler(const std::string& serverIP, const std::string& serverPort) : client(serverIP, serverPort), running(false), receivedClientID(0), connected(false), sendGameData(false) { }
 
     ~ClientHandler()
     {
@@ -86,6 +86,9 @@ public:
 
                         Debug("Received Client ID: ", receivedClientID);
                         connected = true;
+
+                        //Requesting game data
+                        Send(Packet(receivedClientID, RequestGameDataPacket));
                     }
 
                     AddClient(packet.ID, physicsWorld->GetCurrentFrame()); //Todo:: or +1 - 1
@@ -160,6 +163,13 @@ public:
 
         clientIDs.insert(clientID);
         clientInputs.emplace(clientID, InputCollection(playerInputKeys, frame,MaxRollBackFrames * 2));
+
+        //Add input for the first few frames to avoid missing input
+        for(int i = frame; i < frame + 5; ++i)
+        {
+            InputData input = InputData(i, std::vector<bool>(playerInputKeys.size()), std::vector<bool>(playerInputKeys.size()), 0, 0);
+            clientInputs.at(clientID).AddInput(input);
+        }
     }
 
     void RemoveClient(ClientID clientID)
@@ -224,7 +234,11 @@ public:
 
     uint32_t GetRollbacks(uint32_t currentFrame) const
     {
-        return currentFrame - GetLastConfirmedFrame();
+        uint32_t lastConfirmedFrame = GetLastConfirmedFrame();
+
+        if (lastConfirmedFrame >= currentFrame) return 0;
+
+        return currentFrame - lastConfirmedFrame;
     }
 
     uint32_t GetLastConfirmedFrame() const
@@ -262,9 +276,6 @@ private:
 
                     //Add packet to queue so it can be evaluated later
                     receivedMessages.push_back(packet.Data.GetBuffer());
-
-                    //Requesting game data
-                    Send(Packet(receivedClientID, RequestGameDataPacket));
                 }
             }
             else
