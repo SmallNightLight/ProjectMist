@@ -1,0 +1,67 @@
+not a research report
+
+reflection report - past of evrything
+not I for every sentence
+
+write not in chronological order (a bit)
+
+not I did this and then that
+
+explain
+
+Goal: intro: dive into rollback networking -> divide into three components
+goal rn
+
+do the milestones later after goal
+
+explain more about rollback , differentent networking architectures, explain why I chose rollback networking, there will always be a delay! why do I 
+
+
+at the end of report -> cheating
+
+reference to fighting games, competetive market, reliable multiplayer architecture, challenging architecture
+
+an entire diagram, show subset of it (like ECS)
+
+draw conclusions for the reader
+
+dependencies put stuff (at the end, not wordcount, for exmaple entire UML).
+
+The caption would be a title not description
+Refere always in text to the image
+
+mileston (M) Ent is correct
+4 better four
+
+
+game diea start of report
+Frameork part first
+
+
+fighting games are a genre that require rollback network. I find that a fascinating genre
+
+scope what is part of the research. dont mention stuff that is not part of the scope (at least not first), just say for myself deptermine scope
+
+After a bit a research -> A common network architecture
+
+
+The main issues rollback networking
+ (
+here diagramm (communication diagram), to show the issue
+
+in figure 1 you can see this effect. (Describe isue with figure)
+
+1. Fighting games, networking architecture, personal connection, learning outcomes, plan to set up my research
+
+leave out a few of the details (with the frames), less details
+
+talk about the goals in with the boids (does not need that much introduction with the rollback networking)
+
+diagram smaller
+graphs for formula
+
+diagram for packets
+
+
+conclusion: look back, did I meet the goals, would I use the things I learned in future projects, happy about the approach, was it the right solution?
+The goal is not to m
