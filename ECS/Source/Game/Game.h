@@ -70,7 +70,7 @@ public:
     int GameLoop()
     {
         isPaused = false;
-        Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(60);
+        Fixed16_16 fixedDelta = Fixed16_16(1) / Fixed16_16(SimulationFPS);
         double lastTime = glfwGetTime();
         Fixed16_16 accumulator = Fixed16_16(0);
         double lastTitleUpdateTime = 0.0;
@@ -195,7 +195,7 @@ public:
         worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects();
     }
 
-    void Update(GLFWwindow* window, Fixed16_16 deltaTime) //TODO: Rollback debug mode always rollback
+    void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
         auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         uint32_t currentFrame = oldPhysicsWorld->GetCurrentFrame();
@@ -245,7 +245,7 @@ public:
             //Received new game data from another client
             worldManager.PreventFurtherRollback();
 
-            auto inputs = std::vector<Input*>(); //Todo: get clients inputs??
+            std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
             physicsWorld->Update(deltaTime, inputs);
         }
         else

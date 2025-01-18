@@ -10,6 +10,7 @@
 #include <set>
 #include <unordered_map>
 #include <asio.hpp>
+#include <thread>
 
 using asio::ip::udp;
 
@@ -28,13 +29,38 @@ public:
         service_thread.join();
     }
 
-    void SendToClient(const Packet& packet, ClientID clientID)
+    void SendToClient(const Packet& packet, ClientID clientID, uint32_t delayMilliseconds = 0)
     {
-        Debug("Sending packet: (Bytes: ", packet.Data.GetBuffer().size(), ", Receiver: ", clientID, ", Frame: ", packet.Frame, ")");
-
         try
         {
-            Send(packet.Data.GetBuffer(), Clients.at(clientID));
+            if (delayMilliseconds == 0)
+            {
+                Debug("Sending packet: (Bytes: ", packet.Data.GetBuffer().size(), ", Receiver: ", clientID, ", Frame: ", packet.Frame, ")");
+                Send(packet.Data.GetBuffer(), Clients.at(clientID));
+            }
+           else
+           {
+               //Capture the necessary data for sending in a lambda
+               auto sendFunction = [this, packet, clientID]()
+               {
+                   try
+                   {
+                       Send(packet.Data.GetBuffer(), Clients.at(clientID));
+                       Debug("Sent packet: (Bytes: ", packet.Data.GetBuffer().size(), ", Receiver: ", clientID, ", Frame: ", packet.Frame, ")");
+                   }
+                   catch (const std::out_of_range&)
+                   {
+                       Error("Cannot send packet to client, unknown client ID ", clientID);
+                   }
+               };
+
+               //Use a thread to introduce a delay before sending
+               std::thread([sendFunction, delayMilliseconds]()
+               {
+                   std::this_thread::sleep_for(std::chrono::milliseconds(delayMilliseconds));
+                   sendFunction();
+               }).detach();
+           }
         }
         catch (const std::out_of_range&)
         {
@@ -42,20 +68,20 @@ public:
         }
     }
 
-    void SendToAllExcept(const Packet& packet, ClientID clientID)
+    void SendToAllExcept(const Packet& packet, ClientID clientID, uint32_t delayMilliseconds = 0)
     {
         for (auto client: Clients)
         {
             if (client.first != clientID)
-                SendToClient(packet, client.first);
+                SendToClient(packet, client.first, delayMilliseconds);
         }
     }
 
-    void SendToAll(const Packet& packet)
+    void SendToAll(const Packet& packet, uint32_t delayMilliseconds = 0)
     {
         for (auto client: Clients)
         {
-            SendToClient(packet, client.first);
+            SendToClient(packet, client.first, delayMilliseconds);
         }
     }
 
@@ -147,7 +173,7 @@ private:
                                 if (ClientCurrentFrames.find(clientID) != ClientCurrentFrames.end() &&  ClientCurrentFrames.at(clientID) < packet.Frame)
                                     ClientCurrentFrames[clientID] = packet.Frame;
 
-                                SendToAllExcept(packet, clientID);
+                                SendToAllExcept(packet, clientID, InputPacketDelay);
                                 break;
                             }
                             default:
