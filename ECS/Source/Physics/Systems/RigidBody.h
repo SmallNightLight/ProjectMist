@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../ECS/ECS.h"
+#include "../PhysicsSettings.h"
 
 class RigidBody : public System
 {
@@ -22,7 +23,7 @@ public:
         return signature;
     }
 
-    void DetectCollisions()
+    void DetectCollisions(uint32_t frame, uint32_t iteration, uint32_t id)
     {
         std::vector<CollisionInfo> collisions;
 
@@ -45,6 +46,9 @@ public:
                 }
             }
         }
+
+        if (LogCollisions && iteration == 0)
+            CollisionInfo::LogCollisions(collisions, frame, id);
 
         for(CollisionInfo collision : collisions)
         {

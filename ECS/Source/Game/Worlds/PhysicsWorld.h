@@ -18,7 +18,7 @@ public:
     {
         RegisterComponents(layer);
         RegisterSystems(layer);
-        InitializeCamera();
+        InitializeCamera(layer);
     }
 
     ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
@@ -77,9 +77,9 @@ public:
         layer.RegisterSystem<MovingSystem>();
     }
 
-    void InitializeCamera()
+    void InitializeCamera(Layer& layer)
     {
-        camera = baseLayer.AddComponent(baseLayer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
+        camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
     void OverwriteFrame(uint32_t frame, std::mt19937 otherNumberGenerator)
@@ -123,7 +123,7 @@ public:
         }
     }
 
-    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs)
+    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs, uint32_t id)
     {
         UpdateDebug(inputs);
 
@@ -132,7 +132,7 @@ public:
         for (int i = 0; i < PhysicsIterations; ++i)
         {
             rigidBodySystem->ApplyVelocity(stepTime);
-            rigidBodySystem->DetectCollisions();
+            rigidBodySystem->DetectCollisions(currentFrame, i, id);
         }
 
         ++currentFrame;
@@ -234,6 +234,7 @@ public:
         Layer layer = Layer();
         RegisterComponentsForLayer(layer);
         RegisterSystemsForLayer(layer);
+        layer.CreateEntity(); //Create an entity that would be the camera - essential for maintaining a correct entity queue
 
         std::vector<Entity> entities;
         std::vector<Signature> signatures;

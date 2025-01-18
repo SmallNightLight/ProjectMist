@@ -233,7 +233,7 @@ public:
 
                 auto p2 = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
                 std::vector<Input*> inputs = clientHandler.GetAllClientInputs(p2->GetCurrentFrame());
-                p2->Update(deltaTime, inputs);
+                p2->Update(deltaTime, inputs, clientHandler.GetClientID());
             }
         }
 
@@ -246,12 +246,12 @@ public:
             worldManager.PreventFurtherRollback();
 
             std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-            physicsWorld->Update(deltaTime, inputs);
+            physicsWorld->Update(deltaTime, inputs, clientHandler.GetClientID());
         }
         else
         {
             std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-            physicsWorld->Update(deltaTime, inputs);
+            physicsWorld->Update(deltaTime, inputs, clientHandler.GetClientID());
 
             clientHandler.SendGameData(physicsWorld);
         }
