@@ -135,14 +135,14 @@ public:
             if (otherInput.GetKey(GLFW_KEY_LEFT_CONTROL) && otherInput.GetKeyDown(GLFW_KEY_C))
             {
                 //Serialize current game state
-                std::cout << "Serializing Game State";
+                std::cout << "Serializing Game State" << std::endl;
                 Serialize();
             }
 
             if (hasSerializedStream && otherInput.GetKey(GLFW_KEY_LEFT_CONTROL) && otherInput.GetKeyDown(GLFW_KEY_V))
             {
                 //Deserialize the saved game state amd override the current game state
-                std::cout << "Deserializing Game State";
+                std::cout << "Deserializing Game State" << std::endl;
                 Deserialize();
             }
 

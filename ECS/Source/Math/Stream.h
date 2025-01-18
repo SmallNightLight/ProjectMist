@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <stdexcept>
+#include <sstream>
 
 #include "FixedTypes.h"
 
@@ -96,6 +97,23 @@ public:
         }
     }
 
+    void WriteStream(const  std::ostringstream& oss)
+    {
+        std::string serializedData = oss.str();
+        uint32_t streamSize = serializedData.length();
+
+        //Write stream size
+        WriteInteger<uint32_t>(streamSize);
+
+        uint32_t i = 0;
+        for (char c : serializedData)
+        {
+            WriteInteger<uint8_t>(static_cast<uint8_t>(c));
+            ++i;
+        }
+        assert(streamSize == i && "Stream size does not match written bytes count");
+    }
+
     //Read from stream
     bool ReadBool()
     {
@@ -166,6 +184,22 @@ public:
 
         currentIndex += numBytes;
         return result;
+    }
+
+    std::istringstream ReadStream()
+    {
+        //Read stream size
+        uint32_t streamSize = ReadInteger<uint32_t>();
+
+        std::ostringstream oss;
+
+        for (int i = 0; i < streamSize; ++i)
+        {
+            oss.put(static_cast<char>(ReadInteger<uint8_t>()));
+        }
+
+        std::istringstream iss(oss.str());
+        return iss;
     }
 
 private:

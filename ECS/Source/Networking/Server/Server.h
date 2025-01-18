@@ -95,7 +95,7 @@ private:
                     //Send joining of client to other clients
                     for (auto client: Clients)
                     {
-                        SendToClient(Packet(clientID, clientID == client.first ? AcceptJoin : NewClientPacket), client.first);
+                        SendToClient(Packet(clientID, clientID == client.first ? AcceptJoin : NewClientPacket, ClientCurrentFrames[clientID]), client.first);
                     }
 
                     //Send other existing clients to client
@@ -103,7 +103,7 @@ private:
                     {
                         if (client.first == clientID) continue;
 
-                        SendToClient(Packet(client.first, NewClientPacket), clientID);
+                        SendToClient(Packet(client.first, NewClientPacket, ClientCurrentFrames[client.first]), clientID);
                     }
                 }
                 else if (message.size() >= Packet::DefaultSize)
@@ -114,14 +114,9 @@ private:
                     {
                         switch (packet.Type)
                         {
-                            case RequestJoinPacket:  //Accept client to join
+                            case RequestJoinPacket: //Accept client to join
                             {
-                                SendToAll(Packet(clientID, NewClientPacket));
-                                for (auto client: Clients)
-                                {
-                                    SendToClient(Packet(client.first, NewClientPacket), clientID);
-                                }
-                                break;
+                                Warning("Not implemented, join with empty packet");
                             }
                             case RequestGameDataPacket: //Continue request to all other clients
                             {
@@ -148,6 +143,10 @@ private:
                             }
                             case InputPacket: //Continue the input packet to other clients
                             {
+                                //Update information on the frame
+                                if (ClientCurrentFrames.find(clientID) != ClientCurrentFrames.end() &&  ClientCurrentFrames.at(clientID) < packet.Frame)
+                                    ClientCurrentFrames[clientID] = packet.Frame;
+
                                 SendToAllExcept(packet, clientID);
                                 break;
                             }
@@ -218,6 +217,7 @@ private:
 
         Clients.erase(clientID);
         Endpoints.erase(client);
+        ClientCurrentFrames.erase(clientID);
         OnClientDisconnect(clientID);
     }
 
@@ -269,11 +269,27 @@ private:
 
     ClientID AddClient(const ClientEndpoint& endpoint)
     {
+        uint32_t frame = GetGameFrame();
+
         Clients[++nextClientID] = endpoint;
         Endpoints[endpoint] = nextClientID;
+        ClientCurrentFrames[nextClientID] = frame;
 
         Debug("Accepted new client: ", nextClientID);
         return nextClientID;
+    }
+
+    uint32_t GetGameFrame() const
+    {
+        uint32_t frame = 0;
+
+        for (auto clientFrame : ClientCurrentFrames)
+        {
+            if (clientFrame.second > frame)
+                frame = clientFrame.second;
+        }
+
+        return frame;
     }
 
     size_t GetClientCount() const
@@ -303,6 +319,7 @@ private:
 
     std::unordered_map<ClientID, ClientEndpoint> Clients;
     std::unordered_map<ClientEndpoint, ClientID> Endpoints;
+    std::unordered_map<ClientID, uint32_t> ClientCurrentFrames;
     ClientID nextClientID;
 
     std::set<ClientID> clientsWaitingForGameData;

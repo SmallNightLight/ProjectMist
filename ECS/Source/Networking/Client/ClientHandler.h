@@ -87,6 +87,8 @@ public:
                         Debug("Received Client ID: ", receivedClientID);
                         connected = true;
 
+                        AddClient(receivedClientID, packet.Frame);
+
                         //Requesting game data
                         Send(Packet(receivedClientID, RequestGameDataPacket));
                     }
@@ -94,10 +96,12 @@ public:
                     {
                         Warning("Did not yet receive client ID??");
                     }
+
+                    break;
                 }
                 case NewClientPacket:
                 {
-                    AddClient(packet.ID, physicsWorld->GetCurrentFrame());
+                    AddClient(packet.ID, packet.Frame);
                     break;
                 }
                 case RequestGameDataPacket: //Mark for later serialization
@@ -132,9 +136,9 @@ public:
 
         if (clientsWaitingToJoin.size() > 0)
         {
-            for (ClientID clientID : clientsWaitingToJoin)
+            for (auto newClient : clientsWaitingToJoin)
             {
-                AddClient(clientID, physicsWorld->GetCurrentFrame());
+                AddClient(newClient.first, newClient.second);
             }
 
             clientsWaitingToJoin.clear();
@@ -298,7 +302,7 @@ private:
                     }
                     else if (packet.Type == NewClientPacket)
                     {
-                        clientsWaitingToJoin.insert(packet.ID);
+                        clientsWaitingToJoin[packet.ID] = packet.Frame;
                     }
                     else
                     {
@@ -330,7 +334,7 @@ private:
 
     std::mutex messageMutex;
     std::vector<std::vector<uint8_t>> receivedMessages;
-    std::set<ClientID> clientsWaitingToJoin;
+    std::unordered_map<ClientID, uint32_t> clientsWaitingToJoin;
 
     std::set<ClientID> clientIDs { };
     std::unordered_map<ClientID, InputCollection> clientInputs;

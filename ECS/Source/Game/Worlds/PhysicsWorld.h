@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <array>
+#include <random>
 
 class PhysicsWorld : public World
 {
@@ -204,7 +205,11 @@ public:
         std::vector<Entity> entities;
         std::vector<Signature> signatures;
 
+        //Write current frame
         stream.WriteInteger<uint32_t>(currentFrame);
+
+        //Write number generator
+        SerializeGenerator(stream, numberGenerator);
 
         //Write the signatures of all active entities
         SerializeEntities(stream, entities, signatures);
@@ -236,6 +241,9 @@ public:
 
         currentFrame = stream.ReadInteger<uint32_t>();
 
+        //Read the number generator
+        DeserializeGenerator(stream, numberGenerator);
+
         //Read the signatures of all active entities
         DeserializeEntities(stream, entities, signatures);
 
@@ -259,6 +267,15 @@ public:
     }
 
 private:
+
+    // Save the state of the generator into the stream
+    void SerializeGenerator(Stream& stream, const std::mt19937& generator) const
+    {
+        std::ostringstream oss;
+        oss << generator;
+
+        stream.WriteStream(oss);
+    }
 
     ///Write the entities and their signatures to the stream //TODO: make all ///
     void SerializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<Signature>& signatures) const
@@ -352,6 +369,12 @@ private:
             entities[i] = stream.ReadInteger<Entity>();
             signatures[i] = stream.ReadBitset<MAXCOMPONENTS>();
         }
+    }
+
+    static void DeserializeGenerator(Stream& stream, std::mt19937& generator)
+    {
+        std::istringstream iss = stream.ReadStream();
+        iss >> generator;
     }
 
     ///Add entities to the layer
