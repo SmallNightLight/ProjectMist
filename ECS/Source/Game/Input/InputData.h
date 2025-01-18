@@ -46,6 +46,11 @@ struct InputData
         }
     }
 
+    InputData CopyForNextFrame(uint32_t frame) const
+    {
+        return InputData(frame, Input, Input, MouseX, MouseY);
+    }
+
     void Serialize(Stream& stream)
     {
         assert(Input.size() == LastInput.size() && "Size of Input and LastInput needs to match");

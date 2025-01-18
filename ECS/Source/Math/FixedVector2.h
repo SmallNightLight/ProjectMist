@@ -148,11 +148,11 @@ struct FixedVector2
 
             IntermediateType mul = xRaw * xRaw + yRaw * yRaw;
 
-            //Using floating point square roots //TODO: Test if this is actually deterministic as expected
-            IntermediateType result = std::sqrt(mul);
+            //Using floating point square roots
+            //IntermediateType result = std::sqrt(mul);
 
             //Using fixed point square roots - slower
-            //IntermediateType result = fpm::sqrt<IntermediateType>(mul);
+            IntermediateType result = fpm::sqrt<IntermediateType>(mul);
 
             return T::from_raw_value(static_cast<BaseTType>(result));
       }

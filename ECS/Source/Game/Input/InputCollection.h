@@ -68,18 +68,18 @@ public:
     {
         if (!HasInput(frame))
         {
-            return GetPredictedInput();
+            return GetPredictedInput(frame);
         }
 
         baseInput.Overwrite(inputs[GetIndex(frame)]);
         return baseInput;
     }
 
-    Input& GetPredictedInput()
+    Input& GetPredictedInput(uint32_t frame)
     {
         //Get last registered input packet
         uint32_t index = GetIndex(lastCompletedFrame);
-        baseInput.Overwrite(inputs[index]);
+        baseInput.Overwrite(inputs[index].CopyForNextFrame(frame));
         return baseInput;
     }
 

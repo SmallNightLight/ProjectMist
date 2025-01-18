@@ -209,6 +209,10 @@ public:
         clientHandler.ReadMessages(oldPhysicsWorld);
 
         uint32_t rollbackFrames = clientHandler.GetRollbacks(oldPhysicsWorld->GetCurrentFrame());
+
+        if (RollbackDebugMode)
+            rollbackFrames = MaxRollBackFrames - 1;
+
         uint32_t actualRollbacks = 0;
 
         if (rollbackFrames > 0)

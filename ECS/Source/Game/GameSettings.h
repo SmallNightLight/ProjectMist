@@ -8,6 +8,8 @@ static constexpr short NetworkFPS = 15;
 static constexpr short SimulationFPS = 30;
 static constexpr short RenderingFPS = 60;
 
+static constexpr bool RollbackDebugMode = true; //always rollback 12 frames
+
 static const std::vector<uint16_t> playerInputKeys =
 {
     GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE

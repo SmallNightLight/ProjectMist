@@ -231,7 +231,7 @@ public:
 
         if (inputCollection.NeedsPrediction(frame))
         {
-            return &inputCollection.GetPredictedInput();
+            return &inputCollection.GetPredictedInput(frame);
         }
 
         return &inputCollection.GetInput(frame);
