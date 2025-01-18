@@ -30,9 +30,6 @@ dependencies put stuff (at the end, not wordcount, for exmaple entire UML).
 The caption would be a title not description
 Refere always in text to the image
 
-mileston (M) Ent is correct
-4 better four
-
 
 game diea start of report
 Frameork part first
