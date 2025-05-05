@@ -215,3 +215,44 @@ I'm not so sure why a fighting game would have many issues with this, but I don'
 
 
 
+
+
+
+Causes for issues
+- A player has a very bad internet connection to the other players
+- A player has a very bad internet connection to one player, but a good one to the other players
+
+
+
+
+
+
+
+
+
+
+
+Doing rollbacks + input with better performance
+- Pruning + Saving data for future calculations
+- Spatial map for object groups. Calculate collisions per group. On rollback only recalculate group if an object inside has changed (or has moved in). Save delta changes per group. Store collision response results per object in a group, and the entities each object collided with. Every entity stores per group 1 byte that indicates if it is also present in other groups (and the direction of the othert groups (max 3)). Every object is smaller than the group size. 
+- Every group is sorting the entities for sweep and prune.
+- Delta rollback: Saving only changes in game state. 2 saved complete game states: last confirmed game state and most recent game state, that we are constantly changing (can also add 1 in the middle).
+- Run physics calculations on low FPS. Separate rendering with interpolation
+- Support up to 1 second of rollback time
+- Add 1 frame of lockstep since that is either way delayed because of interpolation)
+
+
+
+
+Optimizing collision detection 
+https://leanrada.com/notes/sweep-and-prune-2/
+
+
+
+
+
+
+
+
+Define a player with its action, only modifyable by the controlling client. A player can influence a global object with no defined host. This object is part of the rollback group
+
