@@ -34,6 +34,7 @@ add_executable(ECS Source/main.cpp
         Source/Components/Lifetime.h
         Source/Systems/BlinkingParticles.h
         Source/Physics/Physics.h
+        Source/Physics/PhysicsUtils.h
         Source/Physics/Components/ColliderTransform.h
         Source/Physics/Components/RigidBodyData.h
         Source/Physics/Components/BoxCollider.h
@@ -51,18 +52,23 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/CollisionInfo.h
         Source/Physics/Components/PolygonCollider.h
         Source/Physics/Systems/PolygonColliderRenderer.h
+        Source/Physics/Collision/CollisionResponseInfo.h
+        Source/Physics/Collision/CollisionCache.h
+        Source/ECS/ECS.h
         Source/Game/Game.h
         Source/Game/WorldManager.h
         Source/Game/GameSettings.h
-        Source/ECS/ECS.h
         Source/Game/Worlds/PhysicsWorld.h
-        Source/Physics/PhysicsUtils.h
         Source/Game/World.h
         Source/Game/Input/InputData.h
         Source/Game/Input/InputManager.h
         Source/Game/Input/Input.h
         Source/Game/Input/InputCollection.h
         Source/Game/Input/Input.cpp
+        Source/ECS/CacheManager.h
+        Source/Physics/Collision/CollisionCheckInfo.h
+        Source/Physics/Enums/HashType.h
+        Source/Physics/Enums/HashUpdateType.h
 )
 
 add_subdirectory(Source/Math)

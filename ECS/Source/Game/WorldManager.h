@@ -2,7 +2,9 @@
 
 #include "World.h"
 #include "GameSettings.h"
+#include "../ECS/ECSSettings.h"
 #include "../ECS/ECS.h"
+#include "../ECS/CacheManager.h"
 
 #include <array>
 
@@ -13,7 +15,7 @@ public:
     {
         for(short layer = 0; layer < MaxRollBackFrames; ++layer)
         {
-            layers[layer] = Layer();
+            layers[layer] = Layer(&cacheManager);
         }
     }
 
@@ -85,10 +87,17 @@ public:
         rollbackCount = MaxRollBackFrames - 1;
     }
 
+    CacheManager* GetCacheManager()
+    {
+        return &cacheManager;
+    }
+
 private:
     int lastLayerIndex;
     int rollbackCount;
     int worldCount;
     std::array<Layer, MaxRollBackFrames> layers;
     std::array<std::array<std::shared_ptr<World>, MaxRollBackFrames>, MAXWORLDS> worlds { };
+
+    CacheManager cacheManager;
 };

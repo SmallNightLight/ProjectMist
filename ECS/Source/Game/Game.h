@@ -206,7 +206,7 @@ public:
         clientHandler.UpdateInput(clientHandler.GetClientID(), input);
 
         //Update the input of other clients and handle other packets
-        clientHandler.ReadMessages(oldPhysicsWorld);
+        clientHandler.ReadMessages(oldPhysicsWorld, worldManager.GetCacheManager());
 
         uint32_t rollbackFrames = clientHandler.GetRollbacks(oldPhysicsWorld->GetCurrentFrame());
 
@@ -220,7 +220,7 @@ public:
             if (worldManager.Rollback(rollbackFrames))
             {
                 actualRollbacks = rollbackFrames;
-                std::cout << "Rollback " << rollbackFrames<< " frames" << std::endl;
+                //std::cout << "Rollback " << rollbackFrames<< " frames" << std::endl;
             }
             else
             {
@@ -275,7 +275,7 @@ public:
     {
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         Stream temporaryStream = Stream(serializedStream);
-        physicsWorld->Deserialize(temporaryStream);
+        physicsWorld->Deserialize(temporaryStream, worldManager.GetCacheManager());
         worldManager.PreventFurtherRollback();
     }
 

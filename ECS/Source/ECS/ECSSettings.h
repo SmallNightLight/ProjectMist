@@ -7,11 +7,15 @@
 static constexpr int32_t SCREEN_WIDTH = 800;
 static constexpr int32_t SCREEN_HEIGHT = 600; //TODO: Bug - needs to be divisble by a specific number
 
+//Rollback
+static constexpr short MaxRollBackFrames = 15; //amount of save states - actually -1
+
 //ECS
 using Entity = std::uint32_t;
 using ComponentType = std::uint8_t;
 using SystemType = std::uint8_t;
 using WorldType = std::uint8_t;
+using FrameNumber = std::uint32_t;
 
 static constexpr std::uint32_t MAXENTITIES = 2000;
 static constexpr ComponentType MAXCOMPONENTS = 32;

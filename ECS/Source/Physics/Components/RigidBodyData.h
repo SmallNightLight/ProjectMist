@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../Enums/HashType.h"
+#include "../Enums/HashUpdateType.h"
 #include "../../Math/FixedTypes.h"
 #include "../../Math/Stream.h"
 
@@ -9,7 +11,7 @@ struct RigidBodyData
 {
     Vector2 Velocity;
     Fixed16_16 AngularVelocity;
-    Vector2 Force;
+    Vector2 Force; //Temporary container for force, reset to 0 in rigidBody after use
 
     Fixed16_16 InverseMass;
     Fixed16_16 Restitution;
@@ -17,9 +19,34 @@ struct RigidBodyData
     Fixed16_16 StaticFriction; //TODO: add materials and only save the index instead of he entire friction value (Restitution, StaticFriction, DynamicFriction)
     Fixed16_16 DynamicFriction;
 
-    RigidBodyData() : Velocity(0, 0), AngularVelocity(0, 0), Force(0, 0), InverseMass(1), Restitution(0, 5), InverseInertia(1), StaticFriction(0, 6), DynamicFriction(0, 4) { }
+    bool Active;
+    Vector2 LastPosition; //TODO: remove this
+    Fixed16_16 LastRotation;
 
-    constexpr RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area, const Fixed16_16& inertia, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
+private:
+    uint32_t Hash;              //The final hash that is used for caching
+    uint32_t BaseHash;          //The base hash for variables that do not change often
+    //HashType EntityHashType;    //Declares which variables are expected to change often
+    HashUpdateType HashUpdateRequired;
+
+public:
+    RigidBodyData() : //TODO: Add position and rotation to this class to improve? variables double?
+        Velocity(0, 0),
+        AngularVelocity(0, 0),
+        Force(0, 0), InverseMass(1),
+        Restitution(0, 5),
+        InverseInertia(1),
+        StaticFriction(0, 6),
+        DynamicFriction(0, 4),
+        Active(true),
+        LastPosition(0, 0),
+        LastRotation(0),
+        Hash(0),
+        BaseHash(0),
+        //EntityHashType(DynamicHashType),
+        HashUpdateRequired(HashUpdateType::FullUpdate) { }
+
+    constexpr RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area, const Fixed16_16& inertia, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction) //, HashType hashType = DynamicHashType)
         : Velocity(0, 0),
           AngularVelocity(0, 0),
           Force(0, 0),
@@ -27,7 +54,14 @@ struct RigidBodyData
           Restitution(restitution),
           InverseInertia(1 / inertia),
           StaticFriction(staticFriction),
-          DynamicFriction(dynamicFriction) { }
+          DynamicFriction(dynamicFriction),
+          Active(true),
+          LastPosition(0, 0),
+          LastRotation(0),
+          Hash(0),
+          BaseHash(0),
+          //EntityHashType(hashType),
+          HashUpdateRequired(HashUpdateType::FullUpdate) { } //ToDO: No area use?
 
     explicit RigidBodyData(Stream& stream)
     {
@@ -39,6 +73,12 @@ struct RigidBodyData
         InverseInertia = stream.ReadFixed();
         StaticFriction = stream.ReadFixed();
         DynamicFriction = stream.ReadFixed();
+
+        Active = true;
+        LastPosition = Vector2(0, 0);
+        LastRotation = Fixed16_16 (0);
+
+        HashUpdateRequired = HashUpdateType::FullUpdate;
     }
 
     constexpr static RigidBodyData CreateCircleRigidBody(const Fixed16_16 radius, const Fixed16_16& density, const Fixed16_16& restitution, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
@@ -68,14 +108,44 @@ struct RigidBodyData
         return RigidBodyData {area * density, restitution, area, GetRotationalInertiaPolygon(mass, vertices), staticFriction, dynamicFriction};
     }
 
-    void ApplyForce(const Vector2& direction)
+    inline void ApplyForce(const Vector2& direction)
     {
         Force += direction;
     }
 
-    [[nodiscard]] Fixed16_16 GetMass() const
+    inline Fixed16_16 Mass() const
     {
         return 1 / InverseMass;
+    }
+
+    inline Fixed16_16 Inertia() const
+    {
+        return 1 / InverseInertia;
+    }
+
+    constexpr inline uint32_t GetHash(Vector2 position, Fixed16_16 rotation)
+    {
+        if (HashUpdateRequired == HashUpdateType::None) return Hash;
+
+        if (HashUpdateRequired == HashUpdateType::FullUpdate)
+        {
+            //Recompute base hash
+            BaseHash = CombineHash(static_cast<uint32_t>(InverseMass.raw_value()), static_cast<uint32_t>(Restitution.raw_value()));
+            BaseHash = CombineHash(BaseHash, static_cast<uint32_t>(InverseInertia.raw_value()));
+            BaseHash = CombineHash(BaseHash, static_cast<uint32_t>(StaticFriction.raw_value()));
+            BaseHash = CombineHash(BaseHash, static_cast<uint32_t>(DynamicFriction.raw_value()));
+        }
+
+        //Recompute final hash
+        Hash = CombineHash(BaseHash, static_cast<uint32_t>(position.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(position.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(rotation.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(AngularVelocity.raw_value()));
+
+        HashUpdateRequired = HashUpdateType::None;
+        return Hash;
     }
 
     static Fixed16_16 GetPolygonArea(const std::vector<Vector2>& vertices)

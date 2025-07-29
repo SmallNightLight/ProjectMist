@@ -20,7 +20,7 @@ enum RigidBodyType
 struct ColliderTransform
 {
     Vector2 Position;
-    Fixed16_16 Rotation;
+    Fixed16_16 Rotation; //Radians
 
     ColliderType Shape;
     bool IsStatic;
@@ -64,6 +64,8 @@ struct ColliderTransform
         Position += direction;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+
+        QuantizePosition();
     }
 
     void SetPosition(Vector2 position)
@@ -71,6 +73,13 @@ struct ColliderTransform
         Position = position;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+
+        QuantizePosition();
+    }
+
+    inline void QuantizePosition()
+    {
+
     }
 
     void Rotate(Fixed16_16 amount)
@@ -78,6 +87,22 @@ struct ColliderTransform
         Rotation += amount;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+
+        QuantizeRotation();
+    }
+
+    void SetRotation(Fixed16_16 angle)
+    {
+        Rotation = angle;
+        TransformUpdateRequired = true;
+        AABBUpdateRequired = true;
+
+        QuantizeRotation();
+    }
+
+    inline void QuantizeRotation()
+    {
+
     }
 
     const std::vector<Vector2>& GetTransformedVertices(std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)

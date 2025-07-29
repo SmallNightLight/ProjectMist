@@ -7,7 +7,7 @@
 
 #include "FixedTypes.h"
 
- template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType, unsigned int FractionBits>
+template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType, unsigned int FractionBits>
 struct FixedVector2
 {
       T X;

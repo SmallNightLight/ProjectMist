@@ -24,6 +24,7 @@ add_executable(Math main.cpp
         Stream.h
 
         TestMath.h
+        HashUtils.h
 )
 
 add_subdirectory(FixedLib)

@@ -132,7 +132,8 @@ public:
         for (int i = 0; i < PhysicsIterations; ++i)
         {
             rigidBodySystem->ApplyVelocity(stepTime);
-            rigidBodySystem->DetectCollisions(currentFrame, i, id);
+            rigidBodySystem->HandleCollisions(currentFrame, i, id);
+            rigidBodySystem->UpdateState();
         }
 
         ++currentFrame;
@@ -228,10 +229,10 @@ public:
     }
 
     ///Deserializes the stream and overwrites the layer data. Only use this methode in a try loop
-    void Deserialize(Stream& stream)
+    void Deserialize(Stream& stream, CacheManager* cacheManager)
     {
         //Create a new layer and then Overwrite the existing layer with the new layer
-        Layer layer = Layer();
+        Layer layer = Layer(cacheManager);
         RegisterComponentsForLayer(layer);
         RegisterSystemsForLayer(layer);
         layer.CreateEntity(); //Create an entity that would be the camera - essential for maintaining a correct entity queue
@@ -378,7 +379,7 @@ private:
         iss >> generator;
     }
 
-    ///Add entities to the layer
+    //Add entities to the layer
     static void AddEntities(Layer& layer, const std::vector<Entity>& entities, std::array<uint32_t, MAXENTITIES>& entityIndexes)
     {
         for (Entity entity = 0; entity < MAXENTITIES; ++entity)
@@ -388,7 +389,7 @@ private:
 
         std::bitset<MAXENTITIES> entityPresent;
 
-        for (Entity entity : entities)
+        for (const Entity& entity : entities)
         {
             entityPresent.set(entity, true);
         }

@@ -5,7 +5,7 @@
 
 #include "../../Math/Stream.h"
 #include "../../Game/Input/InputCollection.h"
-#include "../../Game/GameSettings.h"
+#include "../../ECS/ECSSettings.h"
 #include "../../Game/Worlds/PhysicsWorld.h"
 
 #include <memory>
@@ -68,7 +68,7 @@ public:
         return message;
     }
 
-    void ReadMessages(std::shared_ptr<PhysicsWorld> physicsWorld)
+    void ReadMessages(std::shared_ptr<PhysicsWorld> physicsWorld, CacheManager* cacheManager)
     {
         while(HasNewMessages())
         {
@@ -111,7 +111,7 @@ public:
                 }
                 case GameDataPacket:  //Deserialize the game data
                 {
-                    physicsWorld->Deserialize(packet.Data);
+                    physicsWorld->Deserialize(packet.Data, cacheManager);
                     clientInputs.at(receivedClientID).JumpToFrame(physicsWorld->GetCurrentFrame());
                     Debug("Deserialized the game data");
                     break;

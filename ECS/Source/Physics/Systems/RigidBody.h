@@ -23,7 +23,34 @@ public:
         return signature;
     }
 
-    void DetectCollisions(uint32_t frame, uint32_t iteration, uint32_t id)
+    void ApplyVelocity(Fixed16_16 deltaTime)
+    {
+        for (const Entity& entity : Entities)
+        {
+            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+
+            if (colliderTransform.IsStatic) continue;
+
+            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
+
+            rigidBodyData.Velocity += rigidBodyData.Force * rigidBodyData.InverseMass * deltaTime;
+
+            if (colliderTransform.IsDynamic)
+            {
+                rigidBodyData.Velocity += Gravity * deltaTime;
+            }
+
+            rigidBodyData.LastPosition = colliderTransform.Position;
+            rigidBodyData.LastRotation = colliderTransform.Rotation;
+
+            colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
+            colliderTransform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
+
+            rigidBodyData.Force = Vector2::Zero();
+        }
+    }
+
+    void HandleCollisions(uint32_t frame, uint32_t iteration, uint32_t id)
     {
         std::vector<CollisionInfo> collisions;
 
@@ -48,38 +75,57 @@ public:
         }
 
         if (LogCollisions && iteration == 0)
-            CollisionInfo::LogCollisions(collisions, frame, id);
-
-        for(CollisionInfo collision : collisions)
         {
-            ResolveCollisionWithRotation(collision);
+            CollisionInfo::LogCollisions(collisions, frame, id);
+        }
+
+        for (CollisionInfo collision : collisions)
+        {
+            ResolveCollision(collision);
         }
 
         collisionsRE = std::vector(collisions);
     }
 
-    void ApplyVelocity(Fixed16_16 deltaTime)
+    //Update state, quantize transform, update position in collision grid
+    void UpdateState()
     {
+        int activeCount = 0;
+        int inactiveCount = 0;
+
         for (const Entity& entity : Entities)
         {
             ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
 
-            if (colliderTransform.IsStatic) continue;
+            if (colliderTransform.IsStatic) continue; //ToDO: Check if can actually skip this - also in applyvelocity
 
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
 
-            rigidBodyData.Velocity += rigidBodyData.Force * rigidBodyData.InverseMass * deltaTime;
+            Vector2 oldPosition = colliderTransform.Position;
 
-            if (colliderTransform.IsDynamic)
-            {
-                rigidBodyData.Velocity += Gravity * deltaTime;
-            }
+            //Quantize transform //ToDo: Check if can quantize here or in MovePosition function
+            //Quantize(colliderTransform.Position.X, QuantizationStepPosition);
+            //Quantize(colliderTransform.Position.Y, QuantizationStepPosition);
+            //Quantize(colliderTransform.Rotation, QuantizationStepRotation);
+            //std::cout << oldPosition - colliderTransform.Position << std::endl;
 
-            colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
-            colliderTransform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
+            rigidBodyData.Active = colliderTransform.Position != rigidBodyData.LastPosition || colliderTransform.Rotation != rigidBodyData.LastRotation;
 
-            rigidBodyData.Force = Vector2::Zero();
+            if (rigidBodyData.Active)
+                ++activeCount;
+            else
+                ++inactiveCount; //TODO: Remove small velocities
         }
+
+        //std::cout << "Active: " << activeCount << "/" << activeCount + inactiveCount << std::endl;
+    }
+
+    void Quantize(Fixed16_16& value, std::int32_t log2Step)
+    {
+        std::int32_t raw = value.raw_value();
+        std::int32_t bias = (1 << (log2Step - 1)) * ((raw >> 31) | 1);
+        raw = ((raw + bias) >> log2Step) << log2Step;
+        value = Fixed16_16::from_raw_value(raw);
     }
 
     void RotateAllEntities(Fixed16_16 delta) const
@@ -105,7 +151,8 @@ public:
     }
 
 private:
-    void ResolveCollision(const CollisionInfo& collisionInfo)
+    //Resolves the collision without rotation
+    void ResolveCollisionBasic(const CollisionInfo& collisionInfo)
     {
         RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(collisionInfo.Entity1);
         RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity2);
@@ -126,12 +173,12 @@ private:
         rigidBodyData2.Velocity += impulse * inverseMass2;
     }
 
-    void ResolveCollisionWithRotation(const CollisionInfo& collisionInfo)
+    void ResolveCollision(const CollisionInfo& collisionInfo)
     {
         ColliderTransform colliderTransform1 = colliderTransformCollection->GetComponent(collisionInfo.Entity1);
         ColliderTransform colliderTransform2 = colliderTransformCollection->GetComponent(collisionInfo.Entity2);
 
-        RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(collisionInfo.Entity1);
+        RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity1);
         RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity2);
 
         std::array<Vector2, 2> contacts {collisionInfo.Contact1, collisionInfo.Contact2};
