@@ -54,7 +54,7 @@ public:
             //bool applyVelocity = rigidBodyData.Velocity.RawMagnitudeSquared() > VelocityEpsilon && rigidBodyData.Velocity.RawMagnitudeSquared() >= rigidBodyData.LastVelocity.RawMagnitudeSquared();
             //bool applyAngularVelocity = rigidBodyData.AngularVelocity > AngularVelocityEpsilon || rigidBodyData.AngularVelocity < -AngularVelocityEpsilon;
 
-            rigidBodyData.LastPosition = colliderTransform.Position;
+            colliderTransform.LastPosition = colliderTransform.Position;
             rigidBodyData.LastVelocity = rigidBodyData.Velocity;
             rigidBodyData.LastAngularVelocity = rigidBodyData.AngularVelocity;
 
@@ -69,7 +69,10 @@ public:
     {
         assert(collisionCache && "CollisionCache is null");
 
+        //Update & Validate collision cache
         currentFrameNumber = PhysicsIterations * frame + iteration;
+        bool useCache = collisionCache->UpdateFrame(currentFrameNumber);
+
         std::vector<CollisionInfo> collisions;
         std::vector<CollisionCheckInfo> collisionChecks;
 
@@ -77,61 +80,38 @@ public:
         {
             const Entity& entity1 = *it1;
             ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(entity1);
-            RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(entity1);
 
             //Detect collisions
             for (auto it2 = std::next(it1); it2 != Entities.end(); ++it2)
             {
                 const Entity& entity2 = *it2;
                 ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
-                RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
 
-                CollisionCheckInfo check = CollisionCheckInfo();
-
-                check.Entity1 = entity1;
-                check.Entity2 = entity2;
-                check.Rotation1 = colliderTransform1.Rotation;
-                check.Rotation2 = colliderTransform2.Rotation;
-                check.GravityScale1 = rigidBodyData1.GravityScale;
-                check.GravityScale2 = rigidBodyData2.GravityScale;
-                check.MassScale1 = rigidBodyData1.GravityScale;
-                check.MassScale2 = rigidBodyData2.GravityScale;
-
-                if (colliderTransform1.IsStatic)
-                {
-                    check.Position1 = colliderTransform1.Position;
-                    check.Velocity1 = Vector2(0, 0);
-                    check.AngularVelocity1 = Fixed16_16(0);
-                }
-                else
-                {
-                    check.Position1 = rigidBodyData1.LastPosition;
-                    check.Velocity1 = rigidBodyData1.LastVelocity;
-                    check.AngularVelocity1 = rigidBodyData1.LastAngularVelocity;
-                }
-
-                if (colliderTransform2.IsStatic)
-                {
-                    check.Position2 = colliderTransform2.Position;
-                    check.Velocity2 = Vector2(0, 0);
-                    check.AngularVelocity2 = Fixed16_16(0);
-                }
-                else
-                {
-                    check.Position2 = rigidBodyData2.LastPosition;
-                    check.Velocity2 = rigidBodyData2.LastVelocity;
-                    check.AngularVelocity2 = rigidBodyData2.LastAngularVelocity;
-                }
-
-                //TODO: Try to cache some things to avoid rigid body access
+                CollisionPairData pairData = CollisionPairData(entity1, entity2, colliderTransform1.LastPosition, colliderTransform2.LastPosition, colliderTransform1.Rotation, colliderTransform2.Rotation);
 
                 //Check if collision already occurred in the past
-                /**/
+                bool foundCollision = false;
 
-                CollisionResponseInfo responseInfo;
-                if (collisionCache->TryGetCollisionData(currentFrameNumber, check, responseInfo))
+                if (useCache)
                 {
-                    if (responseInfo.Collision)
+                    bool collision;
+                    foundCollision = collisionCache->TryGetPairData(currentFrameNumber, pairData, collision);
+
+                    if (foundCollision && !collision) continue;
+                }
+
+                CollisionCheckInfo check;
+
+                RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
+                RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
+
+                if (foundCollision)
+                {
+                    //Get collision response data
+                    check = GetCollisionCheckInfo(entity1, entity2, colliderTransform1, colliderTransform1, rigidBodyData1, rigidBodyData2);
+
+                    CollisionResponseInfo responseInfo;
+                    if (collisionCache->TryGetCollisionData(currentFrameNumber, check, responseInfo))
                     {
                         colliderTransform1.Position = responseInfo.Position1;
                         colliderTransform2.Position = responseInfo.Position2;
@@ -139,29 +119,33 @@ public:
                         rigidBodyData2.Velocity = responseInfo.Velocity2;
                         rigidBodyData1.AngularVelocity = responseInfo.AngularVelocity1;
                         rigidBodyData2.AngularVelocity = responseInfo.AngularVelocity2;
-                    }
 
-                    continue;
+                        continue;
+                    }
                 }
-                /**/
 
                 CollisionInfo resultInfo = CollisionInfo();
                 if (collisionDetection.DetectCollisionAndCorrect(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo))
                 {
                     collisions.emplace_back(resultInfo);
-                    collisionChecks.emplace_back(check);
+                    collisionCache->CacheCollisionPair(currentFrameNumber, pairData);
+
+                    if (foundCollision)
+                    {
+                        collisionChecks.emplace_back(check);
+                    }
+                    else
+                    {
+                        collisionChecks.emplace_back(GetCollisionCheckInfo(entity1, entity2, colliderTransform1, colliderTransform1, rigidBodyData1, rigidBodyData2));
+                    }
                 }
                 else
                 {
                     //Cache result
-                    collisionCache->Cache(currentFrameNumber, check, NonColliding);
+                    collisionCache->CacheNonCollision(currentFrameNumber, pairData);
                 }
             }
         }
-        //TODO: Does not cache if one object is static. Cache objects that dont collide in different structure?
-        //TODO: AND ONLY try to get the value if in a rollback and we know there is data
-        //TODO: Only first frame first iteration works
-        //solution: we dont move the object from the cache like before in the collision detection moving
 
         if (LogCollisions && iteration == 0)
         {
@@ -174,6 +158,42 @@ public:
         }
 
         collisionsRE = std::vector(collisions);
+    }
+
+    static inline CollisionCheckInfo GetCollisionCheckInfo(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, const RigidBodyData& rigidBodyData1, const RigidBodyData& rigidBodyData2)
+    {
+        CollisionCheckInfo check = CollisionCheckInfo();
+
+        check.Entity1 = entity1;
+        check.Entity2 = entity2;
+        check.GravityScale1 = rigidBodyData1.GravityScale;
+        check.GravityScale2 = rigidBodyData2.GravityScale;
+        check.MassScale1 = rigidBodyData1.GravityScale;
+        check.MassScale2 = rigidBodyData2.GravityScale;
+
+        if (colliderTransform1.IsStatic)
+        {
+            check.Velocity1 = Vector2(0, 0);
+            check.AngularVelocity1 = Fixed16_16(0);
+        }
+        else
+        {
+            check.Velocity1 = rigidBodyData1.LastVelocity;
+            check.AngularVelocity1 = rigidBodyData1.LastAngularVelocity;
+        }
+
+        if (colliderTransform2.IsStatic)
+        {
+            check.Velocity2 = Vector2(0, 0);
+            check.AngularVelocity2 = Fixed16_16(0);
+        }
+        else
+        {
+            check.Velocity2 = rigidBodyData2.LastVelocity;
+            check.AngularVelocity2 = rigidBodyData2.LastAngularVelocity;
+        }
+
+        return check;
     }
 
     void RotateAllEntities(Fixed16_16 delta) const
@@ -331,10 +351,8 @@ private:
         }
 
         //Cache result
-        /**/
-        CollisionResponseInfo responseInfo = CollisionResponseInfo(true, colliderTransform1.Position, colliderTransform2.Position, newVelocity1, newVelocity2, newAngularVelocity1, newAngularVelocity2);
-        collisionCache->Cache(currentFrameNumber, check, responseInfo);
-        /**/
+        CollisionResponseInfo responseInfo = CollisionResponseInfo(colliderTransform1.Position, colliderTransform2.Position, newVelocity1, newVelocity2, newAngularVelocity1, newAngularVelocity2);
+        collisionCache->CacheCollision(currentFrameNumber, check, responseInfo);
 
         //Apply velocities
         rigidBodyData1.Velocity = newVelocity1;

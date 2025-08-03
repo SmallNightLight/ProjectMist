@@ -23,7 +23,6 @@ struct RigidBodyData
     uint8_t MassScale;
 
     bool Active;
-    Vector2 LastPosition;
     Vector2 LastVelocity;
     Fixed16_16 LastAngularVelocity;
 
@@ -45,7 +44,6 @@ public:
         GravityScale(1),
         MassScale(1),
         Active(true),
-        LastPosition(0, 0),
         LastVelocity(0, 0),
         LastAngularVelocity(0),
         Hash(0),
@@ -65,7 +63,6 @@ public:
         GravityScale(1),
         MassScale(1),
         Active(true),
-        LastPosition(0, 0),
         LastVelocity(0, 0),
         LastAngularVelocity(0),
         Hash(0),
@@ -85,7 +82,6 @@ public:
         DynamicFriction = stream.ReadFixed();
 
         Active = true;
-        LastPosition = Vector2(0, 0);
         LastVelocity = Vector2(0, 0);
         LastAngularVelocity = Fixed16_16(0);
 

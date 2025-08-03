@@ -27,13 +27,20 @@ struct ColliderTransform
     bool IsKinematic;
     bool IsDynamic;
 
-    ColliderTransform() : Position(0, 0), Rotation(0), Shape(Circle), IsStatic(true), IsKinematic(false), IsDynamic(false), TransformUpdateRequired(false), AABBUpdateRequired(false) { }
+    Vector2 LastPosition;
 
-    constexpr ColliderTransform(Vector2 position, Fixed16_16 rotation, ColliderType shape, RigidBodyType type) : Position(position), Rotation(rotation), Shape(shape), IsStatic(type == Static),
-      IsKinematic(type == Kinematic),
-      IsDynamic(type == Dynamic), TransformUpdateRequired(true), AABBUpdateRequired(true)
-    {
-    }
+    ColliderTransform() : Position(0, 0), Rotation(0), Shape(Circle), IsStatic(true), IsKinematic(false), IsDynamic(false), TransformUpdateRequired(false), AABBUpdateRequired(false), LastPosition(0, 0) { }
+
+    constexpr ColliderTransform(Vector2 position, Fixed16_16 rotation, ColliderType shape, RigidBodyType type) :
+        Position(position),
+        Rotation(rotation),
+        Shape(shape),
+        IsStatic(type == Static),
+        IsKinematic(type == Kinematic),
+        IsDynamic(type == Dynamic),
+        LastPosition(position),
+        TransformUpdateRequired(true),
+        AABBUpdateRequired(true) { }
 
     explicit ColliderTransform(Stream& stream)
     {
@@ -46,6 +53,8 @@ struct ColliderTransform
         IsStatic = stream.ReadBool();
         IsKinematic = stream.ReadBool();
         IsDynamic = stream.ReadBool();
+
+        LastPosition = Position;
 
         //Since the transform and bounding box have been updated before serialization they should be correct
         TransformUpdateRequired = false;
@@ -64,8 +73,6 @@ struct ColliderTransform
         Position += direction;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
-
-        QuantizePosition();
     }
 
     void SetPosition(Vector2 position)
@@ -73,13 +80,6 @@ struct ColliderTransform
         Position = position;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
-
-        QuantizePosition();
-    }
-
-    inline void QuantizePosition()
-    {
-
     }
 
     void Rotate(Fixed16_16 amount)
@@ -87,8 +87,6 @@ struct ColliderTransform
         Rotation += amount;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
-
-        QuantizeRotation();
     }
 
     void SetRotation(Fixed16_16 angle)
@@ -96,13 +94,6 @@ struct ColliderTransform
         Rotation = angle;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
-
-        QuantizeRotation();
-    }
-
-    inline void QuantizeRotation()
-    {
-
     }
 
     const std::vector<Vector2>& GetTransformedVertices(std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)

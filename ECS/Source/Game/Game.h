@@ -184,8 +184,8 @@ public:
                 sleepTime += sleepDuration;
             }
 
-            //auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-            //if (oldPhysicsWorld->GetCurrentFrame() >= 100) break;
+            auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+            if (oldPhysicsWorld->GetCurrentFrame() >= 1000) break;
         }
 
         //Stop glfw
