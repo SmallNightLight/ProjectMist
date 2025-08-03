@@ -2,6 +2,10 @@
 
 #include "../../ECS/ECS.h"
 #include "../PhysicsSettings.h"
+#include "../Collision/CollisionCache.h"
+
+#include <vector>
+#include <tuple>
 
 class RigidBody : public System
 {
@@ -13,6 +17,13 @@ public:
         circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
         boxColliderCollection = layer->GetComponentCollection<BoxCollider>();
         polygonColliderCollection = world->GetComponentCollection<PolygonCollider>();
+
+        collisionCache = nullptr;
+    }
+
+    void InitializeCache(CollisionCache* cache)
+    {
+        collisionCache = cache;
     }
 
     [[nodiscard]] Signature GetSignature() const override
@@ -40,92 +51,129 @@ public:
                 rigidBodyData.Velocity += Gravity * deltaTime;
             }
 
+            //bool applyVelocity = rigidBodyData.Velocity.RawMagnitudeSquared() > VelocityEpsilon && rigidBodyData.Velocity.RawMagnitudeSquared() >= rigidBodyData.LastVelocity.RawMagnitudeSquared();
+            //bool applyAngularVelocity = rigidBodyData.AngularVelocity > AngularVelocityEpsilon || rigidBodyData.AngularVelocity < -AngularVelocityEpsilon;
+
             rigidBodyData.LastPosition = colliderTransform.Position;
-            rigidBodyData.LastRotation = colliderTransform.Rotation;
+            rigidBodyData.LastVelocity = rigidBodyData.Velocity;
+            rigidBodyData.LastAngularVelocity = rigidBodyData.AngularVelocity;
 
             colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
-            colliderTransform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
-
             rigidBodyData.Force = Vector2::Zero();
+
+            colliderTransform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
         }
     }
 
-    void HandleCollisions(uint32_t frame, uint32_t iteration, uint32_t id)
+    void HandleCollisions(FrameNumber frame, uint8_t iteration, uint32_t id)
     {
+        assert(collisionCache && "CollisionCache is null");
+
+        currentFrameNumber = PhysicsIterations * frame + iteration;
         std::vector<CollisionInfo> collisions;
+        std::vector<CollisionCheckInfo> collisionChecks;
 
         for (auto it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
             const Entity& entity1 = *it1;
             ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(entity1);
+            RigidBodyData& rigidBodyData1= rigidBodyDataCollection->GetComponent(entity1);
 
             //Detect collisions
             for (auto it2 = std::next(it1); it2 != Entities.end(); ++it2)
             {
                 const Entity& entity2 = *it2;
                 ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
+                RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
+
+                CollisionCheckInfo check = CollisionCheckInfo();
+
+                check.Entity1 = entity1;
+                check.Entity2 = entity2;
+                check.Rotation1 = colliderTransform1.Rotation;
+                check.Rotation2 = colliderTransform2.Rotation;
+                check.GravityScale1 = rigidBodyData1.GravityScale;
+                check.GravityScale2 = rigidBodyData2.GravityScale;
+                check.MassScale1 = rigidBodyData1.GravityScale;
+                check.MassScale2 = rigidBodyData2.GravityScale;
+
+                if (colliderTransform1.IsStatic)
+                {
+                    check.Position1 = colliderTransform1.Position;
+                    check.Velocity1 = Vector2(0, 0);
+                    check.AngularVelocity1 = Fixed16_16(0);
+                }
+                else
+                {
+                    check.Position1 = rigidBodyData1.LastPosition;
+                    check.Velocity1 = rigidBodyData1.LastVelocity;
+                    check.AngularVelocity1 = rigidBodyData1.LastAngularVelocity;
+                }
+
+                if (colliderTransform2.IsStatic)
+                {
+                    check.Position2 = colliderTransform2.Position;
+                    check.Velocity2 = Vector2(0, 0);
+                    check.AngularVelocity2 = Fixed16_16(0);
+                }
+                else
+                {
+                    check.Position2 = rigidBodyData2.LastPosition;
+                    check.Velocity2 = rigidBodyData2.LastVelocity;
+                    check.AngularVelocity2 = rigidBodyData2.LastAngularVelocity;
+                }
+
+                //TODO: Try to cache some things to avoid rigid body access
+
+                //Check if collision already occurred in the past
+                /**/
+
+                CollisionResponseInfo responseInfo;
+                if (collisionCache->TryGetCollisionData(currentFrameNumber, check, responseInfo))
+                {
+                    if (responseInfo.Collision)
+                    {
+                        colliderTransform1.Position = responseInfo.Position1;
+                        colliderTransform2.Position = responseInfo.Position2;
+                        rigidBodyData1.Velocity = responseInfo.Velocity1;
+                        rigidBodyData2.Velocity = responseInfo.Velocity2;
+                        rigidBodyData1.AngularVelocity = responseInfo.AngularVelocity1;
+                        rigidBodyData2.AngularVelocity = responseInfo.AngularVelocity2;
+                    }
+
+                    continue;
+                }
+                /**/
 
                 CollisionInfo resultInfo = CollisionInfo();
-
                 if (collisionDetection.DetectCollisionAndCorrect(entity1, entity2, colliderTransform1, colliderTransform2, resultInfo))
                 {
                     collisions.emplace_back(resultInfo);
+                    collisionChecks.emplace_back(check);
+                }
+                else
+                {
+                    //Cache result
+                    collisionCache->Cache(currentFrameNumber, check, NonColliding);
                 }
             }
         }
+        //TODO: Does not cache if one object is static. Cache objects that dont collide in different structure?
+        //TODO: AND ONLY try to get the value if in a rollback and we know there is data
+        //TODO: Only first frame first iteration works
+        //solution: we dont move the object from the cache like before in the collision detection moving
 
         if (LogCollisions && iteration == 0)
         {
             CollisionInfo::LogCollisions(collisions, frame, id);
         }
 
-        for (CollisionInfo collision : collisions)
+        for (size_t i = 0; i < collisions.size(); ++i)
         {
-            ResolveCollision(collision);
+            ResolveCollision(collisions[i], collisionChecks[i]);
         }
 
         collisionsRE = std::vector(collisions);
-    }
-
-    //Update state, quantize transform, update position in collision grid
-    void UpdateState()
-    {
-        int activeCount = 0;
-        int inactiveCount = 0;
-
-        for (const Entity& entity : Entities)
-        {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
-
-            if (colliderTransform.IsStatic) continue; //ToDO: Check if can actually skip this - also in applyvelocity
-
-            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
-
-            Vector2 oldPosition = colliderTransform.Position;
-
-            //Quantize transform //ToDo: Check if can quantize here or in MovePosition function
-            //Quantize(colliderTransform.Position.X, QuantizationStepPosition);
-            //Quantize(colliderTransform.Position.Y, QuantizationStepPosition);
-            //Quantize(colliderTransform.Rotation, QuantizationStepRotation);
-            //std::cout << oldPosition - colliderTransform.Position << std::endl;
-
-            rigidBodyData.Active = colliderTransform.Position != rigidBodyData.LastPosition || colliderTransform.Rotation != rigidBodyData.LastRotation;
-
-            if (rigidBodyData.Active)
-                ++activeCount;
-            else
-                ++inactiveCount; //TODO: Remove small velocities
-        }
-
-        //std::cout << "Active: " << activeCount << "/" << activeCount + inactiveCount << std::endl;
-    }
-
-    void Quantize(Fixed16_16& value, std::int32_t log2Step)
-    {
-        std::int32_t raw = value.raw_value();
-        std::int32_t bias = (1 << (log2Step - 1)) * ((raw >> 31) | 1);
-        raw = ((raw + bias) >> log2Step) << log2Step;
-        value = Fixed16_16::from_raw_value(raw);
     }
 
     void RotateAllEntities(Fixed16_16 delta) const
@@ -173,13 +221,20 @@ private:
         rigidBodyData2.Velocity += impulse * inverseMass2;
     }
 
-    void ResolveCollision(const CollisionInfo& collisionInfo)
+    void ResolveCollision(const CollisionInfo& collisionInfo, const CollisionCheckInfo& check)
     {
+        assert(collisionCache && "CollisionCache is null");
+
         ColliderTransform colliderTransform1 = colliderTransformCollection->GetComponent(collisionInfo.Entity1);
         ColliderTransform colliderTransform2 = colliderTransformCollection->GetComponent(collisionInfo.Entity2);
 
         RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity1);
         RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(collisionInfo.Entity2);
+
+        Vector2 newVelocity1 = rigidBodyData1.Velocity;
+        Vector2 newVelocity2 = rigidBodyData2.Velocity;
+        Fixed16_16 newAngularVelocity1 = rigidBodyData1.AngularVelocity;
+        Fixed16_16 newAngularVelocity2 = rigidBodyData2.AngularVelocity;
 
         std::array<Vector2, 2> contacts {collisionInfo.Contact1, collisionInfo.Contact2};
         std::array<Vector2, 2> impulses { };
@@ -206,11 +261,7 @@ private:
             Vector2 perpendicular1 = r1[i].Perpendicular();
             Vector2 perpendicular2 = r2[i].Perpendicular();
 
-            Vector2 angularVelocity1 = perpendicular1 * rigidBodyData1.AngularVelocity;
-            Vector2 angularVelocity2 = perpendicular2 * rigidBodyData2.AngularVelocity;
-
-            Vector2 relativeVelocity = (rigidBodyData2.Velocity + angularVelocity2) - (rigidBodyData1.Velocity + angularVelocity1);
-
+            Vector2 relativeVelocity = (newVelocity2 + perpendicular2 * newAngularVelocity2) - (newVelocity1 + perpendicular1 * newAngularVelocity1);
             Fixed16_16 velocityMagnitude = relativeVelocity.Dot(collisionInfo.Normal);
 
             if (velocityMagnitude > 0) continue;
@@ -226,11 +277,11 @@ private:
         {
             Vector2 impulse = impulses[i];
 
-            rigidBodyData1.Velocity -= impulse * inverseMass1;
-            rigidBodyData2.Velocity += impulse * inverseMass2;
+            newVelocity1 -= impulse * inverseMass1;
+            newVelocity2 += impulse * inverseMass2;
 
-            rigidBodyData1.AngularVelocity -= r1[i].Cross(impulse) * inverseInertia1;
-            rigidBodyData2.AngularVelocity += r2[i].Cross(impulse) * inverseInertia2;
+            newAngularVelocity1 -= r1[i].Cross(impulse) * inverseInertia1;
+            newAngularVelocity2 += r2[i].Cross(impulse) * inverseInertia2;
         }
 
         impulses = { };
@@ -241,16 +292,10 @@ private:
             Vector2 perpendicular1 = r1[i].Perpendicular();
             Vector2 perpendicular2 = r2[i].Perpendicular();
 
-            Vector2 angularVelocity1 = perpendicular1 * rigidBodyData1.AngularVelocity;
-            Vector2 angularVelocity2 = perpendicular2 * rigidBodyData2.AngularVelocity;
-
-            Vector2 relativeVelocity = (rigidBodyData2.Velocity + angularVelocity2) - (rigidBodyData1.Velocity + angularVelocity1);
+            Vector2 relativeVelocity = (newVelocity2 + perpendicular2 * newAngularVelocity2) - (newVelocity1 + perpendicular1 * newAngularVelocity1);
             Vector2 tangent = relativeVelocity - collisionInfo.Normal * relativeVelocity.Dot(collisionInfo.Normal);
 
-            if (Vector2::AlmostEqual(tangent, Vector2::Zero()))
-            {
-                continue;
-            }
+            if (Vector2::AlmostEqual(tangent, Vector2::Zero())) continue;
 
             tangent = tangent.Normalize();
 
@@ -278,14 +323,25 @@ private:
         {
             Vector2 frictionImpulse = impulses[i];
 
-            rigidBodyData1.Velocity -= frictionImpulse * inverseMass1;
-            rigidBodyData2.Velocity += frictionImpulse * inverseMass2;
+            newVelocity1 -= frictionImpulse * inverseMass1;
+            newVelocity2 += frictionImpulse * inverseMass2;
 
-            rigidBodyData1.AngularVelocity -= r1[i].Cross(frictionImpulse) * inverseInertia1;
-            rigidBodyData2.AngularVelocity += r2[i].Cross(frictionImpulse) * inverseInertia2;
+            newAngularVelocity1 -= r1[i].Cross(frictionImpulse) * inverseInertia1;
+            newAngularVelocity2 += r2[i].Cross(frictionImpulse) * inverseInertia2;
         }
-    }
 
+        //Cache result
+        /**/
+        CollisionResponseInfo responseInfo = CollisionResponseInfo(true, colliderTransform1.Position, colliderTransform2.Position, newVelocity1, newVelocity2, newAngularVelocity1, newAngularVelocity2);
+        collisionCache->Cache(currentFrameNumber, check, responseInfo);
+        /**/
+
+        //Apply velocities
+        rigidBodyData1.Velocity = newVelocity1;
+        rigidBodyData2.Velocity = newVelocity2;
+        rigidBodyData1.AngularVelocity = newAngularVelocity1;
+        rigidBodyData2.AngularVelocity = newAngularVelocity2;
+    }
 
 private:
     template <typename T>
@@ -297,6 +353,7 @@ private:
     }
 
 private:
+    FrameNumber currentFrameNumber;
     CollisionDetection collisionDetection;
 
     std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
@@ -304,6 +361,9 @@ private:
     std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
     std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
     std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
+
+    //Caching
+    CollisionCache* collisionCache;
 
 public:
     std::vector<CollisionInfo> collisionsRE; //TODO: remove

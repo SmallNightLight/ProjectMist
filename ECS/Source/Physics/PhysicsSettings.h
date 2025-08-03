@@ -2,10 +2,10 @@
 
 #include "../Math/FixedTypes.h"
 
-constexpr int PhysicsIterations = 5;
+constexpr uint8_t PhysicsIterations = 5;
 
-constexpr std::int32_t QuantizationStepPosition = 2; //in Log2 (2^x)
-constexpr std::int32_t QuantizationStepRotation = 1; //in Log2 (2^x)
+constexpr int64_t VelocityEpsilon = (Fixed16_16(1) / Fixed16_16(1000)).GetValueIntermediate();
+constexpr Fixed16_16 AngularVelocityEpsilon = Fixed16_16(1) / Fixed16_16(100);
 
 constexpr Fixed16_16 MinBodySize = Fixed16_16::FromFloat(0.01f * 0.01f);
 constexpr Fixed16_16 MaxBodySize( 64 * 64);
@@ -18,5 +18,5 @@ constexpr  Vector2 Gravity = Vector2(Fixed16_16(0), Fixed16_16(-9, 81));
 using CollisionHash = std::uint32_t;
 
 //Debug
-constexpr bool PhysicsDebugMode = false;
+constexpr bool PhysicsDebugMode = true;
 constexpr bool LogCollisions = false;

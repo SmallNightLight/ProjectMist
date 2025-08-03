@@ -10,6 +10,7 @@ public:
         colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
         polygonColliderCollection = layer->GetComponentCollection<PolygonCollider>();
         colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
+        rigidBodyDataCollection = layer->GetComponentCollection<RigidBodyData>();
     }
 
     [[nodiscard]] Signature GetSignature() const override
@@ -60,14 +61,28 @@ public:
         }
     }
 
-    void RenderAABB() const
+    void RenderDebugOverlay() const
     {
         for (const Entity& entity : Entities)
         {
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
             PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
 
-            glColor3ub(128, 128, 128);
+            bool active = false;
+            if (rigidBodyDataCollection->HasComponent(entity))
+            {
+                active = rigidBodyDataCollection->GetComponent(entity).Active;
+            }
+
+            if (active)
+            {
+                glColor3ub(128, 128, 128);
+            }
+            else
+            {
+                glColor3ub(0, 255, 0);
+            }
+
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
@@ -85,4 +100,5 @@ private:
     std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
     std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
     std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
+    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
 };

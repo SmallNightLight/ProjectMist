@@ -4,16 +4,14 @@
 
 #include <vector>
 
-struct BoxCollider
+//BoxCollider cannot change shape after it has been created
+class BoxCollider
 {
-    Fixed16_16 Width;
-    Fixed16_16 Height;
-
-    std::vector<Vector2> Vertices { };
-    std::vector<Vector2> TransformedVertices { };
-
+public:
     BoxCollider() : Width(0), Height(0) { }
-    BoxCollider(Fixed16_16 width, Fixed16_16 height) : Width(width), Height(height), Vertices(GetBoxVertices()), TransformedVertices(Vertices) { }
+
+    BoxCollider(Fixed16_16 width, Fixed16_16 height) : Vertices(GetBoxVertices(width, height)), TransformedVertices(Vertices), Width(width), Height(height) { }
+
     explicit BoxCollider(Stream& stream)
     {
         //Read Size
@@ -59,12 +57,12 @@ struct BoxCollider
     }
 
 private:
-    [[nodiscard]] std::vector<Vector2> GetBoxVertices() const
+    [[nodiscard]] static std::vector<Vector2> GetBoxVertices(Fixed16_16 width, Fixed16_16 height)
     {
-        Fixed16_16 left = -Width / 2;
-        Fixed16_16 right = left + Width;
-        Fixed16_16 bottom = -Height / 2;
-        Fixed16_16 top = bottom + Height;
+        Fixed16_16 left = -width / 2;
+        Fixed16_16 right = left + width;
+        Fixed16_16 bottom = -height / 2;
+        Fixed16_16 top = bottom + height;
 
         return std::vector
         {
@@ -74,4 +72,12 @@ private:
             Vector2{left, bottom}
         };
     }
+
+public:
+    std::vector<Vector2> Vertices { };
+    std::vector<Vector2> TransformedVertices { };
+
+private:
+    Fixed16_16 Width;
+    Fixed16_16 Height;
 };

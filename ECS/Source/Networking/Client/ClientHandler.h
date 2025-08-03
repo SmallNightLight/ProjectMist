@@ -68,7 +68,7 @@ public:
         return message;
     }
 
-    void ReadMessages(std::shared_ptr<PhysicsWorld> physicsWorld, CacheManager* cacheManager)
+    void ReadMessages(std::shared_ptr<PhysicsWorld> physicsWorld)
     {
         while(HasNewMessages())
         {
@@ -111,7 +111,7 @@ public:
                 }
                 case GameDataPacket:  //Deserialize the game data
                 {
-                    physicsWorld->Deserialize(packet.Data, cacheManager);
+                    physicsWorld->Deserialize(packet.Data);
                     clientInputs.at(receivedClientID).JumpToFrame(physicsWorld->GetCurrentFrame());
                     Debug("Deserialized the game data");
                     break;

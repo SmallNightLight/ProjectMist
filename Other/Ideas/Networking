@@ -132,7 +132,7 @@ Architecture
 - World: Manages layers, has sub worlds that manages the systems (like a physics world)
 - Layer: Stores components
 
-
+-> The input also saves the amount of frames this was pressed to reduce data amount (not saving when input was pressed for the same multiple frames)
 
 
 No server
@@ -145,13 +145,136 @@ Since only input is transfered the authority is on the client themselves
 
 
 
+Methods of cheating
+- Spoofing input packets                                    (Severe)
+- Read game data for additional info (player location)      (Minimal, the entire game state is known, but has not that much valuable information for the player that is not already shown)
+- Colliders display                                         (Low, colliders should match roughly the displayed shapes anyway - many fights are not done in close range where that matters that much)
+- Modifying game data (Health, CD)                          (Low, checksum will findout if any game data has been modified, only issue is when determining correct game state)
+- Aim bots                                                  (Low, Aim is no crucial part, and only minimal in skill expression - with salow projectiles and fast moving players no perfect aim exists anyway)
+- Modifying game tick speed                                 (Low, the tixck rate is fixed, if the trick rate is modified, it will send future packets with input of old data, resulting in bad play, results in a lot of rollbacks)
+- Auto clicker                                              (Low, no action is dependent on spamming abilities)
+- Simulate lag                                              (Severe, witholding input data to minimize reaction time for other clients)
+- Abuse of prediction functionality                         (Maximal, can give a powerful overlay with trajectories, same as the golden player state)
+- Target other clients                                      (Severe, in lobbies multiple clients sending faulty data to 1 target client which will be wrongly accused)
+- Modifying assets (louder sounds, brighter textures)       (Low, will decrease player enjoyment more then it helps)
+- Macros / replay inputs                                    (Minimal, can be usefull in certain cases, but since reactive play is often neede not that important. Might also get implemented as a feature if needed)
+- Force other clients to rollback                           (Minimal, game should be able to run on max rollbacks anyway)
+- Send faulty win                                           (Severe, No authorative instance to determine correct result)
+- Frame perfect blocking                                    (Low, blocking is no core game mechanic)
+
+-> Most cheating attempts only slightly increase the players stength, resulting in diminishing returns
+-> Some critical cheating methods related to modifying packets
 
 
 
 Prevent cheating
+
+
+
 A hash is generated from the complete packet (input and frame) and game state. It is a 128 bit number. 
 Note: UDP can also corrupt data, so an invalid hash might be possible without cheating
+-> Use bitflip prevention like in qr codes
 
+
+Every player has a hash stored for every other player it is connected to
+This hash is used more hashes for input
+
+A)
+send input from player a to b:
+- generate hash from input and player B hash, which advances the player B hash to its next state
+- send the input and hash to player B
+- pl
+- player B encrypts the data and check 
+1) if the hash matches the input data
+2) if the hash matches its own player hash with the correct number from seed
+- 
+
+
+B)
+- player A sends the input and a basic hash do verification on a basic level
+- player B receives the input and declares and uses it, but not yet verifies it.
+- player B 
+
+method to modify the 
+
+
+- if a player just sends wrong input, on all other players screen that person just inputs garbage. Here there is no need to veridy input, since the cheater now himseelf is affected most as their connection to all other players is desynced
+- Every frame every player creates a hash of the current game state and sends it to the other clients. The clients send the game state hash of other clients to each other
+- Normally: A client can detect a desync by checking if (of a completed frame) all state hashes are the same. 
+
+(Considering a game with 5 persons)
+- If a SINGLE client has a different hash: that client is desynced, send current game state to it
+- If two clients have 
+- If all clients have different hashes: Cheating used
+
+
+
+
+Delay input
+- Every client tracks the time is takes for a packet to arrive. This is (active frame at that time - last received packet frame). If that value exceeds a limit (like 10 frames) the information is delayed
+- Current delay is compared with default delay to that client to mitigate natural occuring lags (but is saved as potential delay attempt)
+- Issue: Doubled connection time for already slow connections
+
+
+
+
+Send faulty win
+- When no competitive environment: Show what the client believes to be true, if a cheater gets a win screen after losing that is fine as the winning client still gets the correct screen
+- Give the option to player to blacklist certain players they believe to be cheating
+
+- with server: all clients send win state to server. If they dont match, the server requests the entire game input of all clients, and replays the game, giving it 
+- Issues: the server will need to determine which input to choose
+- Server will take the input that each client provided. Maybe still not possible to completely verify game
+- input is routed over the server anyway
+
+
+-> Proveide two two modes: Ranked & Casual
+
+Ranked: Input is transferred over server giving a competetive environment
+Casual: Checks if any server / server capacity is available - uses server if possible. Will use p2p when not
+
+
+Serverless Ranked
+- Every client stores their rank in a hidden steam leaderboard
+- use obfuscating to hide this process (like act like saving config files
+
+- stores a hash containing the rank
+- if the client that verifies the other clients rank and discovers a faulty hash, it will display a cheater rank, the cheater (and friends) themselves will not see this
+
+
+
+
+Determine culprit in case of desync
+
+- 
+
+- send the input to others by sending them over other clients, that are unable to modify these packets as they are encryopteds with keys only the two other clients know
+
+
+
+Every client shares a key with every other client (5 clients, 5 different keys)
+The input is hashed with the key 5 time and all 5 are send to all clients
+When receiving an input packet (consisting out of a list of inputs from the past frames and all other hashes from the clients), this is stored in a list and compared. The hashes and game state hashes can be compared by every client to determine the cheater
+
+- A client expects 
+
+
+in case of some clients having wrong states
+
+- 1 of 5 wrong: correct 1 client and give a warning (saved on the other clients devices)
+- 
+
+
+
+Workflow (considering 5 clients)
+- Every client has a private and a public key
+- Every frame the client generates 5 input hashes with the input of current frame and the public key of the other clients. 
+
+a packet is send to every other client containig with some data
+ - the input of the current frame hashed with 
+
+
+- when a client receives a game state 
 
 
 Questions
@@ -194,6 +317,17 @@ Server architecture
 - Server saves the connection speed between a server and client
 - The server does not save the game data, when a new client joins or a desync occurs, the server requests the game data from one of the clients and send it to the client
 - 
+
+
+
+
+
+
+
+
+
+
+
 
 
 

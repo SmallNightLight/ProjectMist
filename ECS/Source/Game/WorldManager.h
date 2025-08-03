@@ -4,7 +4,7 @@
 #include "GameSettings.h"
 #include "../ECS/ECSSettings.h"
 #include "../ECS/ECS.h"
-#include "../ECS/CacheManager.h"
+#include "CacheManager.h"
 
 #include <array>
 
@@ -15,7 +15,7 @@ public:
     {
         for(short layer = 0; layer < MaxRollBackFrames; ++layer)
         {
-            layers[layer] = Layer(&cacheManager);
+            layers[layer] = Layer();
         }
     }
 
@@ -47,6 +47,17 @@ public:
         return std::static_pointer_cast<T>(worlds[worldType][targetLayerIndex]);
     }
 
+    template<typename T>
+    std::array<std::shared_ptr<T>, MaxRollBackFrames> GetAllWorlds(WorldType worldType)
+    {
+        std::array<std::shared_ptr<T>, MaxRollBackFrames> result;
+        for (uint8_t i = 0; i < MaxRollBackFrames; ++i)
+        {
+            result[i] = std::static_pointer_cast<T>(worlds[worldType][i]);
+        }
+        return result;
+    }
+
     Layer& GetCurrentLayer()
     {
         return layers[lastLayerIndex];
@@ -71,12 +82,11 @@ public:
     }
 
     //Rollback the amount of specified frames from the current frame
-    bool Rollback(unsigned int frames)
+    bool Rollback(FrameNumber frames)
     {
         if (rollbackCount + frames >= MaxRollBackFrames) return false;
 
-        lastLayerIndex -= frames;
-        lastLayerIndex = (lastLayerIndex % MaxRollBackFrames + MaxRollBackFrames) % MaxRollBackFrames; //Todo: lol
+        lastLayerIndex = (lastLayerIndex + MaxRollBackFrames - frames) % MaxRollBackFrames;
         rollbackCount += frames;
 
         return true;
@@ -87,17 +97,10 @@ public:
         rollbackCount = MaxRollBackFrames - 1;
     }
 
-    CacheManager* GetCacheManager()
-    {
-        return &cacheManager;
-    }
-
 private:
-    int lastLayerIndex;
-    int rollbackCount;
-    int worldCount;
+    uint8_t lastLayerIndex;
+    FrameNumber rollbackCount;
+    uint8_t worldCount;
     std::array<Layer, MaxRollBackFrames> layers;
     std::array<std::array<std::shared_ptr<World>, MaxRollBackFrames>, MAXWORLDS> worlds { };
-
-    CacheManager cacheManager;
 };

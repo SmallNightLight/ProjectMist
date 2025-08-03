@@ -77,12 +77,17 @@ public:
         layer.RegisterSystem<MovingSystem>();
     }
 
+    void InitializeCache(CacheManager* cache)
+    {
+        rigidBodySystem->InitializeCache(cache->GetCollisionCache());
+    }
+
     void InitializeCamera(Layer& layer)
     {
         camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
-    void OverwriteFrame(uint32_t frame, std::mt19937 otherNumberGenerator)
+    void OverwriteFrame(FrameNumber frame, std::mt19937 otherNumberGenerator)
     {
         currentFrame = frame;
         numberGenerator = otherNumberGenerator;
@@ -129,11 +134,10 @@ public:
 
         Fixed16_16 stepTime = deltaTime / PhysicsIterations;
 
-        for (int i = 0; i < PhysicsIterations; ++i)
+        for (uint8_t i = 0; i < PhysicsIterations; ++i)
         {
             rigidBodySystem->ApplyVelocity(stepTime);
             rigidBodySystem->HandleCollisions(currentFrame, i, id);
-            rigidBodySystem->UpdateState();
         }
 
         ++currentFrame;
@@ -173,13 +177,13 @@ public:
         {
             RenderDebugInfo(rigidBodySystem->collisionsRE);
 
-            circleColliderRenderer->RenderAABB();
-            boxColliderRenderer->RenderAABB();
-            polygonColliderRenderer->RenderAABB();
+            circleColliderRenderer->RenderDebugOverlay();
+            boxColliderRenderer->RenderDebugOverlay();
+            polygonColliderRenderer->RenderDebugOverlay();
         }
     }
 
-    uint32_t GetCurrentFrame() const
+    FrameNumber GetCurrentFrame() const
     {
         return currentFrame;
     }
@@ -207,7 +211,7 @@ public:
         std::vector<Signature> signatures;
 
         //Write current frame
-        stream.WriteInteger<uint32_t>(currentFrame);
+        stream.WriteInteger<FrameNumber>(currentFrame);
 
         //Write number generator
         SerializeGenerator(stream, numberGenerator);
@@ -229,10 +233,10 @@ public:
     }
 
     ///Deserializes the stream and overwrites the layer data. Only use this methode in a try loop
-    void Deserialize(Stream& stream, CacheManager* cacheManager)
+    void Deserialize(Stream& stream)
     {
         //Create a new layer and then Overwrite the existing layer with the new layer
-        Layer layer = Layer(cacheManager);
+        Layer layer = Layer();
         RegisterComponentsForLayer(layer);
         RegisterSystemsForLayer(layer);
         layer.CreateEntity(); //Create an entity that would be the camera - essential for maintaining a correct entity queue
@@ -241,7 +245,7 @@ public:
         std::vector<Signature> signatures;
         std::array<uint32_t, MAXENTITIES> entityIndexes;
 
-        currentFrame = stream.ReadInteger<uint32_t>();
+        currentFrame = stream.ReadInteger<FrameNumber>();
 
         //Read the number generator
         DeserializeGenerator(stream, numberGenerator);
@@ -533,7 +537,7 @@ private:
 
 private:
     Layer& baseLayer;
-    uint32_t currentFrame;
+    FrameNumber currentFrame;
     std::mt19937 numberGenerator;
 
     //Systems

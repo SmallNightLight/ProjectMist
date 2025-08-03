@@ -3,19 +3,28 @@
 #include "../../Math/FixedTypes.h"
 #include "../../Math/Stream.h"
 
-struct CircleCollider
+class CircleCollider
 {
-    Fixed16_16 Radius;
-
+public:
     CircleCollider() : Radius(0) { }
+
     explicit CircleCollider(Fixed16_16 _radius) : Radius(_radius) { }
+
     explicit CircleCollider(Stream& stream)
     {
         Radius = stream.ReadFixed();
+    }
+
+    inline constexpr Fixed16_16 GetRadius() const
+    {
+        return Radius;
     }
 
     void Serialize(Stream& stream) const
     {
           stream.WriteFixed(Radius);
     }
+
+private:
+    Fixed16_16 Radius;
 };

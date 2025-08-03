@@ -1,12 +1,13 @@
 #pragma once
 
-struct PolygonCollider
+//PolygonCollider cannot change shape after it has been created
+class PolygonCollider
 {
-    std::vector<Vector2> Vertices { };
-    std::vector<Vector2> TransformedVertices { };
+public:
+    PolygonCollider() { }
 
-    PolygonCollider() = default;
     explicit PolygonCollider(const std::vector<Vector2>& vertices) : Vertices(vertices), TransformedVertices(Vertices) { }
+
     explicit PolygonCollider(Stream& stream)
     {
         //Read Vertices
@@ -42,4 +43,8 @@ struct PolygonCollider
             stream.WriteVector2(vertex);
         }
     }
+
+public:
+    std::vector<Vector2> Vertices { };
+    std::vector<Vector2> TransformedVertices { };
 };

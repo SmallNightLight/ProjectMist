@@ -65,7 +65,7 @@ add_executable(ECS Source/main.cpp
         Source/Game/Input/Input.h
         Source/Game/Input/InputCollection.h
         Source/Game/Input/Input.cpp
-        Source/ECS/CacheManager.h
+        Source/Game/CacheManager.h
         Source/Physics/Collision/CollisionCheckInfo.h
         Source/Physics/Enums/HashType.h
         Source/Physics/Enums/HashUpdateType.h

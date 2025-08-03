@@ -5,7 +5,6 @@ class CollisionDetection
 public:
       explicit  CollisionDetection(Layer* world)
       {
-            rigidBodyDataCollection = world->GetComponentCollection<RigidBodyData>();
             circleColliderCollection = world->GetComponentCollection<CircleCollider>();
             boxColliderCollection = world->GetComponentCollection<BoxCollider>();
             polygonColliderCollection = world->GetComponentCollection<PolygonCollider>();
@@ -119,13 +118,13 @@ public:
             CircleCollider& circleCollider2 = circleColliderCollection->GetComponent(entity2);
 
             //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABB(circleCollider1.Radius).Overlaps(colliderTransform2.GetAABB(circleCollider2.Radius)))
+            if (!colliderTransform1.GetAABB(circleCollider1.GetRadius()).Overlaps(colliderTransform2.GetAABB(circleCollider2.GetRadius())))
             {
                   return false;
             }
 
             Fixed16_16 distance = colliderTransform1.Position.Distance(colliderTransform2.Position);
-            Fixed16_16 totalRadius = circleCollider1.Radius + circleCollider2.Radius;
+            Fixed16_16 totalRadius = circleCollider1.GetRadius() + circleCollider2.GetRadius();
 
             if (distance >= totalRadius)
             {
@@ -142,7 +141,7 @@ public:
             resultInfo.IsDynamic2 = colliderTransform2.IsDynamic;
 
             CollisionCorrection(resultInfo, false, colliderTransform1, colliderTransform2);
-            GetContactCircleCircle(resultInfo, colliderTransform1.Position, colliderTransform2.Position, circleCollider1.Radius);
+            GetContactCircleCircle(resultInfo, colliderTransform1.Position, colliderTransform2.Position, circleCollider1.GetRadius());
 
             return true;
       }
@@ -158,7 +157,7 @@ public:
 
             const std::vector<Vector2>& vertices = colliderTransform2.GetTransformedVertices(boxCollider2.TransformedVertices, boxCollider2.Vertices);
 
-            return CircleConvexCollision(resultInfo, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.Radius, vertices);
+            return CircleConvexCollision(resultInfo, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.GetRadius(), vertices);
       }
 
       bool CirclePolygonCollision(CollisionInfo& resultInfo, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
@@ -172,7 +171,7 @@ public:
 
             const std::vector<Vector2>& vertices = colliderTransform2.GetTransformedVertices(polygonCollider2.TransformedVertices, polygonCollider2.Vertices);
 
-            return CircleConvexCollision(resultInfo, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.Radius, vertices);
+            return CircleConvexCollision(resultInfo, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.GetRadius(), vertices);
       }
 
       bool BoxBoxCollision(CollisionInfo& resultInfo, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
@@ -503,7 +502,6 @@ private:
       }
 
 private:
-      std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
       std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
       std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
       std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;

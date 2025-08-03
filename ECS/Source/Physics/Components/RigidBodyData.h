@@ -19,51 +19,61 @@ struct RigidBodyData
     Fixed16_16 StaticFriction; //TODO: add materials and only save the index instead of he entire friction value (Restitution, StaticFriction, DynamicFriction)
     Fixed16_16 DynamicFriction;
 
+    uint8_t GravityScale;
+    uint8_t MassScale;
+
     bool Active;
-    Vector2 LastPosition; //TODO: remove this
-    Fixed16_16 LastRotation;
+    Vector2 LastPosition;
+    Vector2 LastVelocity;
+    Fixed16_16 LastAngularVelocity;
 
 private:
-    uint32_t Hash;              //The final hash that is used for caching
-    uint32_t BaseHash;          //The base hash for variables that do not change often
-    //HashType EntityHashType;    //Declares which variables are expected to change often
+    uint32_t Hash;                      //The final hash that is used for caching
+    uint32_t BaseHash;                  //The base hash for variables that do not change often
+    //HashType EntityHashType;          //Declares which variables are expected to change often
     HashUpdateType HashUpdateRequired;
 
 public:
     RigidBodyData() : //TODO: Add position and rotation to this class to improve? variables double?
         Velocity(0, 0),
-        AngularVelocity(0, 0),
+        AngularVelocity(0),
         Force(0, 0), InverseMass(1),
         Restitution(0, 5),
         InverseInertia(1),
         StaticFriction(0, 6),
         DynamicFriction(0, 4),
+        GravityScale(1),
+        MassScale(1),
         Active(true),
         LastPosition(0, 0),
-        LastRotation(0),
+        LastVelocity(0, 0),
+        LastAngularVelocity(0),
         Hash(0),
         BaseHash(0),
         //EntityHashType(DynamicHashType),
         HashUpdateRequired(HashUpdateType::FullUpdate) { }
 
-    constexpr RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area, const Fixed16_16& inertia, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction) //, HashType hashType = DynamicHashType)
-        : Velocity(0, 0),
-          AngularVelocity(0, 0),
-          Force(0, 0),
-          InverseMass(1 / mass),
-          Restitution(restitution),
-          InverseInertia(1 / inertia),
-          StaticFriction(staticFriction),
-          DynamicFriction(dynamicFriction),
-          Active(true),
-          LastPosition(0, 0),
-          LastRotation(0),
-          Hash(0),
-          BaseHash(0),
-          //EntityHashType(hashType),
-          HashUpdateRequired(HashUpdateType::FullUpdate) { } //ToDO: No area use?
+    constexpr RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area, const Fixed16_16& inertia, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction) : //, HashType hashType = DynamicHashType)
+        Velocity(0, 0),
+        AngularVelocity(0),
+        Force(0, 0),
+        InverseMass(1 / mass),
+        Restitution(restitution),
+        InverseInertia(1 / inertia),
+        StaticFriction(staticFriction),
+        DynamicFriction(dynamicFriction),
+        GravityScale(1),
+        MassScale(1),
+        Active(true),
+        LastPosition(0, 0),
+        LastVelocity(0, 0),
+        LastAngularVelocity(0),
+        Hash(0),
+        BaseHash(0),
+        //EntityHashType(hashType),
+        HashUpdateRequired(HashUpdateType::FullUpdate) { } //ToDO: No area use?
 
-    explicit RigidBodyData(Stream& stream)
+    explicit RigidBodyData(Stream& stream)//TODO EASY
     {
         Velocity = stream.ReadVector2();
         AngularVelocity = stream.ReadFixed();
@@ -76,7 +86,8 @@ public:
 
         Active = true;
         LastPosition = Vector2(0, 0);
-        LastRotation = Fixed16_16 (0);
+        LastVelocity = Vector2(0, 0);
+        LastAngularVelocity = Fixed16_16(0);
 
         HashUpdateRequired = HashUpdateType::FullUpdate;
     }
@@ -185,7 +196,7 @@ public:
             return Fixed16_16(0);
         }
 
-        //Step 1: Calculate the centroid of the polygon
+        //Calculate the centroid of the polygon
         Fixed16_16 centroidX(0);
         Fixed16_16 centroidY(0);
         Fixed16_16 area = Fixed16_16(0);
@@ -206,7 +217,7 @@ public:
         centroidX *= inverseArea6;
         centroidY *= inverseArea6;
 
-        //Step 2: Calculate the moment of inertia about the centroid
+        //Calculate the moment of inertia about the centroid
         Fixed16_16 inertia = Fixed16_16(0);
 
         for (size_t i = 0; i < vertices.size(); ++i)

@@ -96,6 +96,11 @@ public:
         return m_value;
     }
 
+    constexpr inline IntermediateType GetValueIntermediate()
+    {
+        return static_cast<IntermediateType>(m_value);
+    }
+
     constexpr inline IntermediateType GetFRACTION_MULT() const noexcept
     {
         return FRACTION_MULT;

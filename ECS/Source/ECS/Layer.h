@@ -4,7 +4,6 @@
 #include "EntityManager.h"
 #include "ComponentManager.h"
 #include "SystemManager.h"
-#include "CacheManager.h"
 
 #include <vector>
 
@@ -19,11 +18,6 @@ public:
         entityManager = EntityManager();
         componentManager = ComponentManager();
         systemManager = SystemManager();
-    }
-
-    Layer(CacheManager* cacheManager) : Layer()
-    {
-        CacheManager = cacheManager;
     }
 
     void Overwrite(const Layer& other)
@@ -217,9 +211,6 @@ public:
     {
         ignoreSignatureChanged = value;
     }
-
-public:
-    CacheManager* CacheManager;
 
 private:
     EntityManager entityManager;

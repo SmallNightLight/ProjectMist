@@ -10,6 +10,7 @@ public:
         colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
         circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
         colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
+        rigidBodyDataCollection = layer->GetComponentCollection<RigidBodyData>();
     }
 
     [[nodiscard]] Signature GetSignature() const override
@@ -34,7 +35,7 @@ public:
 
             auto x = transform.Position.X.ToFloating<float>();
             auto y = transform.Position.Y.ToFloating<float>();
-            auto radius = circleCollider.Radius.ToFloating<float>();
+            auto radius = circleCollider.GetRadius().ToFloating<float>();
             int numSegments = 100;
 
             //Draw filled circle
@@ -65,7 +66,7 @@ public:
 
             //Draw line for circle rotation
             Vector2 v1 = Vector2::Zero();
-            Vector2 v2 = Vector2(circleCollider.Radius, Fixed16_16(0));
+            Vector2 v2 = Vector2(circleCollider.GetRadius(), Fixed16_16(0));
 
             v1 = transform.Transform(v1);
             v2 = transform.Transform(v2);
@@ -82,18 +83,32 @@ public:
         glDisable(GL_LINE_SMOOTH);
     }
 
-    void RenderAABB()
+    void RenderDebugOverlay() const
     {
         for (const Entity& entity : Entities)
         {
             ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
             CircleCollider& circleCollider = circleColliderCollection->GetComponent(entity);
 
-            glColor3ub(128, 128, 128);
+            bool active = false;
+            if (rigidBodyDataCollection->HasComponent(entity))
+            {
+                active = rigidBodyDataCollection->GetComponent(entity).Active;
+            }
+
+            if (active)
+            {
+                glColor3ub(128, 128, 128);
+            }
+            else
+            {
+                glColor3ub(0, 255, 0);
+            }
+
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = transform.GetAABB(circleCollider.Radius);
+            AABB boundingBox = transform.GetAABB(circleCollider.GetRadius());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
@@ -107,4 +122,5 @@ private:
     std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
     std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
     std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
+    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
 };

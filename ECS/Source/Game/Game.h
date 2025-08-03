@@ -120,6 +120,11 @@ public:
                 isPaused = !isPaused;
             }
 
+            if (isPaused && otherInput.GetKeyDown(GLFW_KEY_RIGHT))
+            {
+                Update(window, fixedDelta);
+            }
+
             if (otherInput.GetKeyDown(GLFW_KEY_ESCAPE))
             {
                 glfwSetWindowShouldClose(window, true);
@@ -156,9 +161,7 @@ public:
             }
 
             //Render frame
-            glClear(GL_COLOR_BUFFER_BIT);
             Render();
-            glfwSwapBuffers(window);
 
             //Handle input
             playerInput.Update();
@@ -180,6 +183,9 @@ public:
                 std::this_thread::sleep_for(std::chrono::duration<double>(sleepDuration));
                 sleepTime += sleepDuration;
             }
+
+            //auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
+            //if (oldPhysicsWorld->GetCurrentFrame() >= 100) break;
         }
 
         //Stop glfw
@@ -192,13 +198,21 @@ public:
     void AddWorlds()
     {
         physicsWorldType = worldManager.AddWorld<PhysicsWorld>();
+
+        //Add objects to current world
         worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects();
+
+        //Setup cache on all layers
+        for (auto physicsWorld : worldManager.GetAllWorlds<PhysicsWorld>(physicsWorldType))
+        {
+            physicsWorld->InitializeCache(&cacheManager); //TODO: when doing memecp for layer copy, the pointer to the cache stays the same so this can be optimized for the first layer
+        }
     }
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
         auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        uint32_t currentFrame = oldPhysicsWorld->GetCurrentFrame();
+        FrameNumber currentFrame = oldPhysicsWorld->GetCurrentFrame();
 
         //Update the input of this client
         InputData input = playerInput.GetInputData(currentFrame);
@@ -206,17 +220,17 @@ public:
         clientHandler.UpdateInput(clientHandler.GetClientID(), input);
 
         //Update the input of other clients and handle other packets
-        clientHandler.ReadMessages(oldPhysicsWorld, worldManager.GetCacheManager());
+        clientHandler.ReadMessages(oldPhysicsWorld);
 
-        uint32_t rollbackFrames = clientHandler.GetRollbacks(oldPhysicsWorld->GetCurrentFrame());
+        FrameNumber rollbackFrames = clientHandler.GetRollbacks(oldPhysicsWorld->GetCurrentFrame());
 
         if (RollbackDebugMode)
             rollbackFrames = MaxRollBackFrames - 1;
 
-        uint32_t actualRollbacks = 0;
-
         if (rollbackFrames > 0)
         {
+            FrameNumber actualRollbacks = 0;
+
             if (worldManager.Rollback(rollbackFrames))
             {
                 actualRollbacks = rollbackFrames;
@@ -259,8 +273,12 @@ public:
 
     void Render()
     {
+        glClear(GL_COLOR_BUFFER_BIT);
+
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         physicsWorld->Render();
+
+        glfwSwapBuffers(window);
     }
 
     void Serialize()
@@ -275,7 +293,7 @@ public:
     {
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         Stream temporaryStream = Stream(serializedStream);
-        physicsWorld->Deserialize(temporaryStream, worldManager.GetCacheManager());
+        physicsWorld->Deserialize(temporaryStream);
         worldManager.PreventFurtherRollback();
     }
 
@@ -288,6 +306,8 @@ private:
 private:
     WorldManager worldManager;
     WorldType physicsWorldType;
+
+    CacheManager cacheManager;
 
     GLFWwindow* window;
 
