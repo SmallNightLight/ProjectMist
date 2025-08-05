@@ -193,6 +193,7 @@ public:
             check.AngularVelocity2 = rigidBodyData2.LastAngularVelocity;
         }
 
+        check.CalculateHash();
         return check;
     }
 

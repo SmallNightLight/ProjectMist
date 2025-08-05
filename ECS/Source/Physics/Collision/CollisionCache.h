@@ -2,35 +2,37 @@
 
 #include "CollisionCheckInfo.h"
 #include "CollisionResponseInfo.h"
+#include "CollisionPairData.h"
+#include "CollisionTable.h"
+#include "CollisionTable2.h"
+#include "CollisionResponseTable.h"
+#include "CollisionResponseTable2.h"
 #include "../../ECS/ECSSettings.h"
 
 #include <vector>
-#include <unordered_map>
-
-#include "CollisionPairData.h"
 
 class CollisionCache
 {
 public:
-    CollisionCache(FrameNumber depth, FrameNumber startFrame = 0) : frameDepth(depth), oldestFrame(startFrame), startIndex(0), frameCount(0)
+    explicit CollisionCache(FrameNumber depth, FrameNumber startFrame = 0) : frameDepth(depth), oldestFrame(startFrame), startIndex(0), frameCount(0)
     {
         collisionPairData.resize(frameDepth);
         collisionData.resize(frameDepth);
     }
 
-    constexpr inline void CacheCollision(FrameNumber frame, const CollisionCheckInfo& check, const CollisionResponseInfo& responseInfo) //TODO: make sure that entity 1 < 2 in collision detection
+    inline void CacheCollision(FrameNumber frame, const CollisionCheckInfo& check, const CollisionResponseInfo& responseInfo)
     {
-        collisionData[GetIndex(frame)][check] = responseInfo;
+        collisionData[GetIndex(frame)].CacheCollision(check, responseInfo);
     }
 
-    constexpr inline void CacheCollisionPair(FrameNumber frame, const CollisionPairData& collisionPair)
+    inline void CacheCollisionPair(FrameNumber frame, const CollisionPairData& collisionPair)
     {
-        collisionPairData[GetIndex(frame)][collisionPair] = true;
+        collisionPairData[GetIndex(frame)].CacheCollisionPair(collisionPair, true);
     }
 
-    constexpr inline void CacheNonCollision(FrameNumber frame, const CollisionPairData& collisionPair)
+    inline void CacheNonCollision(FrameNumber frame, const CollisionPairData& collisionPair)
     {
-        collisionPairData[GetIndex(frame)][collisionPair] = false;
+        collisionPairData[GetIndex(frame)].CacheCollisionPair(collisionPair, false);
     }
 
     bool UpdateFrame(FrameNumber frame)
@@ -59,8 +61,8 @@ public:
             {
                 //Clear cache
                 uint32_t clearIndex = (startIndex + i) % frameDepth;
-                collisionPairData[clearIndex] = std::unordered_map<CollisionPairData, bool, CollisionPairDataHash>();
-                collisionData[clearIndex] = std::unordered_map<CollisionCheckInfo, CollisionResponseInfo, CollisionCheckInfoHash>();
+                collisionPairData[clearIndex].Reset();
+                collisionData[clearIndex].Reset();
             }
 
             //Update the oldestFrame and adjust startIndex accordingly
@@ -73,35 +75,22 @@ public:
         return true;
     }
 
-    bool TryGetPairData(FrameNumber frame, const CollisionPairData& pairData, bool& outCollision)
+    bool TryGetPairData(FrameNumber frame, const CollisionPairData& pairData, bool& outCollision) const
     {
-        assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldestFrame");
+        assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldest frame");
         assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
 
-        uint32_t index = GetIndex(frame);
-        auto collisionPair = collisionPairData[index].find(pairData);
-
-        if (collisionPair == collisionPairData[index].end()) return false;
-
-        outCollision = collisionPair->second;
-        return true;
+        return collisionPairData[GetIndex(frame)].TryGetCollisionPair(pairData, outCollision);
     }
 
-    bool TryGetCollisionData(FrameNumber frame, const CollisionCheckInfo& check, CollisionResponseInfo& outResponseInfo)
+    bool TryGetCollisionData(FrameNumber frame, const CollisionCheckInfo& check, CollisionResponseInfo& outResponseInfo) const
     {
         assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldestFrame");
         assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
 
         uint32_t index = GetIndex(frame);
 
-        auto collisionResponseData = collisionData[index].find(check);
-        if (collisionResponseData != collisionData[index].end())
-        {
-            outResponseInfo = collisionResponseData->second;
-            return true;
-        }
-
-        return false;
+        return collisionData[index].TryGetCollision(check, outResponseInfo);
     }
 
 private:
@@ -112,8 +101,11 @@ private:
 
 private:
     //Can use non-deterministic map as it not used in iteration
-    std::vector<std::unordered_map<CollisionPairData, bool, CollisionPairDataHash>> collisionPairData; //Used to determine if a collision exist
-    std::vector<std::unordered_map<CollisionCheckInfo, CollisionResponseInfo, CollisionCheckInfoHash>> collisionData; //Used to get the exact collision response data
+    std::vector<CollisionTable2> collisionPairData;
+    std::vector<CollisionResponseTable> collisionData; //Used to get the exact collision response data
+
+    //CollisionResponseTable uses external hash table which gives 3.4ms (better)
+    //CollisionResponseTable2 uses custom hash table which is 3.7ms
 
     FrameNumber frameDepth;
 

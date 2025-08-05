@@ -20,7 +20,20 @@ struct CollisionCheckInfo
     uint8_t MassScale1;
     uint8_t MassScale2;
 
-    CollisionCheckInfo() = default;
+    uint32_t Hash;
+
+    inline constexpr CollisionCheckInfo() :
+        Entity1(0),
+        Entity2(0),
+        Velocity1(0, 0),
+        Velocity2(0, 0),
+        AngularVelocity1(0),
+        AngularVelocity2(0),
+        GravityScale1(0),
+        GravityScale2(0),
+        MassScale1(0),
+        MassScale2(0),
+        Hash(0) { }
 
     CollisionCheckInfo(Entity entity1, Entity entity2, Vector2 velocity1,Vector2 velocity2, Fixed16_16 angularVelocity1, Fixed16_16 angularVelocity2, uint8_t gravityScale1, uint8_t gravityScale2, uint8_t massScale1, uint8_t massScale2) :
         Entity1(entity1),
@@ -32,7 +45,26 @@ struct CollisionCheckInfo
         GravityScale1(gravityScale1),
         GravityScale2(gravityScale2),
         MassScale1(massScale1),
-        MassScale2(massScale2) { }
+        MassScale2(massScale2)
+    {
+        //Calculate hash
+        CalculateHash();
+    }
+
+    inline void CalculateHash()
+    {
+        Hash = CombineHash(static_cast<uint32_t>(Entity1), static_cast<uint32_t>(Entity2));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity1.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity1.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity2.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity2.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(AngularVelocity1.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(AngularVelocity2.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(GravityScale1));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(GravityScale2));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(MassScale1));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(MassScale2));
+    }
 
     bool operator==(const CollisionCheckInfo& otherCollisionCheckInfo) const
     {
@@ -58,20 +90,8 @@ struct CollisionCheckInfo
 
 struct CollisionCheckInfoHash
 {
-    std::size_t operator()( const CollisionCheckInfo& checkInfo ) const
+    inline std::size_t operator()( const CollisionCheckInfo& checkInfo ) const
     {
-        uint32_t hash = CombineHash(static_cast<uint32_t>(checkInfo.Entity1), static_cast<uint32_t>(checkInfo.Entity2));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.Velocity1.X.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.Velocity1.Y.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.Velocity2.X.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.Velocity2.Y.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.AngularVelocity1.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.AngularVelocity2.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.GravityScale1));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.GravityScale2));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.MassScale1));
-        hash = CombineHash(hash, static_cast<uint32_t>(checkInfo.MassScale2));
-
-        return static_cast<std::size_t>(hash);
+        return checkInfo.Hash;
     }
 };

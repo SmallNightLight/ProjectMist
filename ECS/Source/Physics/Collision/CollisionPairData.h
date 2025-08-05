@@ -15,21 +15,27 @@ struct CollisionPairData
     Fixed16_16 Rotation1;
     Fixed16_16 Rotation2;
 
+    uint32_t Hash;
+
     CollisionPairData() = default;
 
-    CollisionPairData(
-       Entity entity1,
-       Entity entity2,
-       Vector2 position1,
-       Vector2 position2,
-       Fixed16_16 rotation1,
-       Fixed16_16 rotation2) :
+    CollisionPairData(Entity entity1, Entity entity2, Vector2 position1, Vector2 position2, Fixed16_16 rotation1, Fixed16_16 rotation2) :
         Entity1(entity1),
         Entity2(entity2),
         Position1(position1),
         Position2(position2),
         Rotation1(rotation1),
-        Rotation2(rotation2) { }
+        Rotation2(rotation2)
+    {
+        //Calculate hash
+        Hash = CombineHash(static_cast<uint32_t>(Entity1), static_cast<uint32_t>(Entity2));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Position1.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Position1.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Position2.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Position2.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Rotation1.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Rotation2.raw_value()));
+    }
 
     bool operator==(const CollisionPairData& otherCollisionPairData) const
     {
@@ -50,16 +56,8 @@ struct CollisionPairData
 
 struct CollisionPairDataHash
 {
-    std::size_t operator()( const CollisionPairData& collisionPairData ) const
+    inline std::size_t operator()(const CollisionPairData& collisionPairData) const
     {
-        uint32_t hash = CombineHash(static_cast<uint32_t>(collisionPairData.Entity1), static_cast<uint32_t>(collisionPairData.Entity2));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionPairData.Position1.X.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionPairData.Position1.Y.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionPairData.Position2.X.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionPairData.Position2.Y.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionPairData.Rotation1.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionPairData.Rotation2.raw_value()));
-
-        return static_cast<std::size_t>(hash);
+        return collisionPairData.Hash;
     }
 };

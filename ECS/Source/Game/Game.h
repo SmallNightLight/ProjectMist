@@ -78,6 +78,9 @@ public:
         //Time tracking variables
         double updateRenderTime = 0.0;
         double sleepTime = 0.0;
+        double averageFrameTime = 0.0;
+
+        uint32_t frameCount = 0;
 
         //Start client thread
         clientHandler.Start();
@@ -177,6 +180,9 @@ public:
             double targetFrameTime = fixedDelta.ToFloating<float>();
             double elapsedFrameTime = frameEndTime - frameStartTime;
 
+            ++frameCount;
+            averageFrameTime += elapsedFrameTime;
+
             if (elapsedFrameTime < targetFrameTime)
             {
                 double sleepDuration = targetFrameTime - elapsedFrameTime;
@@ -187,6 +193,8 @@ public:
             auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
             if (oldPhysicsWorld->GetCurrentFrame() >= 1000) break;
         }
+
+        std::cout << "Average frame time (Lower is better) ms: " << 1000 * averageFrameTime / frameCount << std::endl;
 
         //Stop glfw
         glfwDestroyWindow(window);

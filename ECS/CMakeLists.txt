@@ -70,6 +70,11 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Enums/HashType.h
         Source/Physics/Enums/HashUpdateType.h
         Source/Physics/Collision/CollisionPairData.h
+        Source/Physics/Collision/CollisionTable.h
+        Source/Physics/Collision/CollisionTable2.h
+        Source/Physics/Collision/CollisionResponseTable.h
+        Source/Physics/Collision/CollisionResponseTable2.h
+        Source/Physics/Collision/unordered_dense.h
 )
 
 add_subdirectory(Source/Math)
