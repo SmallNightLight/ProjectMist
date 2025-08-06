@@ -155,7 +155,7 @@ public:
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            const std::vector<Vector2>& vertices = colliderTransform2.GetTransformedVertices(boxCollider2.TransformedVertices, boxCollider2.Vertices);
+            Vector2Span vertices = colliderTransform2.GetTransformedVertices(boxCollider2.GetTransformedVertices(), boxCollider2.GetVertices());
 
             return CircleConvexCollision(resultInfo, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.GetRadius(), vertices);
       }
@@ -169,7 +169,7 @@ public:
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             PolygonCollider& polygonCollider2 = polygonColliderCollection->GetComponent(entity2);
 
-            const std::vector<Vector2>& vertices = colliderTransform2.GetTransformedVertices(polygonCollider2.TransformedVertices, polygonCollider2.Vertices);
+            Vector2Span vertices = colliderTransform2.GetTransformedVertices(polygonCollider2.GetTransformedVertices(), polygonCollider2.GetVertices());
 
             return CircleConvexCollision(resultInfo, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.GetRadius(), vertices);
       }
@@ -183,8 +183,8 @@ public:
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            const std::vector<Vector2>& vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.TransformedVertices, boxCollider1.Vertices);
-            const std::vector<Vector2>& vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2.TransformedVertices, boxCollider2.Vertices);
+            Vector2Span vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.GetTransformedVertices(), boxCollider1.GetVertices());
+            Vector2Span vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2.GetTransformedVertices(), boxCollider2.GetVertices());
 
             return ConvexConvexCollision(resultInfo, false, entity1, entity2, colliderTransform1, colliderTransform2, vertices1, vertices2);
       }
@@ -198,8 +198,8 @@ public:
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             PolygonCollider& polygonCollider2 = polygonColliderCollection->GetComponent(entity2);
 
-            const std::vector<Vector2>& vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.TransformedVertices, boxCollider1.Vertices);
-            const std::vector<Vector2>& vertices2 = colliderTransform2.GetTransformedVertices(polygonCollider2.TransformedVertices, polygonCollider2.Vertices);
+            Vector2Span vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.GetTransformedVertices(), boxCollider1.GetVertices());
+            Vector2Span vertices2 = colliderTransform2.GetTransformedVertices(polygonCollider2.GetTransformedVertices(), polygonCollider2.GetVertices());
 
             return ConvexConvexCollision(resultInfo, swap, entity1, entity2, colliderTransform1, colliderTransform2, vertices1, vertices2);
       }
@@ -213,13 +213,13 @@ public:
             PolygonCollider& polygonCollider1 = polygonColliderCollection->GetComponent(entity1);
             PolygonCollider& polygonCollider2 = polygonColliderCollection->GetComponent(entity2);
 
-            const std::vector<Vector2>& vertices1 = colliderTransform1.GetTransformedVertices(polygonCollider1.TransformedVertices, polygonCollider1.Vertices);
-            const std::vector<Vector2>& vertices2 = colliderTransform2.GetTransformedVertices(polygonCollider2.TransformedVertices, polygonCollider2.Vertices);
+            Vector2Span vertices1 = colliderTransform1.GetTransformedVertices(polygonCollider1.GetTransformedVertices(), polygonCollider1.GetVertices());
+            Vector2Span vertices2 = colliderTransform2.GetTransformedVertices(polygonCollider2.GetTransformedVertices(), polygonCollider2.GetVertices());
 
             return ConvexConvexCollision(resultInfo, false, entity1, entity2, colliderTransform1, colliderTransform2, vertices1, vertices2);
       }
 
-      static bool CircleConvexCollision(CollisionInfo& resultInfo, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const Fixed16_16& circleRadius, const std::vector<Vector2>& vertices)
+      static bool CircleConvexCollision(CollisionInfo& resultInfo, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const Fixed16_16& circleRadius, Vector2Span vertices)
       {
             //First perform an AABB check, to test if the objects are even able to collide
             if (!colliderTransform1.GetAABB(circleRadius).Overlaps(colliderTransform2.GetAABBFromTransformed(vertices)))
@@ -230,10 +230,10 @@ public:
 
             resultInfo.Depth = std::numeric_limits<Fixed16_16>::max();
 
-            for(int i = 0; i < vertices.size(); ++i)
+            for(int i = 0; i < vertices.size; ++i)
             {
                   Vector2 v1 = vertices[i];
-                  Vector2 v2 = vertices[(i + 1) % vertices.size()];
+                  Vector2 v2 = vertices[(i + 1) % vertices.size];
 
                   Vector2 edge = v2 - v1;
                   Vector2 axis = edge.Perpendicular().Normalize();
@@ -253,7 +253,7 @@ public:
             return true;
       }
 
-      static bool ConvexConvexCollision(CollisionInfo& resultInfo, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const std::vector<Vector2>& vertices1, const std::vector<Vector2>& vertices2 )
+      static bool ConvexConvexCollision(CollisionInfo& resultInfo, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, Vector2Span vertices1, Vector2Span vertices2 )
       {
             //First perform an AABB check, to test if the objects are even able to collide
             if (!colliderTransform1.GetAABBFromTransformed(vertices1).Overlaps(colliderTransform2.GetAABBFromTransformed(vertices2)))
@@ -292,12 +292,12 @@ public:
 
       //SAT functions
 
-      static bool CheckAxisSeparation(CollisionInfo& resultInfo, const std::vector<Vector2>& vertices1, const std::vector<Vector2>& vertices2)
+      static bool CheckAxisSeparation(CollisionInfo& resultInfo, Vector2Span vertices1, Vector2Span vertices2)
       {
-            for(int i = 0; i < vertices1.size(); ++i)
+            for(int i = 0; i < vertices1.size; ++i)
             {
                   Vector2 v1 = vertices1[i];
-                  Vector2 v2 = vertices1[(i + 1) % vertices1.size()];
+                  Vector2 v2 = vertices1[(i + 1) % vertices1.size];
 
                   Vector2 edge = v2 - v1;
                   Vector2 axis = edge.Perpendicular().Normalize();
@@ -323,7 +323,7 @@ public:
             return false;
       }
 
-      static bool CheckCircleAxisSeparation(CollisionInfo& resultInfo, const std::vector<Vector2>& vertices, const Vector2& circlePosition, Fixed16_16 circleRadius, const Vector2& axis)
+      static bool CheckCircleAxisSeparation(CollisionInfo& resultInfo, Vector2Span vertices, const Vector2& circlePosition, Fixed16_16 circleRadius, const Vector2& axis)
       {
             Fixed16_16 min1, max1, min2, max2;
             ProjectVertices(vertices, axis, min1, max1);
@@ -354,13 +354,13 @@ public:
             collisionInfo.ContactCount = 1;
       }
 
-      static void GetContactCircleConvex(CollisionInfo& collisionInfo, const Vector2& circlePosition, const std::vector<Vector2>& vertices)
+      static void GetContactCircleConvex(CollisionInfo& collisionInfo, const Vector2& circlePosition, Vector2Span vertices)
       {
             long minDistanceSquared = std::numeric_limits<long>::max();
             FindClosestContact(collisionInfo, circlePosition, vertices, minDistanceSquared);
       }
 
-      static void GetContactConvexConvex(CollisionInfo& collisionInfo, const std::vector<Vector2>& vertices1, const std::vector<Vector2>& vertices2)
+      static void GetContactConvexConvex(CollisionInfo& collisionInfo, Vector2Span vertices1, Vector2Span vertices2)
       {
             long minDistanceSquared = std::numeric_limits<long>::max();
 
@@ -374,12 +374,12 @@ public:
             }
       }
 
-      static void FindClosestContact(CollisionInfo& collisionInfo, const Vector2& point, const std::vector<Vector2>& vertices, long& minDistanceSquared)
+      static void FindClosestContact(CollisionInfo& collisionInfo, const Vector2& point, Vector2Span vertices, long& minDistanceSquared)
       {
-            for (int i = 0; i < vertices.size(); ++i)
+            for (int i = 0; i < vertices.size; ++i)
             {
                   Vector2 v1 = vertices[i];
-                  Vector2 v2 = vertices[(i + 1) % vertices.size()];
+                  Vector2 v2 = vertices[(i + 1) % vertices.size];
 
                   Vector2 contactPoint;
                   long rawDistanceSquared = PointSegmentDistance(point, v1, v2, contactPoint);
@@ -398,7 +398,7 @@ public:
             }
       }
 
-      static void ProjectVertices(const std::vector<Vector2>& vertices, const Vector2& axis, Fixed16_16& min, Fixed16_16& max)
+      static void ProjectVertices(Vector2Span vertices, const Vector2& axis, Fixed16_16& min, Fixed16_16& max)
       {
             min = std::numeric_limits<Fixed16_16>::max();
             max = std::numeric_limits<Fixed16_16>::min();
@@ -430,9 +430,9 @@ public:
             }
       }
 
-      static Vector2 GetCenter(const std::vector<Vector2>& vertices) //TODO: can be avoided
+      static Vector2 GetCenter(Vector2Span vertices) //TODO: can be avoided
       {
-            Vector2 sum;
+            Vector2 sum(0, 0);
             short vertexCount = 0;
 
             for (auto& vertex : vertices)
@@ -443,9 +443,9 @@ public:
             return sum / vertexCount;
       }
 
-      static Vector2 GetClosestPointToCircle(Vector2 center, const std::vector<Vector2>& vertices)
+      static Vector2 GetClosestPointToCircle(Vector2 center, Vector2Span vertices)
       {
-            Vector2 result;
+            Vector2 result(0, 0);
             long minDistance = std::numeric_limits<long>::max();
 
             for (auto& vertex : vertices)

@@ -22,7 +22,7 @@ public:
 template<typename T>
 class ComponentCollection : public IComponentCollection
 {
-	static_assert(std::is_default_constructible<T>::value, "ComponentCollection requires that T is default-constructible.");
+	static_assert(std::is_trivially_default_constructible_v<T>, "ComponentCollection requires T to be default constructible and trivial");
 
 public:
     //Initializes the sparse set with null entities, to indicate that all entities have no components
@@ -109,11 +109,11 @@ public:
 
     void Overwrite(IComponentCollection* other) override
     {
-        auto* collection = dynamic_cast<ComponentCollection<T>*>(other); //TODO: OR STATIC CAST??
+        auto* collection = static_cast<ComponentCollection<T>*>(other);
 
-        assert(collection && "Types of components collection do not match");
+        assert(collection && "Types of component collections do not match");
 
-        components = collection->components;
+        std::memcpy(&components, &collection->components, sizeof(std::array<T, MAXENTITIES>));
         indexToEntity = collection->indexToEntity;
         entityToIndex = collection->entityToIndex;
         entityCount = collection->entityCount;
@@ -126,6 +126,3 @@ private:
 
     std::uint32_t entityCount = 0;
 };
-
-//Fix for <brace-enclosed initializer list>:
-//Missing default constructor with no parameters

@@ -29,9 +29,9 @@ struct ColliderTransform
 
     Vector2 LastPosition;
 
-    ColliderTransform() : Position(0, 0), Rotation(0), Shape(Circle), IsStatic(true), IsKinematic(false), IsDynamic(false), TransformUpdateRequired(false), AABBUpdateRequired(false), LastPosition(0, 0) { }
+    inline ColliderTransform() noexcept = default;
 
-    constexpr ColliderTransform(Vector2 position, Fixed16_16 rotation, ColliderType shape, RigidBodyType type) :
+    constexpr inline explicit ColliderTransform(Vector2 position, Fixed16_16 rotation, ColliderType shape, RigidBodyType type) :
         Position(position),
         Rotation(rotation),
         Shape(shape),
@@ -39,10 +39,13 @@ struct ColliderTransform
         IsKinematic(type == Kinematic),
         IsDynamic(type == Dynamic),
         LastPosition(position),
+        BoundingBox(Vector2(0, 0), Vector2(0, 0)),
+        Hash(0),
         TransformUpdateRequired(true),
-        AABBUpdateRequired(true) { }
+        AABBUpdateRequired(true),
+        HashUpdateRequired(true) { }
 
-    explicit ColliderTransform(Stream& stream)
+    inline explicit ColliderTransform(Stream& stream)
     {
         //Read object data
         Position = stream.ReadVector2();
@@ -54,14 +57,17 @@ struct ColliderTransform
         IsKinematic = stream.ReadBool();
         IsDynamic = stream.ReadBool();
 
-        LastPosition = Position;
+        LastPosition = Position; //TODO: Probably dont want to set it equal to pos?
 
-        //Since the transform and bounding box have been updated before serialization they should be correct
-        TransformUpdateRequired = false;
+        BoundingBox = AABB(Vector2(0, 0), Vector2(0, 0));
+        Hash = 0;
+
+        TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+        HashUpdateRequired = true;
     }
 
-    constexpr void SetRigidBodyType(RigidBodyType type)
+    constexpr void SetRigidBodyType(RigidBodyType type) //TODO: dont support this
     {
         IsStatic = type == Static;
         IsKinematic = type == Kinematic;
@@ -73,6 +79,7 @@ struct ColliderTransform
         Position += direction;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+        HashUpdateRequired = true;
     }
 
     void SetPosition(Vector2 position)
@@ -80,6 +87,7 @@ struct ColliderTransform
         Position = position;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+        HashUpdateRequired = true;
     }
 
     void Rotate(Fixed16_16 amount)
@@ -87,6 +95,7 @@ struct ColliderTransform
         Rotation += amount;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+        HashUpdateRequired = true;
     }
 
     void SetRotation(Fixed16_16 angle)
@@ -94,13 +103,14 @@ struct ColliderTransform
         Rotation = angle;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+        HashUpdateRequired = true;
     }
 
-    const std::vector<Vector2>& GetTransformedVertices(std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)
+    Vector2Span GetTransformedVertices(Vector2Span transformedVertices, Vector2Span vertices)
     {
         if (TransformUpdateRequired)
         {
-            for (int i = 0; i < transformedVertices.size(); ++i)
+            for (uint32_t i = 0; i < transformedVertices.size; ++i)
             {
                 transformedVertices[i] = Transform(vertices[i]);
             }
@@ -115,14 +125,14 @@ struct ColliderTransform
     {
         if (AABBUpdateRequired)
         {
-            BoundingBox = AABB{Vector2(Position.X - radius, Position.Y - radius), Vector2(Position.X + radius, Position.Y + radius)};
+            BoundingBox = AABB(Vector2(Position.X - radius, Position.Y - radius), Vector2(Position.X + radius, Position.Y + radius));
             AABBUpdateRequired = false;
         }
 
         return BoundingBox;
     }
 
-    const AABB& GetAABB(std::vector<Vector2>& transformedVertices, const std::vector<Vector2>& vertices)
+    const AABB& GetAABB(Vector2Span transformedVertices, Vector2Span vertices)
     {
         if (AABBUpdateRequired)
         {
@@ -139,14 +149,14 @@ struct ColliderTransform
                 if (vertex.Y > maxY) { maxY = vertex.Y; }
             }
 
-            BoundingBox = AABB{Vector2(minX, minY), Vector2(maxX, maxY)};
+            BoundingBox = AABB(Vector2(minX, minY), Vector2(maxX, maxY));
             AABBUpdateRequired = false;
         }
 
         return BoundingBox;
     }
 
-    const AABB& GetAABBFromTransformed(const std::vector<Vector2>& transformedVertices)
+    const AABB& GetAABBFromTransformed(Vector2Span transformedVertices)
     {
         if (AABBUpdateRequired)
         {
@@ -163,7 +173,7 @@ struct ColliderTransform
                 if (vertex.Y > maxY) { maxY = vertex.Y; }
             }
 
-            BoundingBox = AABB{Vector2(minX, minY), Vector2(maxX, maxY)};
+            BoundingBox = AABB(Vector2(minX, minY), Vector2(maxX, maxY));
             AABBUpdateRequired = false;
         }
 
@@ -175,7 +185,20 @@ struct ColliderTransform
         Fixed16_16 sin = fpm::sin(Rotation);
         Fixed16_16 cos = fpm::cos(Rotation);
 
-        return Vector2{cos * vector.X - sin * vector.Y + Position.X, sin * vector.X + cos * vector.Y + Position.Y};
+        return Vector2(cos * vector.X - sin * vector.Y + Position.X, sin * vector.X + cos * vector.Y + Position.Y);
+    }
+
+    uint32_t GetHash(Entity entity)
+    {
+        if (!HashUpdateRequired) return Hash;
+
+        //Recompute hash
+        Hash = CombineHash(static_cast<uint32_t>(LastPosition.X.raw_value()), static_cast<uint32_t>(LastPosition.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Rotation.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(entity));
+
+        HashUpdateRequired = false;
+        return Hash;
     }
 
     //Serializes data into the stream, considering that the bounding box and transformed vertices are already updated
@@ -194,7 +217,7 @@ struct ColliderTransform
         assert(!TransformUpdateRequired && "TransformUpdateRequired needs to be false for serialization");
     }
 
-    void OverrideTransformUpdateRequire(bool value)
+    void OverrideTransformUpdateRequire(bool value) //TODO WHY
     {
         TransformUpdateRequired = value;
     }
@@ -206,9 +229,11 @@ struct ColliderTransform
 
 private:
     AABB BoundingBox;
+    uint32_t Hash;
 
     bool TransformUpdateRequired;
     bool AABBUpdateRequired;
+    bool HashUpdateRequired;
 };
 
 //ToDo: Combine TransformUpdateRequired and AABBUpdateRequired

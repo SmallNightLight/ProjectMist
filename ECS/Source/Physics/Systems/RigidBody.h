@@ -5,13 +5,14 @@
 #include "../Collision/CollisionCache.h"
 
 #include <vector>
-#include <tuple>
 
-class RigidBody : public System
+class RigidBody final : public System
 {
 public:
     explicit RigidBody(Layer* world) : System(world), collisionDetection(layer) //TODO: Static objects should not need to have a rigidBody
     {
+        currentFrameNumber = 0;
+
         colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
         rigidBodyDataCollection = layer->GetComponentCollection<RigidBodyData>();
         circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
@@ -80,14 +81,16 @@ public:
         {
             const Entity& entity1 = *it1;
             ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(entity1);
+            uint32_t hash1 = colliderTransform1.GetHash(entity1);
 
             //Detect collisions
             for (auto it2 = std::next(it1); it2 != Entities.end(); ++it2)
             {
                 const Entity& entity2 = *it2;
                 ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
+                uint32_t hash2 = colliderTransform2.GetHash(entity2);
 
-                CollisionPairData pairData = CollisionPairData(entity1, entity2, colliderTransform1.LastPosition, colliderTransform2.LastPosition, colliderTransform1.Rotation, colliderTransform2.Rotation);
+                CollisionPairData pairData = CollisionPairData(entity1, entity2, colliderTransform1.LastPosition, colliderTransform2.LastPosition, colliderTransform1.Rotation, colliderTransform2.Rotation, hash1, hash2);
 
                 //Check if collision already occurred in the past
                 bool foundCollision = false;
@@ -108,17 +111,24 @@ public:
                 if (foundCollision)
                 {
                     //Get collision response data
-                    check = GetCollisionCheckInfo(entity1, entity2, colliderTransform1, colliderTransform1, rigidBodyData1, rigidBodyData2);
+                    check = GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
 
                     CollisionResponseInfo responseInfo;
                     if (collisionCache->TryGetCollisionData(currentFrameNumber, check, responseInfo))
                     {
-                        colliderTransform1.Position = responseInfo.Position1;
-                        colliderTransform2.Position = responseInfo.Position2;
-                        rigidBodyData1.Velocity = responseInfo.Velocity1;
-                        rigidBodyData2.Velocity = responseInfo.Velocity2;
-                        rigidBodyData1.AngularVelocity = responseInfo.AngularVelocity1;
-                        rigidBodyData2.AngularVelocity = responseInfo.AngularVelocity2;
+                        if (!colliderTransform1.IsStatic)
+                        {
+                            colliderTransform1.SetPosition(responseInfo.Position1);
+                            rigidBodyData1.Velocity = responseInfo.Velocity1;
+                            rigidBodyData1.AngularVelocity = responseInfo.AngularVelocity1;
+                        }
+
+                        if (!colliderTransform2.IsStatic)
+                        {
+                            colliderTransform2.SetPosition(responseInfo.Position2);
+                            rigidBodyData2.Velocity = responseInfo.Velocity2;
+                            rigidBodyData2.AngularVelocity = responseInfo.AngularVelocity2;
+                        }
 
                         continue;
                     }
@@ -136,7 +146,7 @@ public:
                     }
                     else
                     {
-                        collisionChecks.emplace_back(GetCollisionCheckInfo(entity1, entity2, colliderTransform1, colliderTransform1, rigidBodyData1, rigidBodyData2));
+                        collisionChecks.emplace_back(GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2));
                     }
                 }
                 else
@@ -160,41 +170,17 @@ public:
         collisionsRE = std::vector(collisions);
     }
 
-    static inline CollisionCheckInfo GetCollisionCheckInfo(Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2, const RigidBodyData& rigidBodyData1, const RigidBodyData& rigidBodyData2)
+    static inline CollisionCheckInfo GetCollisionCheckInfo(Entity entity1, Entity entity2, RigidBodyData& rigidBodyData1, RigidBodyData& rigidBodyData2)
     {
-        CollisionCheckInfo check = CollisionCheckInfo();
+        return CollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
 
-        check.Entity1 = entity1;
-        check.Entity2 = entity2;
-        check.GravityScale1 = rigidBodyData1.GravityScale;
-        check.GravityScale2 = rigidBodyData2.GravityScale;
-        check.MassScale1 = rigidBodyData1.GravityScale;
-        check.MassScale2 = rigidBodyData2.GravityScale;
-
-        if (colliderTransform1.IsStatic)
-        {
-            check.Velocity1 = Vector2(0, 0);
-            check.AngularVelocity1 = Fixed16_16(0);
-        }
-        else
-        {
-            check.Velocity1 = rigidBodyData1.LastVelocity;
-            check.AngularVelocity1 = rigidBodyData1.LastAngularVelocity;
-        }
-
-        if (colliderTransform2.IsStatic)
-        {
-            check.Velocity2 = Vector2(0, 0);
-            check.AngularVelocity2 = Fixed16_16(0);
-        }
-        else
-        {
-            check.Velocity2 = rigidBodyData2.LastVelocity;
-            check.AngularVelocity2 = rigidBodyData2.LastAngularVelocity;
-        }
-
-        check.CalculateHash();
-        return check;
+        //Version 2 (currently slower) - no caching
+        // return CollisionCheckInfo(
+        //     entity1, entity2,
+        //     rigidBodyData1.LastVelocity, rigidBodyData2.LastVelocity,
+        //     rigidBodyData1.LastAngularVelocity, rigidBodyData2.LastAngularVelocity,
+        //     rigidBodyData1.GravityScale, rigidBodyData2.GravityScale,
+        //     rigidBodyData1.MassScale, rigidBodyData2.MassScale);
     }
 
     void RotateAllEntities(Fixed16_16 delta) const

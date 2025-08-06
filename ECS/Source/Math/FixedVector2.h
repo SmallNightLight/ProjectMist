@@ -1,11 +1,8 @@
  #pragma once
 
 #include "FPM/math.hpp"
-#include "FPM/fixed.hpp"
 #include <type_traits>
 #include <iostream>
-
-#include "FixedTypes.h"
 
 template<class T, typename IntegerType, typename FractionType, typename IntermediateType, typename BaseTType, unsigned int FractionBits>
 struct FixedVector2
@@ -13,10 +10,10 @@ struct FixedVector2
       T X;
       T Y;
 
-      constexpr inline FixedVector2() : X(T(0)), Y(T(0)) { }
-      constexpr inline FixedVector2(const T& x, const T& y) : X(x), Y(y) { }
-      constexpr inline FixedVector2(const IntegerType& x, const IntegerType& y) : X(x), Y(y) { }
-      constexpr inline FixedVector2(const IntegerType& integer1, const FractionType& fraction1, const IntegerType& integer2, const FractionType& fraction2) : X(T(integer1, fraction1)), Y(T(integer2, fraction2)) { }
+      inline FixedVector2() noexcept = default;
+      constexpr inline explicit FixedVector2(const T& x, const T& y) : X(x), Y(y) { }
+      constexpr inline explicit FixedVector2(const IntegerType& x, const IntegerType& y) : X(x), Y(y) { }
+      constexpr inline explicit FixedVector2(const IntegerType& integer1, const FractionType& fraction1, const IntegerType& integer2, const FractionType& fraction2) : X(T(integer1, fraction1)), Y(T(integer2, fraction2)) { }
 
       //Basic math operations
       FixedVector2 operator+(const FixedVector2& other) const

@@ -17,9 +17,9 @@ struct CollisionPairData
 
     uint32_t Hash;
 
-    CollisionPairData() = default;
+    inline CollisionPairData() = default;
 
-    CollisionPairData(Entity entity1, Entity entity2, Vector2 position1, Vector2 position2, Fixed16_16 rotation1, Fixed16_16 rotation2) :
+    inline explicit CollisionPairData(Entity entity1, Entity entity2, Vector2 position1, Vector2 position2, Fixed16_16 rotation1, Fixed16_16 rotation2, uint32_t hash1, uint32_t hash2) :
         Entity1(entity1),
         Entity2(entity2),
         Position1(position1),
@@ -27,14 +27,7 @@ struct CollisionPairData
         Rotation1(rotation1),
         Rotation2(rotation2)
     {
-        //Calculate hash
-        Hash = CombineHash(static_cast<uint32_t>(Entity1), static_cast<uint32_t>(Entity2));
-        Hash = CombineHash(Hash, static_cast<uint32_t>(Position1.X.raw_value()));
-        Hash = CombineHash(Hash, static_cast<uint32_t>(Position1.Y.raw_value()));
-        Hash = CombineHash(Hash, static_cast<uint32_t>(Position2.X.raw_value()));
-        Hash = CombineHash(Hash, static_cast<uint32_t>(Position2.Y.raw_value()));
-        Hash = CombineHash(Hash, static_cast<uint32_t>(Rotation1.raw_value()));
-        Hash = CombineHash(Hash, static_cast<uint32_t>(Rotation2.raw_value()));
+        Hash = CombineHash(hash1, hash2);
     }
 
     bool operator==(const CollisionPairData& otherCollisionPairData) const

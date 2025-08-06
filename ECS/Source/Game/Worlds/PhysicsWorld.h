@@ -320,13 +320,13 @@ private:
             if (signature.test(boxColliderComponentType))
             {
                 auto boxCollider = boxColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(boxCollider.TransformedVertices, boxCollider.Vertices);
+                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
             }
 
             if (signature.test(polygonColliderComponentType))
             {
                 auto polygonCollider = polygonColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(polygonCollider.TransformedVertices, polygonCollider.Vertices);
+                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
             }
         }
     }

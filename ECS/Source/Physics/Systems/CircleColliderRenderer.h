@@ -2,7 +2,7 @@
 
 #include "../../ECS/ECS.h"
 
-class CircleColliderRenderer : public System
+class CircleColliderRenderer final : public System
 {
 public:
     explicit CircleColliderRenderer(Layer* world) : System(world)

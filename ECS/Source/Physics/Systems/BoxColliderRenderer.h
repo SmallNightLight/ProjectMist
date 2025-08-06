@@ -2,7 +2,7 @@
 
 #include "../../ECS/ECS.h"
 
-class BoxColliderRenderer : public System
+class BoxColliderRenderer final : public System
 {
 public:
     explicit BoxColliderRenderer(Layer* world) : System(world)
@@ -33,7 +33,7 @@ public:
             //Draw filled rectangle
             glColor3ub(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
 
-            std::vector<Vector2> vertices = transform.GetTransformedVertices(boxCollider.TransformedVertices, boxCollider.Vertices);
+            Vector2Span vertices = transform.GetTransformedVertices(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
 
             glBegin(GL_QUADS);
             for (const auto& vertex : vertices)
@@ -79,7 +79,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = transform.GetAABB(boxCollider.TransformedVertices, boxCollider.Vertices);
+            AABB boundingBox = transform.GetAABB(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());

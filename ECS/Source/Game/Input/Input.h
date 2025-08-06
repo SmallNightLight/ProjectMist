@@ -84,7 +84,7 @@ struct Input
         Fixed16_16 worldX = camera->Left + normalizedX * (camera->Right - camera->Left);
         Fixed16_16 worldY = camera->Bottom + normalizedY * (camera->Top - camera->Bottom);
 
-        return Vector2 { worldX, worldY };
+        return Vector2(worldX, worldY);
     }
 
     void Update()

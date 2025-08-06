@@ -7,11 +7,11 @@ struct Camera
     Fixed16_16 ZoomLevel;
     Vector2 Position;
 
-    Fixed16_16 Left, Right, Top, Bottom;
+    Fixed16_16 Left, Right, Bottom, Top;
 
-    Camera() : Width(0), Height(0), ZoomLevel(0), Position(0, 0), Left(0), Right(0), Top(0), Bottom(0) { }
+    inline Camera() noexcept = default;
 
-    Camera(Fixed16_16 width, Fixed16_16 height, Fixed16_16 zoomLevel = Fixed16_16(1))
+    constexpr inline explicit Camera(Fixed16_16 width, Fixed16_16 height, Fixed16_16 zoomLevel = Fixed16_16(1))
         : Width(width), Height(height), ZoomLevel(zoomLevel), Position(0, 0), Left(0), Right(0), Bottom(0), Top(0)
     {
         UpdateView();
@@ -98,7 +98,7 @@ struct Camera
     }
 
 private:
-    void UpdateView()
+    constexpr void UpdateView()
     {
         //Calculate the boundaries based on position and zoom
         Fixed16_16 halfWidth = Width / Fixed16_16(2) / ZoomLevel;

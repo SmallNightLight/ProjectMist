@@ -21,8 +21,8 @@ struct CollisionInfo
     bool IsDynamic1;
     bool IsDynamic2;
 
-    constexpr inline CollisionInfo(): Entity1(0), Entity2(0), Depth(0), ContactCount(0), IsDynamic1(false), IsDynamic2(false) { }
-    constexpr inline CollisionInfo(Entity owner, Entity other, Vector2 normal, Fixed16_16 depth, Vector2 contact1, Vector2 contact2, uint8_t contactCount, bool isDynamic1, bool isDynamic2) :
+    inline CollisionInfo() noexcept = default;
+    inline constexpr explicit CollisionInfo(Entity owner, Entity other, Vector2 normal, Fixed16_16 depth, Vector2 contact1, Vector2 contact2, uint8_t contactCount, bool isDynamic1, bool isDynamic2) :
         Entity1(owner),
         Entity2(other),
         Normal(normal),

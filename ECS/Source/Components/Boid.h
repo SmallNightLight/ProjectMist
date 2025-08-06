@@ -7,8 +7,7 @@ struct Boid
     Vector2 Velocity;
     Vector2 Acceleration;
 
-    Boid(): Velocity(0, 0), Acceleration(0, 0) { }
+    inline Boid() noexcept = default;
 
-    Boid(const Vector2& velocity, const Vector2& acceleration) : Velocity(velocity), Acceleration(acceleration) { }
-
+    constexpr inline explicit Boid(const Vector2& velocity, const Vector2& acceleration) : Velocity(velocity), Acceleration(acceleration) { }
 };

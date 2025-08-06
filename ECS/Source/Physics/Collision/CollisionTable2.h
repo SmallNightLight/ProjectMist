@@ -1,10 +1,10 @@
 #pragma once
 
 #include "CollisionPairData.h"
+#include "unordered_dense.h"
 
 #include <array>
 #include <cstdint>
-#include <unordered_map>
 #include <cstring>
 
 class CollisionTable2
@@ -78,5 +78,5 @@ private:
 
     alignas(64) std::array<uint8_t, Capacity> data;
 
-    std::unordered_map<CollisionPairData, bool, CollisionPairDataHash> backupCollisions;
+    ankerl::unordered_dense::map<CollisionPairData, bool, CollisionPairDataHash> backupCollisions;
 };

@@ -6,11 +6,11 @@
 class CircleCollider
 {
 public:
-    CircleCollider() : Radius(0) { }
+    inline CircleCollider() noexcept = default;
 
-    explicit CircleCollider(Fixed16_16 _radius) : Radius(_radius) { }
+    constexpr inline explicit CircleCollider(Fixed16_16 _radius) : Radius(_radius) { }
 
-    explicit CircleCollider(Stream& stream)
+    inline explicit CircleCollider(Stream& stream)
     {
         Radius = stream.ReadFixed();
     }

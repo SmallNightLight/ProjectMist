@@ -7,8 +7,8 @@ struct AABB
     Vector2 Min;
     Vector2 Max;
 
-    constexpr AABB() : Min(Vector2::Zero()), Max(Vector2::Zero()) { }
-    constexpr AABB(const Vector2& min, const Vector2& max) : Min(min), Max(max) { }
+    inline AABB() noexcept = default;
+    inline constexpr explicit AABB(const Vector2& min, const Vector2& max) : Min(min), Max(max) { }
 
     [[nodiscard]] constexpr bool Contains(const Vector2& point) const
     {

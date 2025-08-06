@@ -34,9 +34,9 @@ public:
         Fixed16_16 noiseRange = (Fixed16_16::pi() / Fixed16_16(80)) * noise;
         FixedRandom16_16 randomNoise(-noiseRange, noiseRange);
 
-        auto alignmentDirections = std::vector(MAXENTITIES, Vector2 (0, 0));
-        auto cohesionDirections = std::vector(MAXENTITIES, Vector2 (0, 0));
-        auto separationDirections = std::vector(MAXENTITIES, Vector2 (0, 0));
+        auto alignmentDirections = std::vector(MAXENTITIES, Vector2(0, 0));
+        auto cohesionDirections = std::vector(MAXENTITIES, Vector2(0, 0));
+        auto separationDirections = std::vector(MAXENTITIES, Vector2(0, 0));
         auto neighbourCounts = std::vector<std::int32_t>(MAXENTITIES, 0);
 
         int entityPairs = 0;
@@ -82,7 +82,7 @@ public:
             auto& transform = transformCollection->GetComponent(entity);
             auto& boid = boidCollection->GetComponent(entity);
 
-            boid.Acceleration = Vector2 {0, 0};
+            boid.Acceleration = Vector2(0, 0);
 
             //Correct vectors
             if (neighbourCounts[entity] > 0)
@@ -234,7 +234,7 @@ public:
             return (vector / length) * magnitude;
         }
 
-        return {0, 0};
+        return Vector2(0, 0);
     }
 
     Vector2 LimitMagnitudeMax(Vector2 vector, Fixed16_16 maxMagnitude)
@@ -262,7 +262,7 @@ public:
         Fixed16_16 cosine = cos(angle);
         Fixed16_16 sine = sin(angle);
 
-        return {vector.X * cosine - vector.Y * sine, vector.X * sine + vector.Y * cosine};
+        return Vector2(vector.X * cosine - vector.Y * sine, vector.X * sine + vector.Y * cosine);
     }
 
     Vector2 RandomVector(Fixed16_16 magnitude)
@@ -270,7 +270,7 @@ public:
         FixedRandom16_16 randomAngle(Fixed16_16(0), Fixed16_16(1));
         Fixed16_16 angle = randomAngle(random);
 
-        return {fpm::cos(angle) * magnitude, sin(angle) * magnitude};
+        return Vector2(fpm::cos(angle) * magnitude, sin(angle) * magnitude);
     }
 
 private:

@@ -26,8 +26,8 @@ public:
         childrenRects =
         {
             Rect(area.Position, childArea),
-            Rect({area.Position.X + childArea.X, area.Position.Y}, childArea),
-            Rect({area.Position.X, area.Position.Y + childArea.Y}, childArea),
+            Rect(Vector2(area.Position.X + childArea.X, area.Position.Y), childArea),
+            Rect(Vector2(area.Position.X, area.Position.Y + childArea.Y), childArea),
             Rect(area.Position + childArea, childArea)
         };
     }

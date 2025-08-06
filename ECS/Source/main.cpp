@@ -69,10 +69,10 @@ int main()
         //EcsWorld.AddComponent(entity, BoxCollider(Fixed16_16(100), Fixed16_16(100)));
         EcsWorld.AddComponent(entity, ColliderRenderData(0.5, 0.5, 0.5));
 
-        //EcsWorld.AddComponent(entity, Transform {randomPositionX(numberGenerator), randomPositionY(numberGenerator)});
-        //EcsWorld.AddComponent(entity, Velocity {randomVelocity(numberGenerator), randomVelocity(numberGenerator)});
-        //EcsWorld.AddComponent(entity, Lifetime {randomLifetime(numberGenerator)});
-        //EcsWorld.AddComponent(entity, Boid {Vector2{randomVelocity(numberGenerator), randomVelocity(numberGenerator)}, Vector2{0, 0} });
+        //EcsWorld.AddComponent(entity, Transform(randomPositionX(numberGenerator), randomPositionY(numberGenerator)));
+        //EcsWorld.AddComponent(entity, Velocity(randomVelocity(numberGenerator), randomVelocity(numberGenerator)));
+        //EcsWorld.AddComponent(entity, Lifetime(randomLifetime(numberGenerator)));
+        EcsWorld.AddComponent(entity, Boid(Vector2(randomVelocity(numberGenerator), randomVelocity(numberGenerator)), Vector2(0, 0)));
     }*/
 
     //bool isPaused = false;

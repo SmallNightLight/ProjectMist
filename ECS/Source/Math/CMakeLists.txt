@@ -25,6 +25,7 @@ add_executable(Math main.cpp
 
         TestMath.h
         HashUtils.h
+        Span.h
 )
 
 add_subdirectory(FixedLib)

@@ -2,7 +2,7 @@
 
 #include "../../ECS/ECS.h"
 
-class PolygonColliderRenderer : public System
+class PolygonColliderRenderer final : public System
 {
 public:
     explicit PolygonColliderRenderer(Layer* world) : System(world)
@@ -31,7 +31,7 @@ public:
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
             //Get transformed vertices
-            std::vector<Vector2> vertices = transform.GetTransformedVertices(polygonCollider.TransformedVertices, polygonCollider.Vertices);
+            Vector2Span vertices = transform.GetTransformedVertices(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
 
             //Draw filled polygon
             glColor3ub(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
@@ -86,7 +86,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = transform.GetAABB(polygonCollider.TransformedVertices, polygonCollider.Vertices);
+            AABB boundingBox = transform.GetAABB(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());

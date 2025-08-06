@@ -43,9 +43,9 @@ public:
         {
             Entity entity = layer->CreateEntity();
 
-            layer->AddComponent(entity, Transform {randomPositionX(random), randomPositionY(random)});
-            layer->AddComponent(entity, Velocity {randomVelocity(random), randomVelocity(random)});
-            layer->AddComponent(entity, Lifetime {randomLifetime(random)});
+            layer->AddComponent(entity, Transform(randomPositionX(random), randomPositionY(random)));
+            layer->AddComponent(entity, Velocity(randomVelocity(random), randomVelocity(random)));
+            layer->AddComponent(entity, Lifetime(randomLifetime(random)));
         }
     }
 

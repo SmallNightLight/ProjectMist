@@ -6,9 +6,11 @@ struct ColliderRenderData
 {
     uint8_t R, G, B;
 
-    ColliderRenderData() : R(255), G(255), B(255) { }
-    ColliderRenderData(uint8_t r, uint8_t g, uint8_t b) : R(r), G(g), B(b) { }
-    explicit ColliderRenderData(Stream& stream)
+    inline ColliderRenderData() noexcept = default;
+
+    inline constexpr explicit ColliderRenderData(uint8_t r, uint8_t g, uint8_t b) : R(r), G(g), B(b) { }
+
+    inline explicit ColliderRenderData(Stream& stream)
     {
         R = stream.ReadInteger<uint8_t>();
         G = stream.ReadInteger<uint8_t>();
@@ -22,3 +24,5 @@ struct ColliderRenderData
         stream.WriteInteger<uint8_t>(B);
     }
 };
+
+static_assert(std::is_trivially_default_constructible_v<ColliderRenderData>, "Needs to be trivial");

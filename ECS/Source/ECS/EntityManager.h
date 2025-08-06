@@ -1,10 +1,12 @@
 #pragma once
 
+#include "EntityQueue.h"
 #include "ECSSettings.h"
 
 #include <array>
 #include <cassert>
 #include <queue>
+#include <cstring>
 
 //Manages the entities and allows for their creation and destruction
 //Saves the signature of each entity
@@ -16,15 +18,13 @@ public:
 	{
 		for (Entity entity = 0; entity < MAXENTITIES; ++entity)
 		{
-			availableEntities.push(entity);
+			availableEntities.Push(entity);
 		}
 	}
 
 	void Overwrite(const EntityManager& other)
 	{
-		activeEntityCount = other.activeEntityCount;
-		signatures = other.signatures;
-		availableEntities = other.availableEntities;
+		std::memcpy(this, &other, sizeof(EntityManager));
 	}
 
     //Creates a new entity and returns the entity ID
@@ -32,8 +32,8 @@ public:
 	{
 		assert(activeEntityCount < MAXENTITIES && "Too many entities. Extend the buffer size");
 
-		Entity id = availableEntities.front();
-		availableEntities.pop();
+		Entity id = availableEntities.Front();
+		availableEntities.Pop();
 		activeEntityCount++;
 
 		return id;
@@ -45,7 +45,7 @@ public:
 		assert(entity < MAXENTITIES && "Entity out of range");
 
 		signatures[entity].reset();
-		availableEntities.push(entity);
+		availableEntities.Push(entity);
 		activeEntityCount--;
 	}
 
@@ -92,5 +92,5 @@ public:
 private:
 	uint32_t activeEntityCount { };
 	std::array<Signature, MAXENTITIES> signatures { };
-	std::queue<Entity> availableEntities { };
+	EntityQueue<MAXENTITIES> availableEntities { };
 };

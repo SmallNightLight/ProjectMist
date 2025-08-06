@@ -6,9 +6,12 @@
 struct Movable
 {
     Fixed16_16 Speed;
-    Movable() : Speed(1) { }
-    explicit Movable(Fixed16_16 speed) : Speed(speed) { }
-    explicit Movable(Stream& stream)
+
+    inline Movable() noexcept = default;
+
+    inline constexpr explicit Movable(Fixed16_16 speed) : Speed(speed) { }
+
+    inline explicit Movable(Stream& stream)
     {
         Speed = stream.ReadFixed();
     }

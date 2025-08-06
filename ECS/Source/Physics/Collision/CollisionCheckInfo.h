@@ -22,20 +22,9 @@ struct CollisionCheckInfo
 
     uint32_t Hash;
 
-    inline constexpr CollisionCheckInfo() :
-        Entity1(0),
-        Entity2(0),
-        Velocity1(0, 0),
-        Velocity2(0, 0),
-        AngularVelocity1(0),
-        AngularVelocity2(0),
-        GravityScale1(0),
-        GravityScale2(0),
-        MassScale1(0),
-        MassScale2(0),
-        Hash(0) { }
+    inline CollisionCheckInfo() noexcept = default;
 
-    CollisionCheckInfo(Entity entity1, Entity entity2, Vector2 velocity1,Vector2 velocity2, Fixed16_16 angularVelocity1, Fixed16_16 angularVelocity2, uint8_t gravityScale1, uint8_t gravityScale2, uint8_t massScale1, uint8_t massScale2) :
+    inline explicit CollisionCheckInfo(Entity entity1, Entity entity2, Vector2 velocity1,Vector2 velocity2, Fixed16_16 angularVelocity1, Fixed16_16 angularVelocity2, uint8_t gravityScale1, uint8_t gravityScale2, uint8_t massScale1, uint8_t massScale2) :
         Entity1(entity1),
         Entity2(entity2),
         Velocity1(velocity1),
@@ -46,12 +35,6 @@ struct CollisionCheckInfo
         GravityScale2(gravityScale2),
         MassScale1(massScale1),
         MassScale2(massScale2)
-    {
-        //Calculate hash
-        CalculateHash();
-    }
-
-    inline void CalculateHash()
     {
         Hash = CombineHash(static_cast<uint32_t>(Entity1), static_cast<uint32_t>(Entity2));
         Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity1.X.raw_value()));
@@ -64,6 +47,27 @@ struct CollisionCheckInfo
         Hash = CombineHash(Hash, static_cast<uint32_t>(GravityScale2));
         Hash = CombineHash(Hash, static_cast<uint32_t>(MassScale1));
         Hash = CombineHash(Hash, static_cast<uint32_t>(MassScale2));
+    }
+
+    inline explicit CollisionCheckInfo(Entity entity1, Entity entity2 , RigidBodyData& rigidBody1, RigidBodyData& rigidBody2) :
+        Entity1(entity1),
+        Entity2(entity2),
+        Velocity1(rigidBody1.LastVelocity),
+        Velocity2(rigidBody2.LastVelocity),
+        AngularVelocity1(rigidBody1.LastAngularVelocity),
+        AngularVelocity2(rigidBody2.LastAngularVelocity),
+        GravityScale1(rigidBody1.GravityScale),
+        GravityScale2(rigidBody2.GravityScale),
+        MassScale1(rigidBody1.MassScale),
+        MassScale2(rigidBody2.MassScale)
+    {
+        Hash = CombineHash(rigidBody1.GetHash(Entity1), rigidBody2.GetHash(Entity2));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity1.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity1.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity2.X.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(Velocity2.Y.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(AngularVelocity1.raw_value()));
+        Hash = CombineHash(Hash, static_cast<uint32_t>(AngularVelocity2.raw_value()));
     }
 
     bool operator==(const CollisionCheckInfo& otherCollisionCheckInfo) const

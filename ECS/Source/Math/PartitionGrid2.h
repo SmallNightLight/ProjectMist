@@ -13,7 +13,7 @@ static constexpr std::uint32_t MainBufferSize = 64;
 static constexpr std::uint32_t ExtraBufferSize = 32;
 static constexpr std::uint32_t ExtraBufferCount = MAXENTITIES / ExtraBufferSize;
 
-static constexpr Rect PartitionArea = Rect(Vector2 (0, 0), Vector2(SCREEN_WIDTH, SCREEN_HEIGHT));
+static constexpr Rect PartitionArea = Rect(Vector2(0, 0), Vector2(SCREEN_WIDTH, SCREEN_HEIGHT));
 static constexpr Fixed16_16 MaxEntitySize = Fixed16_16::FromFixed(50, 0);
 static constexpr Fixed16_16 CellSize = MaxEntitySize;
 

@@ -8,7 +8,7 @@ struct Rect
     Vector2 Size;
 
     constexpr Rect() : Position(0, 0), Size(1, 1) { }
-    explicit constexpr Rect(const Vector2& position, const Vector2& size = {1, 1}) : Position(position), Size(size) { }
+    explicit constexpr Rect(const Vector2& position, const Vector2& size = Vector2(1, 1)) : Position(position), Size(size) { }
 
     [[nodiscard]] constexpr bool Contains(const Vector2& point) const
     {

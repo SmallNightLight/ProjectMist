@@ -2,7 +2,7 @@
 
 #include "../../ECS/ECS.h"
 
-class MovingSystem : public System
+class MovingSystem final : public System
 {
 public:
     explicit MovingSystem(Layer* world) : System(world)
