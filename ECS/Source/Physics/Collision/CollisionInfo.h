@@ -33,26 +33,6 @@ struct CollisionInfo
         IsDynamic1(isDynamic1),
         IsDynamic2(isDynamic2) { }
 
-    bool operator==(const CollisionInfo& otherCollisionInfo) const
-    {
-        return
-            Entity1 == otherCollisionInfo.Entity1 &&
-            Entity2 == otherCollisionInfo.Entity2 &&
-            Normal == otherCollisionInfo.Normal &&
-            Depth == otherCollisionInfo.Depth &&
-            ContactCount == otherCollisionInfo.ContactCount;
-            //Contact1 == otherCollisionInfo.Contact1 &&
-            //Contact2 == otherCollisionInfo.Contact2 &&
-
-            //IsDynamic1 == otherCollisionInfo.IsDynamic1 &&
-            //IsDynamic2 == otherCollisionInfo.IsDynamic2;
-    }
-
-    bool operator!=(const CollisionInfo& otherCollisionInfo) const
-    {
-        return !(*this == otherCollisionInfo);
-    }
-
     static void LogCollisions(const std::vector<CollisionInfo>& collisions, int frame, uint32_t id, const std::string& baseFileName = "collision_logs")
     {
         std::ostringstream oss;
@@ -86,19 +66,5 @@ struct CollisionInfo
 
         logFile << "----------------------------------------\n\n";
         logFile.close();
-    }
-};
-
-struct CollisionInfoHash
-{
-    std::size_t operator()( const CollisionInfo& collisionInfo ) const
-    {
-        uint32_t hash = CombineHash(static_cast<uint32_t>(collisionInfo.Entity1), static_cast<uint32_t>(collisionInfo.Entity2));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionInfo.Normal.X.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionInfo.Normal.Y.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionInfo.Depth.raw_value()));
-        hash = CombineHash(hash, static_cast<uint32_t>(collisionInfo.ContactCount));
-
-        return static_cast<std::size_t>(hash);
     }
 };

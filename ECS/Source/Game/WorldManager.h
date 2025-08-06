@@ -64,7 +64,7 @@ public:
     }
 
     template<typename T>
-    void NextFrame(WorldType worldType)
+    void NextFrame(WorldType worldType, bool save)
     {
         std::shared_ptr<T> currentWorld = GetWorld<T>(worldType);
         int currentLayer = lastLayerIndex;

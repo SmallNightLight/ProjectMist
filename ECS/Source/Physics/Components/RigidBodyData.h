@@ -21,12 +21,10 @@ struct RigidBodyData
     uint8_t MassScale;
 
     uint32_t Hash;
-
-    bool Active;
     Vector2 LastVelocity;
     Fixed16_16 LastAngularVelocity;
 
-public: //TODO: Add position and rotation to this class to improve? variables double?
+public:
     inline RigidBodyData() noexcept = default;
 
     constexpr inline explicit RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& area, const Fixed16_16& inertia, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction) :
@@ -41,7 +39,6 @@ public: //TODO: Add position and rotation to this class to improve? variables do
         GravityScale(1),
         MassScale(1),
         Hash(0),
-        Active(true),
         LastVelocity(0, 0),
         LastAngularVelocity(0),
         HashUpdateRequired(true) { } //ToDO: No area use?
@@ -62,7 +59,6 @@ public: //TODO: Add position and rotation to this class to improve? variables do
 
         Hash = 0;
 
-        Active = true;
         LastVelocity = Velocity;
         LastAngularVelocity = AngularVelocity;
 
@@ -94,26 +90,6 @@ public: //TODO: Add position and rotation to this class to improve? variables do
         Fixed16_16 mass = area * density;
 
         return RigidBodyData(area * density, restitution, area, GetRotationalInertiaPolygon(mass, vertices), staticFriction, dynamicFriction);
-    }
-
-    inline constexpr void AddVelocity(const Vector2& value)
-    {
-        Velocity += value;
-    }
-
-    inline constexpr void SetVelocity(const Vector2& newVelocity)
-    {
-        Velocity = newVelocity;
-    }
-
-    inline constexpr void AddAngularVelocity(const Fixed16_16& value)
-    {
-        AngularVelocity += value;
-    }
-
-    inline constexpr void SetAngularVelocity(const Fixed16_16& newAngularVelocity)
-    {
-        AngularVelocity = newAngularVelocity;
     }
 
     inline void ApplyForce(const Vector2& direction)

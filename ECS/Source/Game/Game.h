@@ -213,7 +213,7 @@ public:
         //Setup cache on all layers
         for (auto physicsWorld : worldManager.GetAllWorlds<PhysicsWorld>(physicsWorldType))
         {
-            physicsWorld->InitializeCache(&cacheManager); //TODO: when doing memecp for layer copy, the pointer to the cache stays the same so this can be optimized for the first layer
+            physicsWorld->InitializeCache(&cacheManager);
         }
     }
 
@@ -231,9 +231,12 @@ public:
         clientHandler.ReadMessages(oldPhysicsWorld);
 
         FrameNumber rollbackFrames = clientHandler.GetRollbacks(oldPhysicsWorld->GetCurrentFrame());
+        FrameNumber lastConfirmedFrame = clientHandler.GetLastConfirmedFrame();
 
         if (RollbackDebugMode)
             rollbackFrames = MaxRollBackFrames - 1;
+
+        //TODO for optimization: Delta rollback, not save every physics tick, threaded physics, grid physics broad phase
 
         if (rollbackFrames > 0)
         {
@@ -251,7 +254,7 @@ public:
 
             for(int i = 0; i < actualRollbacks; ++i)
             {
-                worldManager.NextFrame<PhysicsWorld>(physicsWorldType);
+                worldManager.NextFrame<PhysicsWorld>(physicsWorldType, currentFrame - actualRollbacks + i == lastConfirmedFrame);
 
                 auto p2 = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
                 std::vector<Input*> inputs = clientHandler.GetAllClientInputs(p2->GetCurrentFrame());
@@ -259,7 +262,7 @@ public:
             }
         }
 
-        worldManager.NextFrame<PhysicsWorld>(physicsWorldType);
+        worldManager.NextFrame<PhysicsWorld>(physicsWorldType, currentFrame == lastConfirmedFrame);
         auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
 
         if (physicsWorld->GetCurrentFrame() != currentFrame)

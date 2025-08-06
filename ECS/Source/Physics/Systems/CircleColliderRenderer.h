@@ -10,7 +10,6 @@ public:
         colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
         circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
         colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
-        rigidBodyDataCollection = layer->GetComponentCollection<RigidBodyData>();
     }
 
     [[nodiscard]] Signature GetSignature() const override
@@ -87,16 +86,10 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
+            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
             CircleCollider& circleCollider = circleColliderCollection->GetComponent(entity);
 
-            bool active = false;
-            if (rigidBodyDataCollection->HasComponent(entity))
-            {
-                active = rigidBodyDataCollection->GetComponent(entity).Active;
-            }
-
-            if (active)
+            if (colliderTransform.Active)
             {
                 glColor3ub(128, 128, 128);
             }
@@ -108,7 +101,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = transform.GetAABB(circleCollider.GetRadius());
+            AABB boundingBox = colliderTransform.GetAABB(circleCollider.GetRadius());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
@@ -122,5 +115,4 @@ private:
     std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
     std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
     std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
-    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
 };

@@ -275,7 +275,7 @@ public:
 private:
 
     // Save the state of the generator into the stream
-    void SerializeGenerator(Stream& stream, const std::mt19937& generator) const
+    static void SerializeGenerator(Stream& stream, const std::mt19937& generator)
     {
         std::ostringstream oss;
         oss << generator;
@@ -290,10 +290,8 @@ private:
 
         Entity entityCount = entities.size();
 
-        //Write the entity count
         stream.WriteInteger<Entity>(entityCount);
 
-        //Write the entities and their signatures
         for (uint32_t i = 0; i < entityCount; ++i)
         {
             stream.WriteInteger(entities[i]);
@@ -363,7 +361,7 @@ private:
 
         if (entityCount > MAXENTITIES)
         {
-            throw "Entity count larger then MAXENTITIES";
+            throw "Entity count larger than MAXENTITIES";
         }
 
         entities.resize(entityCount);

@@ -10,7 +10,6 @@ public:
         colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
         polygonColliderCollection = layer->GetComponentCollection<PolygonCollider>();
         colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
-        rigidBodyDataCollection = layer->GetComponentCollection<RigidBodyData>();
     }
 
     [[nodiscard]] Signature GetSignature() const override
@@ -65,16 +64,10 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
+            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
             PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
 
-            bool active = false;
-            if (rigidBodyDataCollection->HasComponent(entity))
-            {
-                active = rigidBodyDataCollection->GetComponent(entity).Active;
-            }
-
-            if (active)
+            if (colliderTransform.Active)
             {
                 glColor3ub(128, 128, 128);
             }
@@ -86,7 +79,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = transform.GetAABB(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
+            AABB boundingBox = colliderTransform.GetAABB(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
@@ -100,5 +93,4 @@ private:
     std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
     std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
     std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
-    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
 };

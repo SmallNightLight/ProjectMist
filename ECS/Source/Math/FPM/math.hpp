@@ -165,7 +165,7 @@ constexpr inline fixed<B,I,T1,T2,F,R> floor(fixed<B,I,T1,T2,F,R> x) noexcept
     constexpr auto FRAC = B(1) << F;
     auto value = x.raw_value();
     if (value < 0) value -= FRAC - 1;
-    return fixed<B,I,T1,T2,F,R>::from_raw_value(value / FRAC * FRAC); //TODO: REMOVE FRAC????
+    return fixed<B,I,T1,T2,F,R>::from_raw_value(value / FRAC * FRAC);
 }
 
 template <typename B, typename I, typename T1, typename T2, unsigned int F, bool R>

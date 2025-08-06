@@ -28,6 +28,7 @@ struct ColliderTransform
     bool IsDynamic;
 
     Vector2 LastPosition;
+    bool Active;
 
     inline ColliderTransform() noexcept = default;
 
@@ -39,6 +40,7 @@ struct ColliderTransform
         IsKinematic(type == Kinematic),
         IsDynamic(type == Dynamic),
         LastPosition(position),
+        Active(true),
         BoundingBox(Vector2(0, 0), Vector2(0, 0)),
         Hash(0),
         TransformUpdateRequired(true),
@@ -58,6 +60,7 @@ struct ColliderTransform
         IsDynamic = stream.ReadBool();
 
         LastPosition = Position; //TODO: Probably dont want to set it equal to pos?
+        Active = true;
 
         BoundingBox = AABB(Vector2(0, 0), Vector2(0, 0));
         Hash = 0;
@@ -65,13 +68,6 @@ struct ColliderTransform
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
         HashUpdateRequired = true;
-    }
-
-    constexpr void SetRigidBodyType(RigidBodyType type) //TODO: dont support this
-    {
-        IsStatic = type == Static;
-        IsKinematic = type == Kinematic;
-        IsDynamic = type == Dynamic;
     }
 
     void MovePosition(Vector2 direction)
