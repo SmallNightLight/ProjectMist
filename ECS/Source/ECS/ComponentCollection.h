@@ -58,8 +58,8 @@ public:
         assert(entity < MAXENTITIES && "Entity out of range");
         assert(entityToIndex[entity] != ENTITYNULL && "Removing a component that does not exist");
 
-        std::int32_t indexOfRemovedEntity = entityToIndex[entity];
-        std::int32_t lastEntityIndex = entityCount - 1;
+        uint32_t indexOfRemovedEntity = entityToIndex[entity];
+        uint32_t lastEntityIndex = entityCount - 1; //TODO: range exception
 
         //Move the last component to the index of the removed entity
         components[indexOfRemovedEntity] = components[lastEntityIndex];

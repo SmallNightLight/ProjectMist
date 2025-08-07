@@ -69,7 +69,7 @@ public:
 		for (unsigned int i = 0; i < systemCount; ++i)
 		{
 			auto& [signature, system] = systems[i];
-			system->Entities.erase(entity);
+			system->Entities.Erase(entity);
 		}
 	}
 
@@ -85,12 +85,12 @@ public:
 			if ((newSignature & signature) == signature)
 			{
 				//Entity signature matches system signature - insert into set
-				system->Entities.insert(entity);
+				system->Entities.Insert(entity);
 			}
 			else
 			{
 				//Entity signature does not match system signature - erase from set
-				system->Entities.erase(entity);
+				system->Entities.Erase(entity);
 			}
 		}
 	}

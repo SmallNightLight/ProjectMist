@@ -1,8 +1,7 @@
 #pragma once
 
 #include "ECSSettings.h"
-
-#include <set>
+#include "EntitySet.h"
 
 class Layer;
 
@@ -21,7 +20,7 @@ public:
 	[[nodiscard]] virtual Signature GetSignature() const = 0;
 
 public:
-	std::set<Entity> Entities;
+	EntitySet<MAXENTITIES> Entities;
 
 protected:
 	Layer* layer;
