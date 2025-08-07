@@ -77,14 +77,14 @@ public:
         std::vector<CollisionInfo> collisions;
         std::vector<CollisionCheckInfo> collisionChecks;
 
-        for (auto it1 = Entities.begin(); it1 != Entities.end(); ++it1)
+        for (Entity* it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
             const Entity& entity1 = *it1;
             ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(entity1);
             uint32_t hash1 = colliderTransform1.GetHash(entity1);
 
             //Detect collisions
-            for (auto it2 = std::next(it1); it2 != Entities.end(); ++it2)
+            for (Entity* it2 = std::next(it1); it2 != Entities.end(); ++it2)
             {
                 const Entity& entity2 = *it2;
                 ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
