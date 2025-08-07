@@ -200,6 +200,12 @@ public:
         return systemManager.RegisterSystemType<T>(this);
     }
 
+    // template<typename T>
+    // std::shared_ptr<T> GetSystem()
+    // {
+    //     return systemManager.GetSystem<T>(this);
+    // }
+
     //When batch-adding new systems (with ignoreSignatureChanged = true) call this function after to add all systems based on the current signature
     void FinalizeEntitySystems(Entity entity)
     {
@@ -217,10 +223,10 @@ private:
     ComponentManager componentManager;
     SystemManager systemManager;
 
-    std::vector<Entity> entitiesToDestroy { }; //bitset lol
+    std::vector<Entity> entitiesToDestroy { };
     bool ignoreSignatureChanged;
 };
 
-//Ideas to improve:
+//TODO: Ideas to improve:
 // - don't always erase or insert into the system entity set in EntitySignatureChanged()
 // - Archetype ECS

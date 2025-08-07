@@ -6,6 +6,7 @@
 #include "../../Math/Stream.h"
 #include "../../Game/Input/InputCollection.h"
 #include "../../ECS/ECSSettings.h"
+#include "../../Game/GameSettings.h"
 #include "../../Game/Worlds/PhysicsWorld.h"
 
 #include <memory>
@@ -68,7 +69,7 @@ public:
         return message;
     }
 
-    void ReadMessages(std::shared_ptr<PhysicsWorld> physicsWorld)
+    void ReadMessages(PhysicsWorld& physicsWorld, bool& newGameData)
     {
         while(HasNewMessages())
         {
@@ -111,9 +112,10 @@ public:
                 }
                 case GameDataPacket:  //Deserialize the game data
                 {
-                    physicsWorld->Deserialize(packet.Data);
-                    clientInputs.at(receivedClientID).JumpToFrame(physicsWorld->GetCurrentFrame());
+                    physicsWorld.Deserialize(packet.Data);
+                    clientInputs.at(receivedClientID).JumpToFrame(physicsWorld.GetCurrentFrame());
                     Debug("Deserialized the game data");
+                    newGameData = true;
                     break;
                 }
                 case RequestInputPacket: //Resend an input packet
@@ -146,12 +148,12 @@ public:
     }
 
     ///Send back the serialized game state
-    void SendGameData(std::shared_ptr<PhysicsWorld> physicsWorld)
+    void SendGameData(const PhysicsWorld& physicsWorld)
     {
         if (!sendGameData) return;
 
         Stream gameData = Stream();
-        physicsWorld->Serialize(gameData);
+        physicsWorld.Serialize(gameData);
         Send(Packet(receivedClientID, GameDataPacket, 0, std::move(gameData)));
         sendGameData = false;
     }

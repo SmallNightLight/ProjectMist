@@ -20,7 +20,6 @@ using FrameNumber = std::uint32_t;
 static constexpr std::uint32_t MAXENTITIES = 2000;
 static constexpr ComponentType MAXCOMPONENTS = 32;
 static constexpr unsigned int MAXSYSTEMS = 32;
-static constexpr WorldType MAXWORLDS = 4;
 
 using Signature = std::bitset<MAXCOMPONENTS>;
 

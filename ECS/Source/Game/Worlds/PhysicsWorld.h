@@ -3,6 +3,9 @@
 #include <GLFW/glfw3.h>
 
 #include "../World.h"
+#include "../CacheManager.h"
+#include "../../Components/Camera.h"
+#include "../../Systems/CameraSystem.h"
 #include "../../Physics/Physics.h"
 #include "../Input/Input.h"
 #include "../../Math/Stream.h"
@@ -16,22 +19,47 @@ class PhysicsWorld : public World
 public:
     explicit PhysicsWorld(Layer& layer) : baseLayer(layer), currentFrame(1), numberGenerator(std::mt19937(12))
     {
-        RegisterComponents(layer);
-        RegisterSystems(layer);
+        SetupComponents(layer);
+        SetupSystems(layer);
         InitializeCamera(layer);
     }
 
-    ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
-    void RegisterComponents(Layer& layer)
+    ///Registers all components to the layer
+    static void RegisterLayer(Layer& layer)
     {
-        colliderTransformCollection =  layer.RegisterComponent<ColliderTransform>();
+        //Components
+        layer.RegisterComponent<ColliderTransform>();
+        layer.RegisterComponent<RigidBodyData>();
+        layer.RegisterComponent<CircleCollider>();
+        layer.RegisterComponent<BoxCollider>();
+        layer.RegisterComponent<PolygonCollider>();
+        layer.RegisterComponent<ColliderRenderData>();
+        layer.RegisterComponent<Movable>();
+
+        layer.RegisterComponent<Camera>();
+
+        //Systems
+        layer.RegisterSystem<RigidBody>();
+        layer.RegisterSystem<CircleColliderRenderer>();
+        layer.RegisterSystem<BoxColliderRenderer>();
+        layer.RegisterSystem<PolygonColliderRenderer>();
+        layer.RegisterSystem<MovingSystem>();
+
+        layer.RegisterSystem<CameraSystem>();
+    }
+
+    ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
+    void SetupComponents(Layer& layer) //TODO: use GetSystem()
+    {
+        colliderTransformCollection = layer.RegisterComponent<ColliderTransform>();
         rigidBodyDataCollection = layer.RegisterComponent<RigidBodyData>();
         circleColliderCollection = layer.RegisterComponent<CircleCollider>();
         boxColliderCollection = layer.RegisterComponent<BoxCollider>();
         polygonColliderCollection = layer.RegisterComponent<PolygonCollider>();
         colliderRenderDataCollection = layer.RegisterComponent<ColliderRenderData>();
         movableCollection = layer.RegisterComponent<Movable>();
-        layer.RegisterComponent<Camera>(); //Todo: Camera?
+
+        layer.RegisterComponent<Camera>(); //Todo: Remove
 
         //Create a signature that has all component flags
         includedComponents = 0;
@@ -44,19 +72,7 @@ public:
         includedComponents.set(layer.GetComponentType<Movable>(), true);
     }
 
-    ///Registers all components to the layer
-    static void RegisterComponentsForLayer(Layer& layer)
-    {
-        layer.RegisterComponent<ColliderTransform>();
-        layer.RegisterComponent<RigidBodyData>();
-        layer.RegisterComponent<CircleCollider>();
-        layer.RegisterComponent<BoxCollider>();
-        layer.RegisterComponent<PolygonCollider>();
-        layer.RegisterComponent<ColliderRenderData>();
-        layer.RegisterComponent<Movable>();
-    }
-
-    void RegisterSystems(Layer& layer)
+    void SetupSystems(Layer& layer)
     {
         rigidBodySystem = layer.RegisterSystem<RigidBody>();
         circleColliderRenderer = layer.RegisterSystem<CircleColliderRenderer>();
@@ -64,17 +80,7 @@ public:
         polygonColliderRenderer = layer.RegisterSystem<PolygonColliderRenderer>();
         movingSystem = layer.RegisterSystem<MovingSystem>();
 
-        //REMOVE
         cameraSystem = layer.RegisterSystem<CameraSystem>();
-    }
-
-    static void RegisterSystemsForLayer(Layer& layer)
-    {
-        layer.RegisterSystem<RigidBody>();
-        layer.RegisterSystem<CircleColliderRenderer>();
-        layer.RegisterSystem<BoxColliderRenderer>();
-        layer.RegisterSystem<PolygonColliderRenderer>();
-        layer.RegisterSystem<MovingSystem>();
     }
 
     void InitializeCache(CacheManager* cache)
@@ -87,10 +93,9 @@ public:
         camera = layer.AddComponent(layer.CreateEntity(), Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20)));
     }
 
-    void OverwriteFrame(FrameNumber frame, std::mt19937 otherNumberGenerator)
+    void OverwriteFrame(FrameNumber frame)
     {
         currentFrame = frame;
-        numberGenerator = otherNumberGenerator;
     }
 
     void AddObjects()
@@ -111,7 +116,7 @@ public:
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomCircle(baseLayer, numberGenerator, camera);
+            PhysicsUtils::CreateRandomCircle(baseLayer, numberGenerator, camera->Left, camera->Right, camera->Bottom, camera->Top);
         }
 
         baseLayer.AddComponent(10, Movable(Fixed16_16(20)));
@@ -119,12 +124,12 @@ public:
         //Add boxes/
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomBox(baseLayer, numberGenerator, camera);
+            PhysicsUtils::CreateRandomBox(baseLayer, numberGenerator, camera->Left, camera->Right, camera->Bottom, camera->Top);
         }
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomPolygon(baseLayer, numberGenerator, camera);
+            PhysicsUtils::CreateRandomPolygon(baseLayer, numberGenerator, camera->Left, camera->Right, camera->Bottom, camera->Top);
         }
     }
 
@@ -183,12 +188,12 @@ public:
         }
     }
 
-    FrameNumber GetCurrentFrame() const
+    inline FrameNumber GetCurrentFrame() const
     {
         return currentFrame;
     }
 
-    std::mt19937 GetNumberGenerator() const
+    inline std::mt19937 GetNumberGenerator() const
     {
         return numberGenerator;
     }
@@ -237,8 +242,7 @@ public:
     {
         //Create a new layer and then Overwrite the existing layer with the new layer
         Layer layer = Layer();
-        RegisterComponentsForLayer(layer);
-        RegisterSystemsForLayer(layer);
+        RegisterLayer(layer);
         layer.CreateEntity(); //Create an entity that would be the camera - essential for maintaining a correct entity queue
 
         std::vector<Entity> entities;

@@ -1,13 +1,15 @@
 #pragma once
 
-#include "../ECS/ECS.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
-#include "../Components/ComponentHeaders.h"
-#include "../Systems/SystemHeader.h"
+#include "../ECS/ECS.h"
 #include "../Physics/Physics.h"
+#include "../Networking/Client/ClientHandler.h"
 
 #include "GameSettings.h"
 #include "WorldManager.h"
+#include "CacheManager.h"
 #include "Worlds/PhysicsWorld.h"
 
 #include "Input/InputData.h"
@@ -17,11 +19,6 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include "../Networking/Client/ClientHandler.h"
-#include "Input/InputCollection.h"
 
 class Game
 {
@@ -32,7 +29,7 @@ public:
 
         InputManager::SetupCallbacks(window);
 
-        AddWorlds();
+        AddObjects();
     }
 
     int InitializeOpenGL()
@@ -137,7 +134,7 @@ public:
             if (otherInput.GetKeyDown(GLFW_KEY_R))
             {
                 isPaused = true;
-                worldManager.Rollback(1);
+                worldManager.Restore();
             }
 
             if (otherInput.GetKey(GLFW_KEY_LEFT_CONTROL) && otherInput.GetKeyDown(GLFW_KEY_C))
@@ -190,8 +187,7 @@ public:
                 sleepTime += sleepDuration;
             }
 
-            auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-            if (oldPhysicsWorld->GetCurrentFrame() >= 1000) break;
+            if (worldManager.GetPhysicsWorld().GetCurrentFrame() >= 1000) break;
         }
 
         std::cout << "Average frame time (Lower is better) ms: " << 1000 * averageFrameTime / frameCount << std::endl;
@@ -203,109 +199,104 @@ public:
         return 0;
     }
 
-    void AddWorlds()
+    void AddObjects()
     {
-        physicsWorldType = worldManager.AddWorld<PhysicsWorld>();
+        //Add objects
+        worldManager.GetPhysicsWorld().AddObjects();
 
-        //Add objects to current world
-        worldManager.GetWorld<PhysicsWorld>(physicsWorldType)->AddObjects();
-
-        //Setup cache on all layers
-        for (auto physicsWorld : worldManager.GetAllWorlds<PhysicsWorld>(physicsWorldType))
-        {
-            physicsWorld->InitializeCache(&cacheManager);
-        }
+        //Setup cache
+        worldManager.GetPhysicsWorld().InitializeCache(&cacheManager);
     }
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
-        auto oldPhysicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        FrameNumber currentFrame = oldPhysicsWorld->GetCurrentFrame();
+        PhysicsWorld& basePhysicsWorld = worldManager.GetPhysicsWorld();
+        FrameNumber currentFrame = basePhysicsWorld.GetCurrentFrame();
 
         //Update the input of this client
         InputData input = playerInput.GetInputData(currentFrame);
         clientHandler.SendInput(input);
         clientHandler.UpdateInput(clientHandler.GetClientID(), input);
 
-        //Update the input of other clients and handle other packets
-        clientHandler.ReadMessages(oldPhysicsWorld);
+        //Update the input of other clients and handle other packets, deserializing new game state
+        bool newGameData = false;
+        clientHandler.ReadMessages(basePhysicsWorld, newGameData);
 
-        FrameNumber rollbackFrames = clientHandler.GetRollbacks(oldPhysicsWorld->GetCurrentFrame());
         FrameNumber lastConfirmedFrame = clientHandler.GetLastConfirmedFrame();
 
         if (RollbackDebugMode)
-            rollbackFrames = MaxRollBackFrames - 1;
-
-        //TODO for optimization: Delta rollback, not save every physics tick, threaded physics, grid physics broad phase
-
-        if (rollbackFrames > 0)
         {
-            FrameNumber actualRollbacks = 0;
+            if (currentFrame < MaxRollBackFrames)
+                lastConfirmedFrame = 1;
+            else
+                lastConfirmedFrame = currentFrame - (MaxRollBackFrames - 1);
+        }
 
-            if (worldManager.Rollback(rollbackFrames))
+        if (lastConfirmedFrame > currentFrame)
+        {
+            //Should only be possible at start
+            lastConfirmedFrame = currentFrame;
+        }
+
+        if (newGameData)
+        {
+            worldManager.Reset(); //TODO: With delay frames might still be behind
+            lastConfirmedFrame = currentFrame;
+        }
+        else if (lastConfirmedFrame < currentFrame)
+        {
+            if (currentFrame - lastConfirmedFrame >= MaxRollBackFrames)
             {
-                actualRollbacks = rollbackFrames;
-                //std::cout << "Rollback " << rollbackFrames<< " frames" << std::endl;
+                std::cout << "Could not rollback " << currentFrame - lastConfirmedFrame << "frames" << std::endl;
             }
             else
             {
-                std::cout << "Could not rollback this many frames:  " << rollbackFrames << std::endl;
+                int32_t rollbackCount = worldManager.Restore();
+
+                if (rollbackCount < 0)
+                {
+                    std::cout << "Could not rollback from frame " << currentFrame << "to frame " << lastConfirmedFrame << std::endl;
+                }
+                else if (rollbackCount > 0)
+                {
+                    //ToDo: will always rollback when last confirmed frame is < current frame. Add checking if the received input is equal to the predicted
+                    //std::cout << "Rollback " << rollbackCount << " frames" << std::endl;
+
+                    for(int32_t i = 0; i < rollbackCount; ++i)
+                    {
+                        worldManager.NextFrame(lastConfirmedFrame);
+                        std::vector<Input*> inputs = clientHandler.GetAllClientInputs(basePhysicsWorld.GetCurrentFrame());
+                        basePhysicsWorld.Update(deltaTime, inputs, clientHandler.GetClientID());
+                    }
+                }
             }
-
-            for(int i = 0; i < actualRollbacks; ++i)
-            {
-                worldManager.NextFrame<PhysicsWorld>(physicsWorldType, currentFrame - actualRollbacks + i == lastConfirmedFrame);
-
-                auto p2 = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-                std::vector<Input*> inputs = clientHandler.GetAllClientInputs(p2->GetCurrentFrame());
-                p2->Update(deltaTime, inputs, clientHandler.GetClientID());
-            }
         }
 
-        worldManager.NextFrame<PhysicsWorld>(physicsWorldType, currentFrame == lastConfirmedFrame);
-        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-
-        if (physicsWorld->GetCurrentFrame() != currentFrame)
-        {
-            //Received new game data from another client
-            worldManager.PreventFurtherRollback();
-
-            std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-            physicsWorld->Update(deltaTime, inputs, clientHandler.GetClientID());
-        }
-        else
-        {
-            std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-            physicsWorld->Update(deltaTime, inputs, clientHandler.GetClientID());
-
-            clientHandler.SendGameData(physicsWorld);
-        }
+        worldManager.NextFrame(lastConfirmedFrame);
+        std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
+        basePhysicsWorld.Update(deltaTime, inputs, clientHandler.GetClientID());
+        clientHandler.SendGameData(basePhysicsWorld);
     }
 
     void Render()
     {
         glClear(GL_COLOR_BUFFER_BIT);
-
-        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
-        physicsWorld->Render();
-
+        worldManager.GetPhysicsWorld().Render();
         glfwSwapBuffers(window);
     }
 
     void Serialize()
     {
-        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         serializedStream.Clear();
         hasSerializedStream = true;
-        physicsWorld->Serialize(serializedStream);
+         worldManager.GetPhysicsWorld().Serialize(serializedStream);
     }
 
     void Deserialize()
     {
-        auto physicsWorld = worldManager.GetWorld<PhysicsWorld>(physicsWorldType);
         Stream temporaryStream = Stream(serializedStream);
-        physicsWorld->Deserialize(temporaryStream);
-        worldManager.PreventFurtherRollback();
+        worldManager.GetPhysicsWorld().Deserialize(temporaryStream);
+        worldManager.Reset();
     }
 
 private:
@@ -316,7 +307,6 @@ private:
 
 private:
     WorldManager worldManager;
-    WorldType physicsWorldType;
 
     CacheManager cacheManager;
 

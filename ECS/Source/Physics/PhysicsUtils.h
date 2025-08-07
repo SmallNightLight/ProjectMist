@@ -20,10 +20,10 @@ public:
         return CreateCircle(layer, position, Fixed16_16(1), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateRandomCircle(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
+    static Entity CreateRandomCircle(Layer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
     {
-        FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
-        FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
+        FixedRandom16_16 randomPositionX(left, right);
+        FixedRandom16_16 randomPositionY(bottom, top);
 
         return CreateCircle(layer, Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(1), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
@@ -45,10 +45,10 @@ public:
         return CreateBox(layer, position, Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateRandomBox(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
+    static Entity CreateRandomBox(Layer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
     {
-        FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
-        FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
+        FixedRandom16_16 randomPositionX(left, right);
+        FixedRandom16_16 randomPositionY(bottom, top);
 
         return CreateBox(layer, Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
@@ -70,10 +70,10 @@ public:
         return CreatePolygon(layer, Vector2(position), GetRandomVertices(numberGenerator), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateRandomPolygon(Layer& layer, std::mt19937& numberGenerator, const Camera* camera)
+    static Entity CreateRandomPolygon(Layer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
     {
-        FixedRandom16_16 randomPositionX(camera->Left, camera->Right);
-        FixedRandom16_16 randomPositionY(camera->Bottom, camera->Top);
+        FixedRandom16_16 randomPositionX(left, right);
+        FixedRandom16_16 randomPositionY(bottom, top);
 
         return CreatePolygon(layer, Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), GetRandomVertices(numberGenerator), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }

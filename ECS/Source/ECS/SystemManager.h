@@ -39,14 +39,29 @@ public:
 	}
 
 	template<typename T>
-	SystemType RegisterSystemType(Layer* world)
+	SystemType RegisterSystemType(Layer* layer)
 	{
-		auto system = std::make_shared<T>(world);
+		auto system = std::make_shared<T>(layer);
 		Signature signature = system->GetSignature();
 		systems[systemCount] = std::make_pair(signature, system);
 		systemCount++;
 		return systemCount - 1;
 	}
+
+	// template<typename T>
+	// std::shared_ptr<T> GetSystem(Layer* layer)
+	// {
+	// 	for (unsigned int i = 0; i < systemCount; ++i)
+	// 	{
+	// 		auto& [signature, system] = systems[i];
+	// 		auto casted = std::dynamic_pointer_cast<T>(system);
+	// 		if (casted)
+	// 			return casted;
+	// 	}
+	//
+	// 	assert(false && "System type not found");
+	// 	return nullptr;
+	// }
 
     //Removes the given entity from all systems that have a reference to the entity
 	void DestroyEntity(Entity entity)
