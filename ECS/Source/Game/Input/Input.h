@@ -76,13 +76,13 @@ struct Input
     }
 
     //Mouse position methods
-    Vector2 GetMousePosition(Camera* camera) const
+    Vector2 GetMousePosition(const Camera& camera) const
     {
         Fixed16_16 normalizedX = (mouseX) / Fixed16_16(SCREEN_WIDTH);
         Fixed16_16 normalizedY = (Fixed16_16(SCREEN_HEIGHT) - mouseY) / Fixed16_16(SCREEN_HEIGHT);
 
-        Fixed16_16 worldX = camera->Left + normalizedX * (camera->Right - camera->Left);
-        Fixed16_16 worldY = camera->Bottom + normalizedY * (camera->Top - camera->Bottom);
+        Fixed16_16 worldX = camera.Left + normalizedX * (camera.Right - camera.Left);
+        Fixed16_16 worldY = camera.Bottom + normalizedY * (camera.Top - camera.Bottom);
 
         return Vector2(worldX, worldY);
     }

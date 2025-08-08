@@ -7,7 +7,7 @@
 class WorldManager
 {
 public:
-    WorldManager() : LastConfirmedFrame(1), BaseLayer(Layer()), ConfirmedLayer(Layer()), BasePhysicsWorld(BaseLayer)
+    WorldManager() : LastConfirmedFrame(1), BaseLayer(PhysicsLayer()), ConfirmedLayer(PhysicsLayer()), BasePhysicsWorld(BaseLayer)
     {
         PhysicsWorld::RegisterLayer(ConfirmedLayer);
     }
@@ -48,7 +48,7 @@ public:
 
 private:
     FrameNumber LastConfirmedFrame;
-    Layer BaseLayer;                    //Layer that gets updated
-    Layer ConfirmedLayer;               //Layer of the last confirmed frame, which is only used to save to and restore from
+    PhysicsLayer BaseLayer;                    //Layer that gets updated
+    PhysicsLayer ConfirmedLayer;               //Layer of the last confirmed frame, which is only used to save to and restore from
     PhysicsWorld BasePhysicsWorld;
 };

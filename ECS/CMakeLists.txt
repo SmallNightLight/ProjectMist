@@ -45,7 +45,6 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Systems/CircleColliderRenderer.h
         Source/Physics/Systems/RigidBody.h
         Source/Components/Camera.h
-        Source/Systems/CameraSystem.h
         Source/Physics/Components/Movable.h
         Source/Physics/Systems/MovingSystem.h
         Source/Physics/Collision/CollisionDetection.h
@@ -75,6 +74,8 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/unordered_dense.h
         Source/ECS/EntityQueue.h
         Source/ECS/EntitySet.h
+        Source/Physics/PhysicsComponents.h
+        Source/Physics/PhysicsSystems.h
 )
 
 add_subdirectory(Source/Math)

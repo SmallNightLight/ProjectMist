@@ -1,9 +1,11 @@
 #pragma once
 
+#include "PhysicsComponents.h"
+
 class PhysicsUtils
 {
 public:
-    static Entity CreateCircle(Layer& layer, const Vector2& position, const Fixed16_16& radius, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
+    static Entity CreateCircle(PhysicsLayer& layer, const Vector2& position, const Fixed16_16& radius, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
     {
         Entity entity = layer.CreateEntity();
 
@@ -15,12 +17,12 @@ public:
         return entity;
     }
 
-    static Entity CreateRandomCircleFromPosition(Layer& layer, std::mt19937& numberGenerator, const Vector2& position)
+    static Entity CreateRandomCircleFromPosition(PhysicsLayer& layer, std::mt19937& numberGenerator, const Vector2& position)
     {
         return CreateCircle(layer, position, Fixed16_16(1), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateRandomCircle(Layer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
+    static Entity CreateRandomCircle(PhysicsLayer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
     {
         FixedRandom16_16 randomPositionX(left, right);
         FixedRandom16_16 randomPositionY(bottom, top);
@@ -28,7 +30,7 @@ public:
         return CreateCircle(layer, Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(1), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateBox(Layer& layer, const Vector2& position, const Fixed16_16& width, const Fixed16_16& height, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
+    static Entity CreateBox(PhysicsLayer& layer, const Vector2& position, const Fixed16_16& width, const Fixed16_16& height, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
     {
         Entity entity = layer.CreateEntity();
 
@@ -40,12 +42,12 @@ public:
         return entity;
     }
 
-    static Entity CreateRandomBoxFromPosition(Layer& layer, std::mt19937& numberGenerator, const Vector2& position)
+    static Entity CreateRandomBoxFromPosition(PhysicsLayer& layer, std::mt19937& numberGenerator, const Vector2& position)
     {
         return CreateBox(layer, position, Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateRandomBox(Layer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
+    static Entity CreateRandomBox(PhysicsLayer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
     {
         FixedRandom16_16 randomPositionX(left, right);
         FixedRandom16_16 randomPositionY(bottom, top);
@@ -53,7 +55,7 @@ public:
         return CreateBox(layer, Vector2(randomPositionX(numberGenerator), randomPositionY(numberGenerator)), Fixed16_16(2), Fixed16_16(2), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreatePolygon(Layer& layer, const Vector2& position, const std::vector<Vector2>& vertices, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
+    static Entity CreatePolygon(PhysicsLayer& layer, const Vector2& position, const std::vector<Vector2>& vertices, RigidBodyType shape = Dynamic, uint8_t r = 255, uint8_t g = 255, uint8_t b = 255)
     {
         Entity entity = layer.CreateEntity();
 
@@ -65,12 +67,12 @@ public:
         return entity;
     }
 
-    static Entity CreateRandomPolygonFromPosition(Layer& layer, std::mt19937& numberGenerator, const Vector2& position)
+    static Entity CreateRandomPolygonFromPosition(PhysicsLayer& layer, std::mt19937& numberGenerator, const Vector2& position)
     {
         return CreatePolygon(layer, Vector2(position), GetRandomVertices(numberGenerator), Dynamic, GetRandomColor(numberGenerator), GetRandomColor(numberGenerator), GetRandomColor(numberGenerator));
     }
 
-    static Entity CreateRandomPolygon(Layer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
+    static Entity CreateRandomPolygon(PhysicsLayer& layer, std::mt19937& numberGenerator, Fixed16_16 left, Fixed16_16 right, Fixed16_16 bottom, Fixed16_16 top)
     {
         FixedRandom16_16 randomPositionX(left, right);
         FixedRandom16_16 randomPositionY(bottom, top);

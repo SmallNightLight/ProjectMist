@@ -5,19 +5,19 @@
 class PolygonColliderRenderer final : public System
 {
 public:
-    explicit PolygonColliderRenderer(Layer* world) : System(world)
+    explicit PolygonColliderRenderer(PhysicsComponentManager& componentManager) : System()
     {
-        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
-        polygonColliderCollection = layer->GetComponentCollection<PolygonCollider>();
-        colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
+        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
+        colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
     }
 
-    [[nodiscard]] Signature GetSignature() const override
+    static Signature GetSignature()
     {
         Signature signature;
-        signature.set(layer->GetComponentType<ColliderTransform>());
-        signature.set(layer->GetComponentType<PolygonCollider>());
-        signature.set(layer->GetComponentType<ColliderRenderData>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderTransform>());
+        signature.set(PhysicsLayer::GetComponentType<PolygonCollider>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderRenderData>());
         return signature;
     }
 
@@ -90,7 +90,7 @@ public:
     }
 
 private:
-    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
-    std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
-    std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<PolygonCollider>* polygonColliderCollection;
+    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 };

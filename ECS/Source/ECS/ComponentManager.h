@@ -3,119 +3,163 @@
 #include "ECSSettings.h"
 #include "ComponentCollection.h"
 
-#include <unordered_map>
 #include <array>
 #include <cassert>
-#include <memory>
+#include <cstring>
+#include <utility>
+
+template<typename... Components>
+struct ComponentList { };
+
+template<typename T, typename List>
+struct IndexOf;
+
+template<typename T, typename... Ts>
+struct IndexOf<T, ComponentList<T, Ts...>> {
+	static constexpr ComponentType value = 0;
+};
+
+template<typename T, typename U, typename... Ts>
+struct IndexOf<T, ComponentList<U, Ts...>>
+{
+	static constexpr ComponentType value = 1 + IndexOf<T, ComponentList<Ts...>>::value;
+};
+
+template<typename T, typename List>
+constexpr ComponentType IndexOf_v = IndexOf<T, List>::value;
+
+template<typename T, typename List>
+struct Contains;
+
+template<typename T>
+struct Contains<T, ComponentList<>> : std::false_type { };
+
+template<typename T, typename... Ts>
+struct Contains<T, ComponentList<T, Ts...>> : std::true_type { };
+
+template<typename T, typename U, typename... Ts>
+struct Contains<T, ComponentList<U, Ts...>> : Contains<T, ComponentList<Ts...>> { };
+
+template<typename T, typename List>
+constexpr bool Contains_v = Contains<T, List>::value;
+
+template<typename... Components>
+constexpr auto GetOffsets()
+{
+    std::array<std::size_t, sizeof...(Components)> result { };
+
+    std::size_t offset = 0;
+    std::size_t i = 0;
+
+	((result[i++] = offset, offset += sizeof(ComponentCollection<Components>)), ...);
+
+    return result;
+}
+
+template<typename ComponentList>
+class ComponentManager;
 
 //Manages all component collections and uses the component name for easy lookups
-class ComponentManager
+template<typename... Components>
+class ComponentManager<ComponentList<Components...>>
 {
 public:
-	ComponentManager() = default;
-
-	void Overwrite(const ComponentManager& other)
+	ComponentManager()
 	{
-		for(int i = 0; i < other.nextComponentType; ++i)
-		{
-			componentArrays[i]->Overwrite(other.componentArrays[i].get());
-		}
+		(RegisterComponent<Components>(), ...);
 	}
 
-    //Registers the component of type T by using the type name as a hash and creates a new ComponentCollection filled with components of type T
-	template<typename T>
-	std::shared_ptr<ComponentCollection<T>> RegisterComponent()
+	~ComponentManager()
 	{
-		const char* typeName = typeid(T).name();
+		(GetComponentCollection<Components>()->~ComponentCollection<Components>(), ...);
+	}
 
-		assert(componentTypes.find(typeName) == componentTypes.end() && "Component already registered"); //Todo: allow this case, since multiple worlds might want to register the same system
-
-		//Add the component type to the component map
-		componentTypes.insert({ typeName, nextComponentType });
-
-		//Create a componentArray pointer and add it to the component array map
-		auto componentCollection = std::make_shared<ComponentCollection<T>>();
-		componentArrays[componentTypes[typeName]] = componentCollection;
-		nextComponentType++;
-
-		return componentCollection;
+	inline void Overwrite(const ComponentManager& other)
+	{
+		std::memcpy(Data.data(), other.Data.data(), sizeof(Data));
 	}
 
     //Gets the unique component type ID for the component type T
 	template<typename T>
-	ComponentType GetComponentType()
+	inline static constexpr ComponentType GetComponentType()
 	{
-		const char* typeName = typeid(T).name();
-
-		assert(componentTypes.find(typeName) != componentTypes.end() && "Component not yet registered");
-
-		return componentTypes[typeName];
+		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+		return IndexOf_v<T, List>;
 	}
 
     //Adds the component of type T to the given entity
 	template<typename T>
-	T* AddComponent(Entity entity, T component)
+	inline T* AddComponent(Entity entity, T component)
 	{
-        return GetComponentCollection<T>(GetComponentType<T>())->AddComponent(entity, component);
-	}
-
-	//Adds the component of type T to the given entity
-	template<typename T>
-	T* AddComponent(Entity entity, T component, ComponentType componentType)
-	{
-		return GetComponentCollection<T>(componentType)->AddComponent(entity, component);
+		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+        return GetComponentCollection<T>()->AddComponent(entity, component);
 	}
 
     //Removes the component of type T from the given entity
     template<typename T>
-    void RemoveComponent(Entity entity)
+    inline void RemoveComponent(Entity entity)
     {
-        int componentType = GetComponentType<T>();
-        GetComponentCollection<T>(componentType)->RemoveComponent(entity);
+		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+        GetComponentCollection<T>()->RemoveComponent(entity);
     }
 
     //Gets a reference to the component of type T for the given entity
     template<typename T>
-	T& GetComponent(Entity entity, ComponentType componentType)
+	inline T& GetComponent(Entity entity)
 	{
-        return GetComponentCollection<T>(componentType)->GetComponent(entity);
+		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+        return GetComponentCollection<T>()->GetComponent(entity);
 	}
 
     //Checks whether the given entity has the component of type T
     template<typename T>
-    bool HasComponent(Entity entity)
+    inline bool HasComponent(Entity entity) const
     {
-        int componentType = GetComponentType<T>();
-        return ComponentCollection<T>(componentType)->HasComponent(entity);
+		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+        return GetComponentCollection<T>()->HasComponent(entity);
     }
 
     //Removes all components that are associated to the given entity
-	void DestroyEntity(Entity entity)
+	inline void DestroyEntity(Entity entity)
 	{
-		for(int i = 0; i < nextComponentType; ++i)
-		{
-			componentArrays[i]->DestroyEntity(entity);
-		}
+		(DestroyEntityForComponent<Components>(entity), ...);
 	}
 
 	//Gets the component collection for a specific component of type T
 	template<typename T>
-	std::shared_ptr<ComponentCollection<T>> GetComponentCollection()
+	inline constexpr ComponentCollection<T>* GetComponentCollection()
 	{
-		return GetComponentCollection<T>(GetComponentType<T>());
-	}
-
-	//Gets the component collection for a specific component of type T
-	template<typename T>
-	std::shared_ptr<ComponentCollection<T>> GetComponentCollection(ComponentType componentType)
-	{
-		assert(componentArrays[componentType] && "Component not yet registered");
-
-		return std::static_pointer_cast<ComponentCollection<T>>(componentArrays[componentType]);
+		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+		return reinterpret_cast<ComponentCollection<T>*>(&Data[ComponentOffset<T>]);
 	}
 
 private:
-	std::unordered_map<const char*, ComponentType> componentTypes { };
-    std::array<std::shared_ptr<IComponentCollection>, MAXCOMPONENTS> componentArrays { };
-	ComponentType nextComponentType { };
+	template<typename T>
+	void RegisterComponent()
+	{
+		ComponentCollection<T>* collection = new (&Data[ComponentOffset<T>]) ComponentCollection<T>();
+		collection->Initialize();
+	}
+
+	template<typename T>
+	void DestroyEntityForComponent(Entity entity)
+	{
+		reinterpret_cast<ComponentCollection<T>*>(&Data[ComponentOffset<T>])->DestroyEntity(entity);
+	}
+
+private:
+	using List = ComponentList<Components...>;
+
+	static constexpr size_t ComponentCount = sizeof...(Components);
+	static constexpr size_t TotalSize = (sizeof(ComponentCollection<Components>) + ... + 0);
+
+	template<typename T>
+	static constexpr size_t GetIndex() { return IndexOf_v<T, List>;}
+
+	static constexpr std::array<size_t, ComponentCount> Offsets = GetOffsets<Components...>();
+
+	template<typename T>
+	static constexpr std::size_t ComponentOffset = Offsets[GetComponentType<T>()];
+
+	std::array<uint8_t, TotalSize> Data;
 };

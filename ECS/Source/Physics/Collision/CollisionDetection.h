@@ -1,13 +1,15 @@
 #pragma once
 
+#include "CollisionInfo.h"
+
 class CollisionDetection
 {
 public:
-      explicit  CollisionDetection(Layer* world)
+      explicit CollisionDetection(PhysicsComponentManager& componentManager)
       {
-            circleColliderCollection = world->GetComponentCollection<CircleCollider>();
-            boxColliderCollection = world->GetComponentCollection<BoxCollider>();
-            polygonColliderCollection = world->GetComponentCollection<PolygonCollider>();
+            circleColliderCollection = componentManager.GetComponentCollection<CircleCollider>();
+            boxColliderCollection = componentManager.GetComponentCollection<BoxCollider>();
+            polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
       }
 
       static void CollisionCorrection(const CollisionInfo& resultInfo, bool swap, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2)
@@ -502,7 +504,7 @@ private:
       }
 
 private:
-      std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
-      std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
-      std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
+      ComponentCollection<CircleCollider>* circleColliderCollection;
+      ComponentCollection<BoxCollider>* boxColliderCollection;
+      ComponentCollection<PolygonCollider>* polygonColliderCollection;
 };

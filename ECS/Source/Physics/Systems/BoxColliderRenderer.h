@@ -5,19 +5,19 @@
 class BoxColliderRenderer final : public System
 {
 public:
-    explicit BoxColliderRenderer(Layer* world) : System(world)
+    explicit BoxColliderRenderer(PhysicsComponentManager& componentManager) : System()
     {
-        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
-        boxColliderCollection = layer->GetComponentCollection<BoxCollider>();
-        colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
+        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        boxColliderCollection = componentManager.GetComponentCollection<BoxCollider>();
+        colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
     }
 
-    [[nodiscard]] Signature GetSignature() const override
+    static Signature GetSignature()
     {
         Signature signature;
-        signature.set(layer->GetComponentType<ColliderTransform>());
-        signature.set(layer->GetComponentType<BoxCollider>());
-        signature.set(layer->GetComponentType<ColliderRenderData>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderTransform>());
+        signature.set(PhysicsLayer::GetComponentType<BoxCollider>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderRenderData>());
         return signature;
     }
 
@@ -83,7 +83,7 @@ public:
     }
 
 private:
-    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
-    std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
-    std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<BoxCollider>* boxColliderCollection;
+    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 };

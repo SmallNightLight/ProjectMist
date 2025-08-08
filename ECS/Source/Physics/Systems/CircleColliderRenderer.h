@@ -5,19 +5,19 @@
 class CircleColliderRenderer final : public System
 {
 public:
-    explicit CircleColliderRenderer(Layer* world) : System(world)
+    explicit CircleColliderRenderer(PhysicsComponentManager& componentManager) : System()
     {
-        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
-        circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
-        colliderRenderDataCollection = layer->GetComponentCollection<ColliderRenderData>();
+        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        circleColliderCollection = componentManager.GetComponentCollection<CircleCollider>();
+        colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
     }
 
-    [[nodiscard]] Signature GetSignature() const override
+    static Signature GetSignature()
     {
         Signature signature;
-        signature.set(layer->GetComponentType<ColliderTransform>());
-        signature.set(layer->GetComponentType<CircleCollider>());
-        signature.set(layer->GetComponentType<ColliderRenderData>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderTransform>());
+        signature.set(PhysicsLayer::GetComponentType<CircleCollider>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderRenderData>());
         return signature;
     }
 
@@ -112,7 +112,7 @@ public:
     }
 
 private:
-    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
-    std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
-    std::shared_ptr<ComponentCollection<ColliderRenderData>> colliderRenderDataCollection;
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<CircleCollider>* circleColliderCollection;
+    ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 };

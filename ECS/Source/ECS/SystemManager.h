@@ -2,12 +2,9 @@
 
 #include "ECSSettings.h"
 #include "System.h"
-#include "Layer.h"
 
 #include <memory>
 #include <cassert>
-
-class Layer;
 
 //Manages the systems, their signatures and gives functionality to automatically adding components to a system when their signature match (or not)
 class SystemManager
@@ -28,20 +25,24 @@ public:
 	}
 
     //Registers the system of type T and sets the signature
-	template<typename T>
-	std::shared_ptr<T> RegisterSystem(Layer* world)
+	template<typename T, typename ComponentManager>
+	std::shared_ptr<T> RegisterSystem(ComponentManager& componentManager)
 	{
-		auto system = std::make_shared<T>(world);
+		//static_assert() //TODO
+
+		auto system = std::make_shared<T>(componentManager);
 		Signature signature = system->GetSignature();
 		systems[systemCount] = std::make_pair(signature, system);
 		systemCount++;
 		return system;
 	}
 
-	template<typename T>
-	SystemType RegisterSystemType(Layer* layer)
+	template<typename T, typename ComponentManager>
+	SystemType RegisterSystemType(ComponentManager& componentManager)
 	{
-		auto system = std::make_shared<T>(layer);
+		//static_assert() //TODO
+
+		auto system = std::make_shared<T>(componentManager);
 		Signature signature = system->GetSignature();
 		systems[systemCount] = std::make_pair(signature, system);
 		systemCount++;

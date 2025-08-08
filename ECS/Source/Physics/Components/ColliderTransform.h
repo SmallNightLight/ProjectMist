@@ -2,6 +2,7 @@
 
 #include "../../Math/FixedTypes.h"
 #include "../../Math/Stream.h"
+#include "../../Math/HashUtils.h"
 
 enum ColliderType
 {

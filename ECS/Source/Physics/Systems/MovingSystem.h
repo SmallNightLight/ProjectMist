@@ -5,19 +5,19 @@
 class MovingSystem final : public System
 {
 public:
-    explicit MovingSystem(Layer* world) : System(world)
+    explicit MovingSystem(PhysicsComponentManager& componentManager) : System()
     {
-        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
-        rigidBodyCollection = layer->GetComponentCollection<RigidBodyData>();
-        movableCollection = layer->GetComponentCollection<Movable>();
+        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        rigidBodyCollection = componentManager.GetComponentCollection<RigidBodyData>();
+        movableCollection = componentManager.GetComponentCollection<Movable>();
     }
 
-    [[nodiscard]] Signature GetSignature() const override
+    static Signature GetSignature()
     {
         Signature signature;
-        signature.set(layer->GetComponentType<ColliderTransform>());
-        signature.set(layer->GetComponentType<RigidBodyData>());
-        signature.set(layer->GetComponentType<Movable>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderTransform>());
+        signature.set(PhysicsLayer::GetComponentType<RigidBodyData>());
+        signature.set(PhysicsLayer::GetComponentType<Movable>());
         return signature;
     }
 
@@ -55,7 +55,7 @@ public:
     }
 
 private:
-    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
-    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyCollection;
-    std::shared_ptr<ComponentCollection<Movable>> movableCollection;
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<RigidBodyData>* rigidBodyCollection;
+    ComponentCollection<Movable>* movableCollection;
 };

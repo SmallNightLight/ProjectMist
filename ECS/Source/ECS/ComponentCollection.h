@@ -4,32 +4,24 @@
 
 #include <array>
 #include <cassert>
-#include <bitset>
-#include <memory>
-
-//Interface for component collections, used to enforce the `DestroyEntity` method in all collections
-class IComponentCollection
-{
-public:
-	virtual ~IComponentCollection() = default;
-	virtual void DestroyEntity(Entity entity) = 0;
-    virtual void Overwrite(IComponentCollection* other) = 0;
-};
 
 //Stores the components of type T in an array
 //Sparse set-based ECS
 //Issues: When removing components are removed the array reorders the entity indexes to make the array dense, resulting in a non-optimal order
 template<typename T>
-class ComponentCollection : public IComponentCollection
+class ComponentCollection
 {
 	static_assert(std::is_trivially_default_constructible_v<T>, "ComponentCollection requires T to be default constructible and trivial");
 
 public:
+    inline ComponentCollection() noexcept = default;
+
     //Initializes the sparse set with null entities, to indicate that all entities have no components
-    ComponentCollection()
+    void Initialize()
     {
         entityToIndex.fill(ENTITYNULL);
-        indexToEntity.fill(ENTITYNULL); //Maybe not needed (in that case also remove the code for RemoveComponent)
+        indexToEntity.fill(ENTITYNULL); //TODO can be removed also at the bottom
+        entityCount = 0;
     }
 
     //Adds the component of type T to the given entity
@@ -97,7 +89,7 @@ public:
     }
 
     //Removes the component from the entity if possible
-    void DestroyEntity(Entity entity) override
+    void DestroyEntity(Entity entity)
     {
         assert(entity < MAXENTITIES && "Entity out of range");
 
@@ -107,22 +99,20 @@ public:
         }
     }
 
-    void Overwrite(IComponentCollection* other) override
+    void Overwrite(ComponentCollection* other)
     {
-        auto* collection = static_cast<ComponentCollection<T>*>(other);
-
-        assert(collection && "Types of component collections do not match");
-
-        std::memcpy(&components, &collection->components, sizeof(std::array<T, MAXENTITIES>));
-        indexToEntity = collection->indexToEntity;
-        entityToIndex = collection->entityToIndex;
-        entityCount = collection->entityCount;
+        std::memcpy(&components, &other->components, sizeof(std::array<T, MAXENTITIES>));
+        indexToEntity = other->indexToEntity;
+        entityToIndex = other->entityToIndex;
+        entityCount = other->entityCount;
     }
 
 private:
-    std::array<T, MAXENTITIES> components { };
-    std::array<Entity, MAXENTITIES> indexToEntity { };
-    std::array<std::uint32_t, MAXENTITIES> entityToIndex { };
+    std::array<T, MAXENTITIES> components;
+    std::array<Entity, MAXENTITIES> indexToEntity;
+    std::array<std::uint32_t, MAXENTITIES> entityToIndex;
 
-    std::uint32_t entityCount = 0;
+    std::uint32_t entityCount;
 };
+
+static_assert(std::is_trivially_default_constructible_v<ComponentCollection<bool>>, "Component Collection needs to be trivial");

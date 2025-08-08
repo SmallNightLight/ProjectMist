@@ -9,14 +9,19 @@
 
 //Manages the different managers (EntityManager, ComponentManager and SystemManager)
 //Has functionality for modifying the components, systems and signatures of entities
-class Layer
+
+//Manages all component collections and uses the component name for easy lookups
+template<typename ComponentList>
+class Layer;
+
+template<typename... Components>
+class Layer<ComponentList<Components...>>
 {
 public:
     Layer() : ignoreSignatureChanged(false)
     {
-        //Initializes the ECS managers (EntityManager, ComponentManager and SystemManager)
         entityManager = EntityManager();
-        componentManager = ComponentManager();
+        componentManager = ComponentManager<List>();
         systemManager = SystemManager();
     }
 
@@ -84,27 +89,13 @@ public:
 
     //Component methods
 
-    //Registers the component T to the component manager
-    template<typename T>
-    std::shared_ptr<ComponentCollection<T>> RegisterComponent()
-    {
-        return componentManager.RegisterComponent<T>();
-    }
-
     //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
     template<typename T>
     T* AddComponent(Entity entity, T component)
     {
-        return AddComponent(entity, component, componentManager.GetComponentType<T>());
-    }
-
-    //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
-    template<typename T>
-    T* AddComponent(Entity entity, T component, ComponentType componentType)
-    {
         //Render the signature of the entity by including the new component
         Signature signature = entityManager.GetSignature(entity);
-        signature.set(componentType, true);
+        signature.set(GetComponentType<T>(), true);
         entityManager.SetSignature(entity, signature);
 
         //Notify the system manager about the new signature
@@ -113,36 +104,18 @@ public:
             systemManager.EntitySignatureChanged(entity, signature);
         }
 
-        return componentManager.AddComponent<T>(entity, component, componentType);
-    }
-
-    //Adds the component to the given entity, updates the signature and updates on which systems the entity is registered based on the signature
-    template<typename T>
-    T* AddComponent(Entity entity, T component, ComponentType componentType, std::shared_ptr<ComponentCollection<T>> componentCollection)
-    {
-        //Render the signature of the entity by including the new component
-        Signature signature = entityManager.GetSignature(entity);
-        signature.set(componentType, true);
-        entityManager.SetSignature(entity, signature);
-
-        //Notify the system manager about the new signature
-        if (!ignoreSignatureChanged)
-        {
-            systemManager.EntitySignatureChanged(entity, signature);
-        }
-
-        return componentCollection->AddComponent(entity, component);
+        return componentManager.template AddComponent<T>(entity, component);
     }
 
     //Removes the component of type T from the entity, updates the signature and updates on which systems the entity is registered based on the signature
     template<typename T>
     void RemoveComponent(Entity entity)
     {
-        componentManager.RemoveComponent<T>(entity);
+        componentManager.template RemoveComponent<T>(entity);
 
         //Render the signature of the entity by removing the component
-        Signature  signature = entityManager.GetSignature(entity);
-        signature.set(componentManager.GetComponentType<T>(), false);
+        Signature signature = entityManager.GetSignature(entity);
+        signature.set(componentManager.template GetComponentType<T>(), false);
         entityManager.SetSignature(entity, signature);
 
         //Notify the system manager about the new signature
@@ -156,33 +129,27 @@ public:
     template<typename T>
     T& GetComponent(Entity entity)
     {
-        return componentManager.GetComponent<T>(entity, GetComponentType<T>());
+        return componentManager.template GetComponent<T>(entity);
     }
 
     template<typename T>
-    std::shared_ptr<ComponentCollection<T>> GetComponentCollection()
+    ComponentCollection<T>* GetComponentCollection()
     {
-        return componentManager.GetComponentCollection<T>();
-    }
-
-    template<typename T>
-    std::shared_ptr<ComponentCollection<T>> GetComponentCollection(ComponentType componentType)
-    {
-        return componentManager.GetComponentCollection<T>(componentType);
+        return componentManager.template GetComponentCollection<T>();
     }
 
     //Checks whether the given entity has the component of type T
     template<typename T>
-    bool HasComponent(Entity entity)
+    bool HasComponent(Entity entity) const
     {
-        return componentManager.HasComponent<T>(entity);
+        return componentManager.template HasComponent<T>(entity);
     }
 
     //Get the unique ComponentType ID for a component type T
     template<typename T>
-    ComponentType GetComponentType()
+    static constexpr ComponentType GetComponentType()
     {
-       return componentManager.GetComponentType<T>();
+       return ComponentManager<List>::template GetComponentType<T>();
     }
 
     //Systems methods
@@ -191,13 +158,13 @@ public:
     template<typename T>
     std::shared_ptr<T> RegisterSystem()
     {
-        return systemManager.RegisterSystem<T>(this);
+        return systemManager.RegisterSystem<T, ComponentManager<List>>(componentManager);
     }
 
     template<typename T>
     SystemType RegisterSystemType()
     {
-        return systemManager.RegisterSystemType<T>(this);
+        return systemManager.RegisterSystemType<T, List>(componentManager);
     }
 
     // template<typename T>
@@ -219,8 +186,10 @@ public:
     }
 
 private:
+    using List = ComponentList<Components...>;
+
     EntityManager entityManager;
-    ComponentManager componentManager;
+    ComponentManager<List> componentManager;
     SystemManager systemManager;
 
     std::vector<Entity> entitiesToDestroy { };

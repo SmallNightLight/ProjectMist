@@ -2,6 +2,7 @@
 
 #include "../../ECS/ECS.h"
 #include "../PhysicsSettings.h"
+#include "../Collision/CollisionDetection.h"
 #include "../Collision/CollisionCache.h"
 
 #include <vector>
@@ -9,15 +10,15 @@
 class RigidBody final : public System
 {
 public:
-    explicit RigidBody(Layer* world) : System(world), collisionDetection(layer) //TODO: Static objects should not need to have a rigidBody
+    explicit RigidBody(PhysicsComponentManager& componentManager) : System(), collisionDetection(componentManager) //TODO: Static objects should not need to have a rigidBody
     {
         currentFrameNumber = 0;
 
-        colliderTransformCollection = layer->GetComponentCollection<ColliderTransform>();
-        rigidBodyDataCollection = layer->GetComponentCollection<RigidBodyData>();
-        circleColliderCollection = layer->GetComponentCollection<CircleCollider>();
-        boxColliderCollection = layer->GetComponentCollection<BoxCollider>();
-        polygonColliderCollection = world->GetComponentCollection<PolygonCollider>();
+        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        rigidBodyDataCollection = componentManager.GetComponentCollection<RigidBodyData>();
+        circleColliderCollection = componentManager.GetComponentCollection<CircleCollider>();
+        boxColliderCollection = componentManager.GetComponentCollection<BoxCollider>();
+        polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
 
         collisionCache = nullptr;
     }
@@ -27,11 +28,11 @@ public:
         collisionCache = cache;
     }
 
-    [[nodiscard]] Signature GetSignature() const override
+    static Signature GetSignature()
     {
         Signature signature;
-        signature.set(layer->GetComponentType<ColliderTransform>());
-        signature.set(layer->GetComponentType<RigidBodyData>());
+        signature.set(PhysicsLayer::GetComponentType<ColliderTransform>());
+        signature.set(PhysicsLayer::GetComponentType<RigidBodyData>());
         return signature;
     }
 
@@ -361,11 +362,11 @@ private:
     FrameNumber currentFrameNumber;
     CollisionDetection collisionDetection;
 
-    std::shared_ptr<ComponentCollection<ColliderTransform>> colliderTransformCollection;
-    std::shared_ptr<ComponentCollection<RigidBodyData>> rigidBodyDataCollection;
-    std::shared_ptr<ComponentCollection<CircleCollider>> circleColliderCollection;
-    std::shared_ptr<ComponentCollection<BoxCollider>> boxColliderCollection;
-    std::shared_ptr<ComponentCollection<PolygonCollider>> polygonColliderCollection;
+    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
+    ComponentCollection<CircleCollider>* circleColliderCollection;
+    ComponentCollection<BoxCollider>* boxColliderCollection;
+    ComponentCollection<PolygonCollider>* polygonColliderCollection;
 
     //Caching
     CollisionCache* collisionCache;

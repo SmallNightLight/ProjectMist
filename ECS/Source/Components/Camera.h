@@ -1,5 +1,8 @@
 #pragma once
+
 #include "../Math/FixedTypes.h"
+
+#include <GLFW/glfw3.h>
 
 struct Camera
 {
@@ -15,6 +18,14 @@ struct Camera
         : Width(width), Height(height), ZoomLevel(zoomLevel), Position(0, 0), Left(0), Right(0), Bottom(0), Top(0)
     {
         UpdateView();
+    }
+
+    void Apply() const
+    {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(Left.ToFloating<float>(), Right.ToFloating<float>(), Bottom.ToFloating<float>(), Top.ToFloating<float>(), -1.0f, 1.0f); //2D, so near/far planes are -1, 1
+        glMatrixMode(GL_MODELVIEW);
     }
 
     void SetPosition(Vector2 position)
