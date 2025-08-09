@@ -11,18 +11,18 @@
 //Has functionality for modifying the components, systems and signatures of entities
 
 //Manages all component collections and uses the component name for easy lookups
-template<typename ComponentList>
+template<typename ComponentList, typename SystemList>
 class Layer;
 
-template<typename... Components>
-class Layer<ComponentList<Components...>>
+template<typename... Component, typename... System>
+class Layer<ComponentList<Component...>, SystemList<System...>>
 {
 public:
     Layer() : ignoreSignatureChanged(false)
     {
         entityManager = EntityManager();
-        componentManager = ComponentManager<List>();
-        systemManager = SystemManager();
+        componentManager = ComponentManager<Components>();
+        systemManager = SystemManager<Systems>();
     }
 
     void Overwrite(const Layer& other)
@@ -133,7 +133,7 @@ public:
     }
 
     template<typename T>
-    ComponentCollection<T>* GetComponentCollection()
+    inline constexpr ComponentCollection<T>* GetComponentCollection()
     {
         return componentManager.template GetComponentCollection<T>();
     }
@@ -149,7 +149,7 @@ public:
     template<typename T>
     static constexpr ComponentType GetComponentType()
     {
-       return ComponentManager<List>::template GetComponentType<T>();
+       return ComponentManager<Components>::template GetComponentType<T>();
     }
 
     //Systems methods
@@ -158,16 +158,10 @@ public:
     template<typename T>
     std::shared_ptr<T> RegisterSystem()
     {
-        return systemManager.RegisterSystem<T, ComponentManager<List>>(componentManager);
+        return systemManager.template RegisterSystem<T, ComponentManager<Components>>(componentManager);
     }
 
-    template<typename T>
-    SystemType RegisterSystemType()
-    {
-        return systemManager.RegisterSystemType<T, List>(componentManager);
-    }
-
-    // template<typename T>
+    // template<typename T> //TODO
     // std::shared_ptr<T> GetSystem()
     // {
     //     return systemManager.GetSystem<T>(this);
@@ -186,11 +180,12 @@ public:
     }
 
 private:
-    using List = ComponentList<Components...>;
+    using Components = ComponentList<Component...>;
+    using Systems = SystemList<System...>;
 
     EntityManager entityManager;
-    ComponentManager<List> componentManager;
-    SystemManager systemManager;
+    ComponentManager<Components> componentManager;
+    SystemManager<Systems> systemManager;
 
     std::vector<Entity> entitiesToDestroy { };
     bool ignoreSignatureChanged;

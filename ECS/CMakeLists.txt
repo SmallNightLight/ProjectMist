@@ -76,6 +76,7 @@ add_executable(ECS Source/main.cpp
         Source/ECS/EntitySet.h
         Source/Physics/PhysicsComponents.h
         Source/Physics/PhysicsSystems.h
+        Source/ECS/TypeList.h
 )
 
 add_subdirectory(Source/Math)

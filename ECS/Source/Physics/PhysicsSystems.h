@@ -5,3 +5,5 @@
 #include "Systems/BoxColliderRenderer.h"
 #include "Systems/PolygonColliderRenderer.h"
 #include "Systems/MovingSystem.h"
+
+using PhysicsSystems = SystemList<RigidBody, CircleColliderRenderer, BoxColliderRenderer, PolygonColliderRenderer, MovingSystem>;

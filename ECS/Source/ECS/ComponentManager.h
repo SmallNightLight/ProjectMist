@@ -1,57 +1,25 @@
 #pragma once
 
 #include "ECSSettings.h"
+#include "TypeList.h"
 #include "ComponentCollection.h"
 
 #include <array>
 #include <cassert>
 #include <cstring>
-#include <utility>
 
-template<typename... Components>
-struct ComponentList { };
+template<typename... Component>
+using ComponentList = TypeList<Component...>;
 
-template<typename T, typename List>
-struct IndexOf;
-
-template<typename T, typename... Ts>
-struct IndexOf<T, ComponentList<T, Ts...>> {
-	static constexpr ComponentType value = 0;
-};
-
-template<typename T, typename U, typename... Ts>
-struct IndexOf<T, ComponentList<U, Ts...>>
-{
-	static constexpr ComponentType value = 1 + IndexOf<T, ComponentList<Ts...>>::value;
-};
-
-template<typename T, typename List>
-constexpr ComponentType IndexOf_v = IndexOf<T, List>::value;
-
-template<typename T, typename List>
-struct Contains;
-
-template<typename T>
-struct Contains<T, ComponentList<>> : std::false_type { };
-
-template<typename T, typename... Ts>
-struct Contains<T, ComponentList<T, Ts...>> : std::true_type { };
-
-template<typename T, typename U, typename... Ts>
-struct Contains<T, ComponentList<U, Ts...>> : Contains<T, ComponentList<Ts...>> { };
-
-template<typename T, typename List>
-constexpr bool Contains_v = Contains<T, List>::value;
-
-template<typename... Components>
+template<typename... Component>
 constexpr auto GetOffsets()
 {
-    std::array<std::size_t, sizeof...(Components)> result { };
+    std::array<std::size_t, sizeof...(Component)> result { };
 
     std::size_t offset = 0;
     std::size_t i = 0;
 
-	((result[i++] = offset, offset += sizeof(ComponentCollection<Components>)), ...);
+	((result[i++] = offset, offset += sizeof(ComponentCollection<Component>)), ...);
 
     return result;
 }
@@ -60,18 +28,18 @@ template<typename ComponentList>
 class ComponentManager;
 
 //Manages all component collections and uses the component name for easy lookups
-template<typename... Components>
-class ComponentManager<ComponentList<Components...>>
+template<typename... Component>
+class ComponentManager<ComponentList<Component...>>
 {
 public:
 	ComponentManager()
 	{
-		(RegisterComponent<Components>(), ...);
+		(RegisterComponent<Component>(), ...);
 	}
 
 	~ComponentManager()
 	{
-		(GetComponentCollection<Components>()->~ComponentCollection<Components>(), ...);
+		(GetComponentCollection<Component>()->~ComponentCollection<Component>(), ...);
 	}
 
 	inline void Overwrite(const ComponentManager& other)
@@ -83,15 +51,15 @@ public:
 	template<typename T>
 	inline static constexpr ComponentType GetComponentType()
 	{
-		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
-		return IndexOf_v<T, List>;
+		static_assert(Contains_v<T, Components>, "Component T is not part of the specified components");
+		return IndexOf_v<T, Components>;
 	}
 
     //Adds the component of type T to the given entity
 	template<typename T>
 	inline T* AddComponent(Entity entity, T component)
 	{
-		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+		static_assert(Contains_v<T, Components>, "Component T is not part of the specified components");
         return GetComponentCollection<T>()->AddComponent(entity, component);
 	}
 
@@ -99,7 +67,7 @@ public:
     template<typename T>
     inline void RemoveComponent(Entity entity)
     {
-		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+		static_assert(Contains_v<T, Components>, "Component T is not part of the specified components");
         GetComponentCollection<T>()->RemoveComponent(entity);
     }
 
@@ -107,7 +75,7 @@ public:
     template<typename T>
 	inline T& GetComponent(Entity entity)
 	{
-		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+		static_assert(Contains_v<T, Components>, "Component T is not part of the specified components");
         return GetComponentCollection<T>()->GetComponent(entity);
 	}
 
@@ -115,21 +83,21 @@ public:
     template<typename T>
     inline bool HasComponent(Entity entity) const
     {
-		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+		static_assert(Contains_v<T, Components>, "Component T is not part of the specified components");
         return GetComponentCollection<T>()->HasComponent(entity);
     }
 
     //Removes all components that are associated to the given entity
 	inline void DestroyEntity(Entity entity)
 	{
-		(DestroyEntityForComponent<Components>(entity), ...);
+		(DestroyEntityForComponent<Component>(entity), ...);
 	}
 
 	//Gets the component collection for a specific component of type T
 	template<typename T>
 	inline constexpr ComponentCollection<T>* GetComponentCollection()
 	{
-		static_assert(Contains_v<T, List>, "Component T is not part of the specified components");
+		static_assert(Contains_v<T, Components>, "Component T is not part of the specified components");
 		return reinterpret_cast<ComponentCollection<T>*>(&Data[ComponentOffset<T>]);
 	}
 
@@ -148,15 +116,15 @@ private:
 	}
 
 private:
-	using List = ComponentList<Components...>;
+	using Components = ComponentList<Component...>;
 
-	static constexpr size_t ComponentCount = sizeof...(Components);
-	static constexpr size_t TotalSize = (sizeof(ComponentCollection<Components>) + ... + 0);
+	static constexpr size_t ComponentCount = sizeof...(Component);
+	static constexpr size_t TotalSize = (sizeof(ComponentCollection<Component>) + ... + 0);
 
 	template<typename T>
-	static constexpr size_t GetIndex() { return IndexOf_v<T, List>;}
+	static constexpr size_t GetIndex() { return IndexOf_v<T, Components>;}
 
-	static constexpr std::array<size_t, ComponentCount> Offsets = GetOffsets<Components...>();
+	static constexpr std::array<size_t, ComponentCount> Offsets = GetOffsets<Component...>();
 
 	template<typename T>
 	static constexpr std::size_t ComponentOffset = Offsets[GetComponentType<T>()];

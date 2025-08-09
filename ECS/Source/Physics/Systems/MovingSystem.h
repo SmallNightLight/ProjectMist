@@ -15,9 +15,9 @@ public:
     static Signature GetSignature()
     {
         Signature signature;
-        signature.set(PhysicsLayer::GetComponentType<ColliderTransform>());
-        signature.set(PhysicsLayer::GetComponentType<RigidBodyData>());
-        signature.set(PhysicsLayer::GetComponentType<Movable>());
+        signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
+        signature.set(PhysicsComponentManager::GetComponentType<RigidBodyData>());
+        signature.set(PhysicsComponentManager::GetComponentType<Movable>());
         return signature;
     }
 

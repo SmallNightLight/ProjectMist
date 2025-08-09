@@ -1,13 +1,22 @@
 #pragma once
 
 #include "ECSSettings.h"
+#include "TypeList.h"
 #include "System.h"
 
+#include <array>
 #include <memory>
 #include <cassert>
 
+template<typename... Systems>
+using SystemList = TypeList<Systems...>;
+
+template<typename SystemList>
+class SystemManager;
+
 //Manages the systems, their signatures and gives functionality to automatically adding components to a system when their signature match (or not)
-class SystemManager
+template<typename... Systems>
+class SystemManager<SystemList<Systems...>>
 {
 public:
 	SystemManager() = default;
@@ -35,18 +44,6 @@ public:
 		systems[systemCount] = std::make_pair(signature, system);
 		systemCount++;
 		return system;
-	}
-
-	template<typename T, typename ComponentManager>
-	SystemType RegisterSystemType(ComponentManager& componentManager)
-	{
-		//static_assert() //TODO
-
-		auto system = std::make_shared<T>(componentManager);
-		Signature signature = system->GetSignature();
-		systems[systemCount] = std::make_pair(signature, system);
-		systemCount++;
-		return systemCount - 1;
 	}
 
 	// template<typename T>
@@ -99,4 +96,8 @@ public:
 private:
 	unsigned int systemCount = 0;
 	std::array<std::pair<Signature, std::shared_ptr<System>>, MAXSYSTEMS> systems;
+
+	//std::array<EntitySet<MAXENTITIES>, SystemCount> Entities;
+	//std::array<Signature, SystemCount> SystemSignatures;
+	//std::array<System, SystemCount> Systems;
 };

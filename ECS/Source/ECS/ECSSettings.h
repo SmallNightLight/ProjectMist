@@ -18,7 +18,7 @@ using WorldType = std::uint8_t;
 using FrameNumber = std::uint32_t;
 
 static constexpr std::uint32_t MAXENTITIES = 500;
-static constexpr ComponentType MAXCOMPONENTS = 32;
+static constexpr ComponentType MAXCOMPONENTS = 32; //TODO: IMP FOR DES REMOVE
 static constexpr unsigned int MAXSYSTEMS = 32;
 
 using Signature = std::bitset<MAXCOMPONENTS>;

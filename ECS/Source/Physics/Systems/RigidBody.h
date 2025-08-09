@@ -31,8 +31,8 @@ public:
     static Signature GetSignature()
     {
         Signature signature;
-        signature.set(PhysicsLayer::GetComponentType<ColliderTransform>());
-        signature.set(PhysicsLayer::GetComponentType<RigidBodyData>());
+        signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
+        signature.set(PhysicsComponentManager::GetComponentType<RigidBodyData>());
         return signature;
     }
 
@@ -143,6 +143,7 @@ public:
 
                     if (foundCollision)
                     {
+                        // Hitting this means in a rollback a difference occurred
                         collisionChecks.emplace_back(check);
                     }
                     else

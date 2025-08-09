@@ -11,9 +11,12 @@ template<uint32_t Capacity>
 class EntitySet
 {
 public:
-    EntitySet()
+    inline EntitySet() noexcept = default;
+
+    inline void Initialize()
     {
         entityToIndex.fill(InvalidEntity);
+        entityCount = 0;
     }
 
     EntitySet& operator=(const EntitySet& other)
@@ -93,8 +96,10 @@ public:
 private:
     static constexpr uint32_t InvalidEntity = Capacity;
 
-    std::array<Entity, Capacity> entities { };
-    std::array<uint32_t, MAXENTITIES> entityToIndex { };
+    std::array<Entity, Capacity> entities;
+    std::array<uint32_t, MAXENTITIES> entityToIndex;
 
-    uint32_t entityCount = 0;
+    uint32_t entityCount;
 };
+
+static_assert(std::is_trivially_default_constructible_v<EntitySet<10>>, "EntitySet needs to be trivial");

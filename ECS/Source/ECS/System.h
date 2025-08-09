@@ -8,6 +8,11 @@
 class System
 {
 public:
+	System()
+	{
+		Entities.Initialize();
+	}
+
 	virtual ~System() = default;
 
 public:

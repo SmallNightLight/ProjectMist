@@ -9,5 +9,3 @@
 #include "Components/Movable.h"
 
 using PhysicsComponents = ComponentList<ColliderTransform, RigidBodyData, CircleCollider, BoxCollider, PolygonCollider, ColliderRenderData, Movable>;
-using PhysicsComponentManager = ComponentManager<PhysicsComponents>;
-using PhysicsLayer = Layer<PhysicsComponents>;

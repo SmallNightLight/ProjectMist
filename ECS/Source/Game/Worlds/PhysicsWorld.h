@@ -47,13 +47,13 @@ public:
 
         //Create a signature that has all component flags
         includedComponents = 0;
-        includedComponents.set(PhysicsLayer::GetComponentType<ColliderTransform>(), true);
-        includedComponents.set(PhysicsLayer::GetComponentType<RigidBodyData>(), true);
-        includedComponents.set(PhysicsLayer::GetComponentType<CircleCollider>(), true);
-        includedComponents.set(PhysicsLayer::GetComponentType<BoxCollider>(), true);
-        includedComponents.set(PhysicsLayer::GetComponentType<PolygonCollider>(), true);
-        includedComponents.set(PhysicsLayer::GetComponentType<ColliderRenderData>(), true);
-        includedComponents.set(PhysicsLayer::GetComponentType<Movable>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<ColliderTransform>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<RigidBodyData>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<CircleCollider>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<BoxCollider>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<PolygonCollider>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<ColliderRenderData>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<Movable>(), true);
     }
 
     void SetupSystems(PhysicsLayer& layer)
@@ -287,9 +287,9 @@ private:
 
     void UpdateTransform(const std::vector<Entity>& entities, const std::vector<Signature>& signatures) const
     {
-        ComponentType circleColliderComponentType = PhysicsLayer::GetComponentType<CircleCollider>();
-        ComponentType boxColliderComponentType = PhysicsLayer::GetComponentType<BoxCollider>();
-        ComponentType polygonColliderComponentType = PhysicsLayer::GetComponentType<PolygonCollider>();
+        ComponentType circleColliderComponentType = PhysicsComponentManager::GetComponentType<CircleCollider>();
+        ComponentType boxColliderComponentType = PhysicsComponentManager::GetComponentType<BoxCollider>();
+        ComponentType polygonColliderComponentType = PhysicsComponentManager::GetComponentType<PolygonCollider>();
 
         for (int i = 0; i < entities.size(); ++i)
         {
@@ -319,7 +319,7 @@ private:
     static void SerializeComponentCollection(Stream& stream, ComponentCollection<Component>* componentCollection, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
     {
         //Write the componentType
-        ComponentType componentType = PhysicsLayer::GetComponentType<Component>();
+        ComponentType componentType = PhysicsComponentManager::GetComponentType<Component>();
         Signature componentSignature = 0;
         componentSignature.set(componentType, true);
         stream.WriteInteger(componentType);
@@ -403,7 +403,7 @@ private:
         Signature componentSignature = 0;
         componentSignature.set(componentType, true);
 
-        if (componentType != PhysicsLayer::GetComponentType<Component>())
+        if (componentType != PhysicsComponentManager::GetComponentType<Component>())
         {
             throw "Component type mismatch";
         }
