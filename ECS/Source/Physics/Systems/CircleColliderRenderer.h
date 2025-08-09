@@ -2,19 +2,21 @@
 
 #include "../../ECS/ECS.h"
 
-class CircleColliderRenderer final : public System
+class CircleColliderRenderer
 {
 public:
-    explicit CircleColliderRenderer(PhysicsComponentManager& componentManager) : System()
+    explicit CircleColliderRenderer(PhysicsComponentManager& componentManager)
     {
         colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
         circleColliderCollection = componentManager.GetComponentCollection<CircleCollider>();
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
+
+        Entities.Initialize();
     }
 
-    static Signature GetSignature()
+    static constexpr PhysicsSignature GetSignature()
     {
-        Signature signature;
+        PhysicsSignature signature;
         signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
         signature.set(PhysicsComponentManager::GetComponentType<CircleCollider>());
         signature.set(PhysicsComponentManager::GetComponentType<ColliderRenderData>());
@@ -110,6 +112,9 @@ public:
             glEnd();
         }
     }
+
+public:
+    EntitySet<MAXENTITIES> Entities;
 
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;

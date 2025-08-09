@@ -2,102 +2,129 @@
 
 #include "ECSSettings.h"
 #include "TypeList.h"
-#include "System.h"
+#include "ComponentManager.h"
 
 #include <array>
-#include <memory>
 #include <cassert>
 
-template<typename... Systems>
-using SystemList = TypeList<Systems...>;
+template<typename... System>
+using SystemList = TypeList<System...>;
 
-template<typename SystemList>
+template<typename ComponentList, typename SystemList>
 class SystemManager;
 
 //Manages the systems, their signatures and gives functionality to automatically adding components to a system when their signature match (or not)
-template<typename... Systems>
-class SystemManager<SystemList<Systems...>>
+template<typename... Component, typename... System>
+class SystemManager<ComponentList<Component...>, SystemList<System...>>
 {
+private:
+	using Components = ComponentList<Component...>;
+	using Systems = SystemList<System...>;
+	using Signature = std::bitset<Count_v<Components>>;
+
 public:
-	SystemManager() = default;
+	explicit SystemManager(ComponentManager<Components>& componentManager)
+	{
+		(RegisterSystem<System>(componentManager), ...);
+	}
+
+	~SystemManager()
+	{
+		(GetSystem<System>()->~System(), ...);
+	}
 
 	void Overwrite(const SystemManager& other)
 	{
-		for (unsigned int i = 0; i < other.systemCount; ++i)
-		{
-			auto system = systems[i].second;
-			auto otherSystem = other.systems[i].second;
-
-			//Only copy the entities - other data on the system will stay the same
-			system->Entities = otherSystem->Entities;
-		}
+		(OverrideSystem<System>(other), ...);
 	}
 
-    //Registers the system of type T and sets the signature
-	template<typename T, typename ComponentManager>
-	std::shared_ptr<T> RegisterSystem(ComponentManager& componentManager)
+	template<typename T>
+	T* GetSystem()
 	{
-		//static_assert() //TODO
-
-		auto system = std::make_shared<T>(componentManager);
-		Signature signature = system->GetSignature();
-		systems[systemCount] = std::make_pair(signature, system);
-		systemCount++;
-		return system;
+		static_assert(Contains_v<T, Systems>, "System T is not part of the specified systems");
+		return reinterpret_cast<T*>(Data.data() + SystemOffset<T>);
 	}
 
-	// template<typename T>
-	// std::shared_ptr<T> GetSystem(Layer* layer)
-	// {
-	// 	for (unsigned int i = 0; i < systemCount; ++i)
-	// 	{
-	// 		auto& [signature, system] = systems[i];
-	// 		auto casted = std::dynamic_pointer_cast<T>(system);
-	// 		if (casted)
-	// 			return casted;
-	// 	}
-	//
-	// 	assert(false && "System type not found");
-	// 	return nullptr;
-	// }
+	template<typename T>
+	const T* GetSystem() const
+	{
+		static_assert(Contains_v<T, Systems>, "System T is not part of the specified systems");
+		return reinterpret_cast<const T*>(Data.data() + SystemOffset<T>);
+	}
 
     //Removes the given entity from all systems that have a reference to the entity
 	void DestroyEntity(Entity entity)
 	{
-		for (unsigned int i = 0; i < systemCount; ++i)
-		{
-			auto& [signature, system] = systems[i];
-			system->Entities.Erase(entity);
-		}
+		(DestroyEntityForSystem<System>(entity), ...);
 	}
 
     //Compares the new entity signature to all system signatures
     //When the signatures match the entity gets added to the system entity set
     //When the signatures do not match the entity gets removes from the system entity set
-	void EntitySignatureChanged(Entity entity, Signature newSignature)
+	void EntitySignatureChanged(Entity entity, Signature newSignature) //TODO: test with random removals
 	{
-		for (unsigned int i = 0; i < systemCount; ++i)
-		{
-			auto& [signature, system] = systems[i];
+		(EntitySignatureChangedForSystem<System>(entity, newSignature), ...);
+	}
 
-			if ((newSignature & signature) == signature)
-			{
-				//Entity signature matches system signature - insert into set
-				system->Entities.Insert(entity);
-			}
-			else
-			{
-				//Entity signature does not match system signature - erase from set
-				system->Entities.Erase(entity);
-			}
+	template<typename T>
+	inline static constexpr SystemType GetSystemType()
+	{
+		static_assert(Contains_v<T, Systems>, "System T is not part of the specified systems");
+		return IndexOf_v<T, Systems>;
+	}
+
+private:
+	template<typename T>
+	void RegisterSystem(ComponentManager<Components>& componentManager)
+	{
+		new (&Data[SystemOffset<T>]) T(componentManager);
+	}
+
+	template<typename T>
+	inline void OverrideSystem(const SystemManager& other)
+	{
+		//GetSystem<T>()->Entities = other.GetSystem<T>()->Entities; //todo test
+		std::memcpy(Data.data(), other.Data.data(), sizeof(EntitySet<MAXENTITIES>));
+	}
+
+	template<typename T>
+	inline void DestroyEntityForSystem(Entity entity)
+	{
+		GetSystem<T>()->Entities.Erase(entity);
+	}
+
+	template<typename T>
+	inline void EntitySignatureChangedForSystem(Entity entity, Signature newSignature)
+	{
+		T* system = GetSystem<T>();
+		constexpr Signature signature = SystemSignature<T>;
+
+		if ((newSignature & signature) == signature)
+		{
+			//Entity signature matches system signature - insert into set
+			system->Entities.Insert(entity);
+		}
+		else
+		{
+			//Entity signature does not match system signature - erase from set
+			system->Entities.Erase(entity);
 		}
 	}
 
 private:
-	unsigned int systemCount = 0;
-	std::array<std::pair<Signature, std::shared_ptr<System>>, MAXSYSTEMS> systems;
+	//template<typename T>
+	//using RequiredComponents_t = decltype(T::RequiredComponents); //TOdo
 
-	//std::array<EntitySet<MAXENTITIES>, SystemCount> Entities;
-	//std::array<Signature, SystemCount> SystemSignatures;
-	//std::array<System, SystemCount> Systems;
+	static constexpr size_t ComponentCount = Count_v<Components>;
+	static constexpr size_t SystemCount = Count_v<Systems>; //TODO smaller type
+	static constexpr size_t TotalSize = TotalSize_v<System...>;
+	static constexpr std::array<size_t, SystemCount> Offsets = GetOffsets<System...>();
+
+	template<typename T>
+	static constexpr std::size_t SystemOffset = Offsets[GetSystemType<T>()];
+
+	template<typename T>
+	static constexpr Signature SystemSignature = T::GetSignature();
+
+	std::array<uint8_t, TotalSize> Data;
 };

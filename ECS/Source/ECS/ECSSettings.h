@@ -3,12 +3,8 @@
 #include <bitset>
 #include <cstdint>
 
-//Window
-static constexpr int32_t SCREEN_WIDTH = 800;
-static constexpr int32_t SCREEN_HEIGHT = 600; //TODO: Bug - needs to be divisble by a specific number
-
 //Rollback
-static constexpr uint8_t MaxRollBackFrames = 15; //amount of save states - actually -1
+static constexpr uint8_t MaxRollBackFrames = 15; //amount of save states
 
 //ECS
 using Entity = std::uint32_t;
@@ -18,13 +14,7 @@ using WorldType = std::uint8_t;
 using FrameNumber = std::uint32_t;
 
 static constexpr std::uint32_t MAXENTITIES = 500;
-static constexpr ComponentType MAXCOMPONENTS = 32; //TODO: IMP FOR DES REMOVE
-static constexpr unsigned int MAXSYSTEMS = 32;
-
-using Signature = std::bitset<MAXCOMPONENTS>;
-
 static constexpr Entity ENTITYNULL = MAXENTITIES + 1;
-
 
 //Types
 static constexpr int32_t QUADTREE_MAX_DEPTH = 8;

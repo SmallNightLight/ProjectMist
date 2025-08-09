@@ -7,10 +7,10 @@
 
 #include <vector>
 
-class RigidBody final : public System
+class RigidBody
 {
 public:
-    explicit RigidBody(PhysicsComponentManager& componentManager) : System(), collisionDetection(componentManager) //TODO: Static objects should not need to have a rigidBody
+    explicit RigidBody(PhysicsComponentManager& componentManager) : collisionDetection(componentManager) //TODO: Static objects should not need to have a rigidBody
     {
         currentFrameNumber = 0;
 
@@ -21,6 +21,8 @@ public:
         polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
 
         collisionCache = nullptr;
+
+        Entities.Initialize();
     }
 
     void InitializeCache(CollisionCache* cache)
@@ -28,13 +30,16 @@ public:
         collisionCache = cache;
     }
 
-    static Signature GetSignature()
+    static constexpr PhysicsSignature GetSignature()
     {
-        Signature signature;
+        PhysicsSignature signature;
         signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
         signature.set(PhysicsComponentManager::GetComponentType<RigidBodyData>());
         return signature;
     }
+
+    //Would be cool todo
+    static constexpr auto RequiredComponents = ComponentList<ColliderTransform, RigidBodyData>();
 
     void ApplyVelocity(Fixed16_16 deltaTime)
     {
@@ -358,6 +363,9 @@ private:
         x = y;
         y = temp;
     }
+
+public:
+    EntitySet<MAXENTITIES> Entities;
 
 private:
     FrameNumber currentFrameNumber;

@@ -2,19 +2,21 @@
 
 #include "../../ECS/ECS.h"
 
-class BoxColliderRenderer final : public System
+class BoxColliderRenderer
 {
 public:
-    explicit BoxColliderRenderer(PhysicsComponentManager& componentManager) : System()
+    explicit BoxColliderRenderer(PhysicsComponentManager& componentManager)
     {
         colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
         boxColliderCollection = componentManager.GetComponentCollection<BoxCollider>();
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
+
+        Entities.Initialize();
     }
 
-    static Signature GetSignature()
+    static constexpr PhysicsSignature GetSignature()
     {
-        Signature signature;
+        PhysicsSignature signature;
         signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
         signature.set(PhysicsComponentManager::GetComponentType<BoxCollider>());
         signature.set(PhysicsComponentManager::GetComponentType<ColliderRenderData>());
@@ -82,8 +84,13 @@ public:
         }
     }
 
+public:
+    EntitySet<MAXENTITIES> Entities;
+
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
+
+
 };

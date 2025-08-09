@@ -17,13 +17,17 @@ class Layer;
 template<typename... Component, typename... System>
 class Layer<ComponentList<Component...>, SystemList<System...>>
 {
+private:
+    using Components = ComponentList<Component...>;
+    using Systems = SystemList<System...>;
+    using Signature = std::bitset<Count_v<Components>>;
+
 public:
-    Layer() : ignoreSignatureChanged(false)
-    {
-        entityManager = EntityManager();
-        componentManager = ComponentManager<Components>();
-        systemManager = SystemManager<Systems>();
-    }
+    Layer() :
+        entityManager(EntityManager<ComponentCount>()),
+        componentManager(ComponentManager<Components>()),
+        systemManager(SystemManager<Components,Systems>(componentManager)),
+        ignoreSignatureChanged(false) { }
 
     void Overwrite(const Layer& other)
     {
@@ -154,18 +158,17 @@ public:
 
     //Systems methods
 
-    //Registers the system of type T to the system manager
     template<typename T>
-    std::shared_ptr<T> RegisterSystem()
+    T* GetSystem()
     {
-        return systemManager.template RegisterSystem<T, ComponentManager<Components>>(componentManager);
+        return systemManager.template GetSystem<T>();
     }
 
-    // template<typename T> //TODO
-    // std::shared_ptr<T> GetSystem()
-    // {
-    //     return systemManager.GetSystem<T>(this);
-    // }
+    template<typename T>
+    const T* GetSystem() const
+    {
+        return systemManager.template GetSystem<T>();
+    }
 
     //When batch-adding new systems (with ignoreSignatureChanged = true) call this function after to add all systems based on the current signature
     void FinalizeEntitySystems(Entity entity)
@@ -180,12 +183,11 @@ public:
     }
 
 private:
-    using Components = ComponentList<Component...>;
-    using Systems = SystemList<System...>;
+    static constexpr size_t ComponentCount = Count_v<Components>;
 
-    EntityManager entityManager;
+    EntityManager<ComponentCount> entityManager;
     ComponentManager<Components> componentManager;
-    SystemManager<Systems> systemManager;
+    SystemManager<Components, Systems> systemManager;
 
     std::vector<Entity> entitiesToDestroy { };
     bool ignoreSignatureChanged;

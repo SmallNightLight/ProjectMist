@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 project(Math)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 if(WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0A00)
@@ -20,7 +20,7 @@ add_executable(Math main.cpp
         TestMath.h
         IntVector2.h
         FixedRandom.h
-        AABB.h
+        FixedAABB.h
         Stream.h
 
         TestMath.h

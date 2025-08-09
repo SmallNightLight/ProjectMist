@@ -23,17 +23,6 @@ public:
         InitializeCamera();
     }
 
-    ///Registers all components to the layer
-    static void RegisterLayer(PhysicsLayer& layer)
-    {
-        //Systems
-        layer.RegisterSystem<RigidBody>();
-        layer.RegisterSystem<CircleColliderRenderer>();
-        layer.RegisterSystem<BoxColliderRenderer>();
-        layer.RegisterSystem<PolygonColliderRenderer>();
-        layer.RegisterSystem<MovingSystem>();
-    }
-
     ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
     void SetupComponents(PhysicsLayer& layer) //TODO: use GetSystem()
     {
@@ -58,11 +47,11 @@ public:
 
     void SetupSystems(PhysicsLayer& layer)
     {
-        rigidBodySystem = layer.RegisterSystem<RigidBody>();
-        circleColliderRenderer = layer.RegisterSystem<CircleColliderRenderer>();
-        boxColliderRenderer = layer.RegisterSystem<BoxColliderRenderer>();
-        polygonColliderRenderer = layer.RegisterSystem<PolygonColliderRenderer>();
-        movingSystem = layer.RegisterSystem<MovingSystem>();
+        rigidBodySystem = layer.GetSystem<RigidBody>();
+        circleColliderRenderer = layer.GetSystem<CircleColliderRenderer>();
+        boxColliderRenderer = layer.GetSystem<BoxColliderRenderer>();
+        polygonColliderRenderer = layer.GetSystem<PolygonColliderRenderer>();
+        movingSystem = layer.GetSystem<MovingSystem>();
     }
 
     void InitializeCache(CacheManager* cache)
@@ -195,7 +184,7 @@ public:
     void Serialize(Stream& stream) const
     {
         std::vector<Entity> entities;
-        std::vector<Signature> signatures;
+        std::vector<PhysicsSignature> signatures;
 
         //Write current frame
         stream.WriteInteger<FrameNumber>(currentFrame);
@@ -224,11 +213,10 @@ public:
     {
         //Create a new layer and then Overwrite the existing layer with the new layer
         PhysicsLayer physicsLayer = PhysicsLayer();
-        RegisterLayer(physicsLayer);
-        physicsLayer.CreateEntity(); //Create an entity that would be the camera - essential for maintaining a correct entity queue
+        //physicsLayer.CreateEntity(); //Create an entity that would be the camera - essential for maintaining a correct entity queue //TODO pot issue
 
         std::vector<Entity> entities;
-        std::vector<Signature> signatures;
+        std::vector<PhysicsSignature> signatures;
         std::array<uint32_t, MAXENTITIES> entityIndexes;
 
         currentFrame = stream.ReadInteger<FrameNumber>();
@@ -270,7 +258,7 @@ private:
     }
 
     ///Write the entities and their signatures to the stream //TODO: make all ///
-    void SerializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<Signature>& signatures) const
+    void SerializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<PhysicsSignature>& signatures) const
     {
         baseLayer.GetActiveEntities(includedComponents, entities, signatures);
 
@@ -281,11 +269,11 @@ private:
         for (uint32_t i = 0; i < entityCount; ++i)
         {
             stream.WriteInteger(entities[i]);
-            stream.WriteBitset<MAXCOMPONENTS>(signatures[i]);
+            stream.WriteBitset<PhysicsComponentCount>(signatures[i]);
         }
     }
 
-    void UpdateTransform(const std::vector<Entity>& entities, const std::vector<Signature>& signatures) const
+    void UpdateTransform(const std::vector<Entity>& entities, const std::vector<PhysicsSignature>& signatures) const
     {
         ComponentType circleColliderComponentType = PhysicsComponentManager::GetComponentType<CircleCollider>();
         ComponentType boxColliderComponentType = PhysicsComponentManager::GetComponentType<BoxCollider>();
@@ -294,7 +282,7 @@ private:
         for (int i = 0; i < entities.size(); ++i)
         {
             Entity entity = entities[i];
-            Signature signature = signatures[i];
+            PhysicsSignature signature = signatures[i];
 
             if (signature.test(circleColliderComponentType))
             {
@@ -316,11 +304,11 @@ private:
     }
 
     template<typename Component>
-    static void SerializeComponentCollection(Stream& stream, ComponentCollection<Component>* componentCollection, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
+    static void SerializeComponentCollection(Stream& stream, ComponentCollection<Component>* componentCollection, const std::vector<Entity>& entities, const std::vector<PhysicsSignature>& signatures)
     {
         //Write the componentType
         ComponentType componentType = PhysicsComponentManager::GetComponentType<Component>();
-        Signature componentSignature = 0;
+        PhysicsSignature componentSignature = 0;
         componentSignature.set(componentType, true);
         stream.WriteInteger(componentType);
 
@@ -340,7 +328,7 @@ private:
 
     //Deserialization
 
-    static void DeserializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<Signature>& signatures)
+    static void DeserializeEntities(Stream& stream, std::vector<Entity>& entities, std::vector<PhysicsSignature>& signatures)
     {
         //Read the entity count
         Entity entityCount = stream.ReadInteger<Entity>();
@@ -357,7 +345,7 @@ private:
         for (uint32_t i = 0; i < entityCount; ++i)
         {
             entities[i] = stream.ReadInteger<Entity>();
-            signatures[i] = stream.ReadBitset<MAXCOMPONENTS>();
+            signatures[i] = stream.ReadBitset<PhysicsComponentCount>();
         }
     }
 
@@ -396,11 +384,11 @@ private:
     }
 
     template<typename Component>
-    static void DeserializeComponentCollection(Stream& stream, PhysicsLayer& physicsLayer, std::array<uint32_t, MAXENTITIES>& entityIndexes, const std::vector<Signature>& signatures)
+    static void DeserializeComponentCollection(Stream& stream, PhysicsLayer& physicsLayer, std::array<uint32_t, MAXENTITIES>& entityIndexes, const std::vector<PhysicsSignature>& signatures)
     {
         //Read the componentType and verify
         ComponentType componentType = stream.ReadInteger<ComponentType>();
-        Signature componentSignature = 0;
+        PhysicsSignature componentSignature = 0;
         componentSignature.set(componentType, true);
 
         if (componentType != PhysicsComponentManager::GetComponentType<Component>())
@@ -435,7 +423,7 @@ private:
     }
 
     ///Adds the entities to the systems
-    static void AddEntitiesToSystems(PhysicsLayer& physicsLayer, const std::vector<Entity>& entities, const std::vector<Signature>& signatures)
+    static void AddEntitiesToSystems(PhysicsLayer& physicsLayer, const std::vector<Entity>& entities, const std::vector<PhysicsSignature>& signatures)
     {
         for (uint32_t i = 0; i < entities.size(); ++i)
         {
@@ -525,11 +513,11 @@ private:
     std::mt19937 numberGenerator;
 
     //Systems
-    std::shared_ptr<RigidBody> rigidBodySystem;
-    std::shared_ptr<CircleColliderRenderer> circleColliderRenderer;
-    std::shared_ptr<BoxColliderRenderer> boxColliderRenderer;
-    std::shared_ptr<PolygonColliderRenderer> polygonColliderRenderer;
-    std::shared_ptr<MovingSystem> movingSystem;
+    RigidBody* rigidBodySystem;
+    CircleColliderRenderer* circleColliderRenderer;
+    BoxColliderRenderer* boxColliderRenderer;
+    PolygonColliderRenderer* polygonColliderRenderer;
+    MovingSystem* movingSystem;
 
     //Components
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
@@ -540,7 +528,7 @@ private:
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
     ComponentCollection<Movable>* movableCollection;
 
-    Signature includedComponents;
+    PhysicsSignature includedComponents;
 
     Camera camera;
 };

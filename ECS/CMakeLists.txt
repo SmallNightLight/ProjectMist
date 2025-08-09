@@ -11,14 +11,13 @@ endif()
 cmake_minimum_required(VERSION 3.27)
 project(ECS)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 add_executable(ECS Source/main.cpp
         Source/ECS/ComponentCollection.h
         Source/ECS/ComponentManager.h
         Source/ECS/EntityManager.h
         Source/ECS/ECSSettings.h
-        Source/ECS/System.h
         Source/ECS/SystemManager.h
         Source/ECS/Layer.h
         Source/Components/ComponentHeaders.h

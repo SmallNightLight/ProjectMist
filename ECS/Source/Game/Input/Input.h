@@ -3,7 +3,7 @@
 #include "InputData.h"
 #include "../../Math/FixedTypes.h"
 #include "../../Components/Camera.h"
-#include "../../ECS/ECSSettings.h"
+#include "../GameSettings.h"
 
 #include <array>
 #include <vector>

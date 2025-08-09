@@ -5,6 +5,7 @@
 #include "FPM/ios.hpp"
 #include "FixedVector2.h"
 #include "IntVector2.h"
+#include "FixedAABB.h"
 
 #include "Span.h"
 
@@ -26,6 +27,7 @@ using Fixed16_16Rounding = fpm::fixed<std::int32_t, std::int64_t, int16_t, int16
 
 using FixedRandom16_16 = FixedRandom<Fixed16_16>;
 using Vector2Span = Span<Vector2>;
+using AABB = FixedAABB<Vector2>;
 
 static_assert(std::is_trivially_default_constructible_v<Vector2>, "Needs to be trivial");
 static_assert(std::is_trivially_default_constructible_v<Fixed16_16>, "Needs to be trivial");

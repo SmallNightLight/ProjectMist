@@ -2,6 +2,10 @@
 
 #include "../ECS/ECS.h"
 
+//Window
+static constexpr int32_t SCREEN_WIDTH = 800;
+static constexpr int32_t SCREEN_HEIGHT = 600; //TODO: Bug - needs to be divisble by a specific number
+
 static constexpr short NetworkFPS = 15;
 static constexpr short SimulationFPS = 60;
 static constexpr short RenderingFPS = 60;

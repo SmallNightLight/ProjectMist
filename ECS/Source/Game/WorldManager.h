@@ -7,10 +7,7 @@
 class WorldManager
 {
 public:
-    WorldManager() : LastConfirmedFrame(1), BaseLayer(PhysicsLayer()), ConfirmedLayer(PhysicsLayer()), BasePhysicsWorld(BaseLayer)
-    {
-        PhysicsWorld::RegisterLayer(ConfirmedLayer);
-    }
+    WorldManager() : LastConfirmedFrame(1), BaseLayer(PhysicsLayer()), ConfirmedLayer(PhysicsLayer()), BasePhysicsWorld(BaseLayer) { }
 
     void NextFrame(FrameNumber confirmedFrame)
     {

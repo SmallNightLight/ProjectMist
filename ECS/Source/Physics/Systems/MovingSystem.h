@@ -2,19 +2,21 @@
 
 #include "../../ECS/ECS.h"
 
-class MovingSystem final : public System
+class MovingSystem
 {
 public:
-    explicit MovingSystem(PhysicsComponentManager& componentManager) : System()
+    explicit MovingSystem(PhysicsComponentManager& componentManager)
     {
         colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
         rigidBodyCollection = componentManager.GetComponentCollection<RigidBodyData>();
         movableCollection = componentManager.GetComponentCollection<Movable>();
+
+        Entities.Initialize();
     }
 
-    static Signature GetSignature()
+    static constexpr PhysicsSignature GetSignature()
     {
-        Signature signature;
+        PhysicsSignature signature;
         signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
         signature.set(PhysicsComponentManager::GetComponentType<RigidBodyData>());
         signature.set(PhysicsComponentManager::GetComponentType<Movable>());
@@ -53,6 +55,9 @@ public:
 
         }
     }
+
+public:
+    EntitySet<MAXENTITIES> Entities;
 
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;

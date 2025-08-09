@@ -3,7 +3,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "../ECS/ECS.h"
 #include "../Physics/Physics.h"
 #include "../Networking/Client/ClientHandler.h"
 

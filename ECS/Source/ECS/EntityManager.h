@@ -10,8 +10,12 @@
 
 //Manages the entities and allows for their creation and destruction
 //Saves the signature of each entity
+template<uint8_t ComponentCount>
 class EntityManager
 {
+private:
+	using Signature = std::bitset<ComponentCount>;
+
 public:
     //Initializes the EntityManager by populating a queue with all available entities
 	EntityManager()

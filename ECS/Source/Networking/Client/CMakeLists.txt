@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.27)
 project(Client)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 if(WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0A00)

@@ -2,19 +2,21 @@
 
 #include "../../ECS/ECS.h"
 
-class PolygonColliderRenderer final : public System
+class PolygonColliderRenderer
 {
 public:
-    explicit PolygonColliderRenderer(PhysicsComponentManager& componentManager) : System()
+    explicit PolygonColliderRenderer(PhysicsComponentManager& componentManager)
     {
         colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
         polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
+
+        Entities.Initialize();
     }
 
-    static Signature GetSignature()
+    static constexpr PhysicsSignature GetSignature()
     {
-        Signature signature;
+        PhysicsSignature signature;
         signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
         signature.set(PhysicsComponentManager::GetComponentType<PolygonCollider>());
         signature.set(PhysicsComponentManager::GetComponentType<ColliderRenderData>());
@@ -88,6 +90,9 @@ public:
             glEnd();
         }
     }
+
+public:
+    EntitySet<MAXENTITIES> Entities;
 
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;

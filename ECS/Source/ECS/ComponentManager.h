@@ -12,7 +12,7 @@ template<typename... Component>
 using ComponentList = TypeList<Component...>;
 
 template<typename... Component>
-constexpr auto GetOffsets()
+constexpr auto GetComponentOffsets() //todo: gener
 {
     std::array<std::size_t, sizeof...(Component)> result { };
 
@@ -31,6 +31,9 @@ class ComponentManager;
 template<typename... Component>
 class ComponentManager<ComponentList<Component...>>
 {
+private:
+	using Components = ComponentList<Component...>;
+
 public:
 	ComponentManager()
 	{
@@ -101,6 +104,11 @@ public:
 		return reinterpret_cast<ComponentCollection<T>*>(&Data[ComponentOffset<T>]);
 	}
 
+	inline static constexpr size_t GetComponentCount()
+	{
+		return ComponentCount;
+	}
+
 private:
 	template<typename T>
 	void RegisterComponent()
@@ -116,15 +124,10 @@ private:
 	}
 
 private:
-	using Components = ComponentList<Component...>;
+	static constexpr size_t ComponentCount = Count_v<Components>;
+	static constexpr size_t TotalSize = TotalSize_v<ComponentCollection<Component>...>; // TODO: might not work with s?
 
-	static constexpr size_t ComponentCount = sizeof...(Component);
-	static constexpr size_t TotalSize = (sizeof(ComponentCollection<Component>) + ... + 0);
-
-	template<typename T>
-	static constexpr size_t GetIndex() { return IndexOf_v<T, Components>;}
-
-	static constexpr std::array<size_t, ComponentCount> Offsets = GetOffsets<Component...>();
+	static constexpr std::array<size_t, ComponentCount> Offsets = GetComponentOffsets<Component...>();
 
 	template<typename T>
 	static constexpr std::size_t ComponentOffset = Offsets[GetComponentType<T>()];
