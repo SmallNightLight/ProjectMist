@@ -5,6 +5,8 @@
 class MovingSystem
 {
 public:
+    using RequiredComponents = ComponentList<ColliderTransform, RigidBodyData, Movable>;
+
     explicit MovingSystem(PhysicsComponentManager& componentManager)
     {
         colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
@@ -12,15 +14,6 @@ public:
         movableCollection = componentManager.GetComponentCollection<Movable>();
 
         Entities.Initialize();
-    }
-
-    static constexpr PhysicsSignature GetSignature()
-    {
-        PhysicsSignature signature;
-        signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
-        signature.set(PhysicsComponentManager::GetComponentType<RigidBodyData>());
-        signature.set(PhysicsComponentManager::GetComponentType<Movable>());
-        return signature;
     }
 
     void Update(GLFWwindow* window, Fixed16_16 delta)
@@ -56,11 +49,11 @@ public:
         }
     }
 
-public:
-    EntitySet<MAXENTITIES> Entities;
-
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
     ComponentCollection<RigidBodyData>* rigidBodyCollection;
     ComponentCollection<Movable>* movableCollection;
+
+public:
+    EntitySet<MAXENTITIES> Entities;
 };

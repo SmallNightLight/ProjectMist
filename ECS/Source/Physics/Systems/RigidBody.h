@@ -10,6 +10,8 @@
 class RigidBody
 {
 public:
+    using RequiredComponents = ComponentList<ColliderTransform, RigidBodyData>;
+
     explicit RigidBody(PhysicsComponentManager& componentManager) : collisionDetection(componentManager) //TODO: Static objects should not need to have a rigidBody
     {
         currentFrameNumber = 0;
@@ -29,17 +31,6 @@ public:
     {
         collisionCache = cache;
     }
-
-    static constexpr PhysicsSignature GetSignature()
-    {
-        PhysicsSignature signature;
-        signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
-        signature.set(PhysicsComponentManager::GetComponentType<RigidBodyData>());
-        return signature;
-    }
-
-    //Would be cool todo
-    static constexpr auto RequiredComponents = ComponentList<ColliderTransform, RigidBodyData>();
 
     void ApplyVelocity(Fixed16_16 deltaTime)
     {
@@ -364,9 +355,6 @@ private:
         y = temp;
     }
 
-public:
-    EntitySet<MAXENTITIES> Entities;
-
 private:
     FrameNumber currentFrameNumber;
     CollisionDetection collisionDetection;
@@ -381,5 +369,6 @@ private:
     CollisionCache* collisionCache;
 
 public:
+    EntitySet<MAXENTITIES> Entities;
     std::vector<CollisionInfo> collisionsRE; //TODO: remove
 };

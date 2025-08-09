@@ -170,6 +170,12 @@ public:
         return systemManager.template GetSystem<T>();
     }
 
+    template<typename T>
+    static constexpr Signature GetSystemSignature()
+    {
+        return SystemManager<Components, Systems>::template GetSystemSignature<T>();
+    }
+
     //When batch-adding new systems (with ignoreSignatureChanged = true) call this function after to add all systems based on the current signature
     void FinalizeEntitySystems(Entity entity)
     {

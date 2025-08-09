@@ -73,6 +73,13 @@ public:
 		return IndexOf_v<T, Systems>;
 	}
 
+	template<typename T>
+	inline static constexpr Signature GetSystemSignature()
+	{
+		static_assert(Contains_v<T, Systems>, "System T is not part of the specified systems");
+		return SystemSignature<T>;
+	}
+
 private:
 	template<typename T>
 	void RegisterSystem(ComponentManager<Components>& componentManager)
@@ -83,8 +90,7 @@ private:
 	template<typename T>
 	inline void OverrideSystem(const SystemManager& other)
 	{
-		//GetSystem<T>()->Entities = other.GetSystem<T>()->Entities; //todo test
-		std::memcpy(Data.data(), other.Data.data(), sizeof(EntitySet<MAXENTITIES>));
+		GetSystem<T>()->Entities = other.GetSystem<T>()->Entities;
 	}
 
 	template<typename T>
@@ -112,19 +118,30 @@ private:
 	}
 
 private:
-	//template<typename T>
-	//using RequiredComponents_t = decltype(T::RequiredComponents); //TOdo
-
-	static constexpr size_t ComponentCount = Count_v<Components>;
-	static constexpr size_t SystemCount = Count_v<Systems>; //TODO smaller type
+	static constexpr ComponentType ComponentCount = Count_v<Components>;
+	static constexpr SystemType SystemCount = Count_v<Systems>;
 	static constexpr size_t TotalSize = TotalSize_v<System...>;
 	static constexpr std::array<size_t, SystemCount> Offsets = GetOffsets<System...>();
 
 	template<typename T>
 	static constexpr std::size_t SystemOffset = Offsets[GetSystemType<T>()];
 
+	template<typename List>
+	struct SignatureHelper;
+
+	template<typename... SignatureComponent>
+	struct SignatureHelper<ComponentList<SignatureComponent...>>
+	{
+		static constexpr Signature Get()
+		{
+			Signature signature;
+			(signature.set(ComponentManager<Components>::template GetComponentType<SignatureComponent>()), ...);
+			return signature;
+		}
+	};
+
 	template<typename T>
-	static constexpr Signature SystemSignature = T::GetSignature();
+	static constexpr Signature SystemSignature =  SignatureHelper<typename T::RequiredComponents>::Get();
 
 	std::array<uint8_t, TotalSize> Data;
 };

@@ -5,6 +5,8 @@
 class BoxColliderRenderer
 {
 public:
+    using RequiredComponents = ComponentList<ColliderTransform, BoxCollider, ColliderRenderData>;
+
     explicit BoxColliderRenderer(PhysicsComponentManager& componentManager)
     {
         colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
@@ -12,15 +14,6 @@ public:
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
 
         Entities.Initialize();
-    }
-
-    static constexpr PhysicsSignature GetSignature()
-    {
-        PhysicsSignature signature;
-        signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
-        signature.set(PhysicsComponentManager::GetComponentType<BoxCollider>());
-        signature.set(PhysicsComponentManager::GetComponentType<ColliderRenderData>());
-        return signature;
     }
 
     void Render() const
@@ -84,13 +77,11 @@ public:
         }
     }
 
-public:
-    EntitySet<MAXENTITIES> Entities;
-
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 
-
+public:
+    EntitySet<MAXENTITIES> Entities;
 };

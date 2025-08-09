@@ -125,7 +125,7 @@ private:
 
 private:
 	static constexpr size_t ComponentCount = Count_v<Components>;
-	static constexpr size_t TotalSize = TotalSize_v<ComponentCollection<Component>...>; // TODO: might not work with s?
+	static constexpr size_t TotalSize = TotalSize_v<ComponentCollection<Component>...>;
 
 	static constexpr std::array<size_t, ComponentCount> Offsets = GetComponentOffsets<Component...>();
 

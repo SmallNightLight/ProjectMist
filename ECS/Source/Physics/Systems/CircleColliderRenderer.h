@@ -5,6 +5,8 @@
 class CircleColliderRenderer
 {
 public:
+    using RequiredComponents = ComponentList<ColliderTransform, CircleCollider, ColliderRenderData>;
+
     explicit CircleColliderRenderer(PhysicsComponentManager& componentManager)
     {
         colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
@@ -12,15 +14,6 @@ public:
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
 
         Entities.Initialize();
-    }
-
-    static constexpr PhysicsSignature GetSignature()
-    {
-        PhysicsSignature signature;
-        signature.set(PhysicsComponentManager::GetComponentType<ColliderTransform>());
-        signature.set(PhysicsComponentManager::GetComponentType<CircleCollider>());
-        signature.set(PhysicsComponentManager::GetComponentType<ColliderRenderData>());
-        return signature;
     }
 
     void Render() const
@@ -113,11 +106,11 @@ public:
         }
     }
 
-public:
-    EntitySet<MAXENTITIES> Entities;
-
 private:
     ComponentCollection<ColliderTransform>* colliderTransformCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
+
+public:
+    EntitySet<MAXENTITIES> Entities;
 };
