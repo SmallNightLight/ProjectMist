@@ -17,7 +17,6 @@ class SystemManager;
 template<typename... Component, typename... System>
 class SystemManager<ComponentList<Component...>, SystemList<System...>>
 {
-private:
 	using Components = ComponentList<Component...>;
 	using Systems = SystemList<System...>;
 	using Signature = std::bitset<Count_v<Components>>;
@@ -67,14 +66,14 @@ public:
 	}
 
 	template<typename T>
-	inline static constexpr SystemType GetSystemType()
+	static constexpr SystemType GetSystemType()
 	{
 		static_assert(Contains_v<T, Systems>, "System T is not part of the specified systems");
 		return IndexOf_v<T, Systems>;
 	}
 
 	template<typename T>
-	inline static constexpr Signature GetSystemSignature()
+	static constexpr Signature GetSystemSignature()
 	{
 		static_assert(Contains_v<T, Systems>, "System T is not part of the specified systems");
 		return SystemSignature<T>;
@@ -82,7 +81,7 @@ public:
 
 private:
 	template<typename T>
-	void RegisterSystem(ComponentManager<Components>& componentManager)
+	inline void RegisterSystem(ComponentManager<Components>& componentManager)
 	{
 		new (&Data[SystemOffset<T>]) T(componentManager);
 	}
@@ -143,5 +142,5 @@ private:
 	template<typename T>
 	static constexpr Signature SystemSignature =  SignatureHelper<typename T::RequiredComponents>::Get();
 
-	std::array<uint8_t, TotalSize> Data;
+	alignas(64) std::array<uint8_t, TotalSize> Data;
 };

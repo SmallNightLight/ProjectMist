@@ -55,14 +55,6 @@ struct Contains<T, TypeList<U, Ts...>> : Contains<T, TypeList<Ts...>> { };
 template<typename T, typename List>
 constexpr bool Contains_v = Contains<T, List>::value;
 
-//Alignment todo use
-// template<typename T> struct MaxAlignImpl { static constexpr size_t value = alignof(T); };
-// template<typename T, typename U, typename... Ts>
-// struct MaxAlignImpl<T, U, Ts...> {
-//     static constexpr size_t value = alignof(T) > MaxAlignImpl<U, Ts...>::value ? alignof(T) : MaxAlignImpl<U, Ts...>::value;
-// };
-// static constexpr size_t MaxAlign = MaxAlignImpl<System...>::value;
-
 //GetOffsets
 template<typename... Ts>
 constexpr auto GetOffsets()

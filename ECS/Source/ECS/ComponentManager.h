@@ -11,19 +11,6 @@
 template<typename... Component>
 using ComponentList = TypeList<Component...>;
 
-template<typename... Component>
-constexpr auto GetComponentOffsets() //todo: gener
-{
-    std::array<std::size_t, sizeof...(Component)> result { };
-
-    std::size_t offset = 0;
-    std::size_t i = 0;
-
-	((result[i++] = offset, offset += sizeof(ComponentCollection<Component>)), ...);
-
-    return result;
-}
-
 template<typename ComponentList>
 class ComponentManager;
 
@@ -31,7 +18,6 @@ class ComponentManager;
 template<typename... Component>
 class ComponentManager<ComponentList<Component...>>
 {
-private:
 	using Components = ComponentList<Component...>;
 
 public:
@@ -52,7 +38,7 @@ public:
 
     //Gets the unique component type ID for the component type T
 	template<typename T>
-	inline static constexpr ComponentType GetComponentType()
+	static constexpr ComponentType GetComponentType()
 	{
 		static_assert(Contains_v<T, Components>, "Component T is not part of the specified components");
 		return IndexOf_v<T, Components>;
@@ -104,21 +90,21 @@ public:
 		return reinterpret_cast<ComponentCollection<T>*>(&Data[ComponentOffset<T>]);
 	}
 
-	inline static constexpr size_t GetComponentCount()
+	static constexpr size_t GetComponentCount()
 	{
 		return ComponentCount;
 	}
 
 private:
 	template<typename T>
-	void RegisterComponent()
+	inline void RegisterComponent()
 	{
 		ComponentCollection<T>* collection = new (&Data[ComponentOffset<T>]) ComponentCollection<T>();
 		collection->Initialize();
 	}
 
 	template<typename T>
-	void DestroyEntityForComponent(Entity entity)
+	inline void DestroyEntityForComponent(Entity entity)
 	{
 		reinterpret_cast<ComponentCollection<T>*>(&Data[ComponentOffset<T>])->DestroyEntity(entity);
 	}
@@ -127,7 +113,7 @@ private:
 	static constexpr size_t ComponentCount = Count_v<Components>;
 	static constexpr size_t TotalSize = TotalSize_v<ComponentCollection<Component>...>;
 
-	static constexpr std::array<size_t, ComponentCount> Offsets = GetComponentOffsets<Component...>();
+	static constexpr std::array<size_t, ComponentCount> Offsets = GetOffsets<ComponentCollection<Component>...>();
 
 	template<typename T>
 	static constexpr std::size_t ComponentOffset = Offsets[GetComponentType<T>()];

@@ -9,7 +9,7 @@
 //Sparse set-based ECS
 //Issues: When removing components are removed the array reorders the entity indexes to make the array dense, resulting in a non-optimal order
 template<typename T>
-class ComponentCollection
+class alignas(64) ComponentCollection
 {
 	static_assert(std::is_trivially_default_constructible_v<T>, "ComponentCollection requires T to be default constructible and trivial");
 

@@ -17,7 +17,6 @@ class Layer;
 template<typename... Component, typename... System>
 class Layer<ComponentList<Component...>, SystemList<System...>>
 {
-private:
     using Components = ComponentList<Component...>;
     using Systems = SystemList<System...>;
     using Signature = std::bitset<Count_v<Components>>;
@@ -131,7 +130,7 @@ public:
 
     //Gets a reference to the component of type T for the given entity
     template<typename T>
-    T& GetComponent(Entity entity)
+    inline T& GetComponent(Entity entity)
     {
         return componentManager.template GetComponent<T>(entity);
     }
@@ -144,7 +143,7 @@ public:
 
     //Checks whether the given entity has the component of type T
     template<typename T>
-    bool HasComponent(Entity entity) const
+    inline bool HasComponent(Entity entity) const
     {
         return componentManager.template HasComponent<T>(entity);
     }
