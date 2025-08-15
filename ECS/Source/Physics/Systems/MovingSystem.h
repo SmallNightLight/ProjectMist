@@ -2,6 +2,8 @@
 
 #include "../../ECS/ECS.h"
 
+struct Input;
+
 class MovingSystem
 {
 public:
@@ -16,7 +18,7 @@ public:
         Entities.Initialize();
     }
 
-    void Update(GLFWwindow* window, Fixed16_16 delta)
+    void Update(Fixed16_16 delta, bool up, bool down, bool left, bool right, bool aPos, bool aNeg)
     {
         for (const Entity& entity : Entities)
         {
@@ -24,28 +26,41 @@ public:
             RigidBodyData& rigidBodyData = rigidBodyCollection->GetComponent(entity);
             Movable& movable = movableCollection->GetComponent(entity);
 
-            Vector2 input = Vector2::Zero();
+            Vector2 velocity = Vector2::Zero();
+            Fixed16_16 angularVelocity = Fixed16_16(0);
 
-            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-                input.X += 1;
+            if (right)
+                velocity.X += 1;
 
-            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-                input.X -= 1;
+            if (left)
+                velocity.X -= 1;
 
-            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-                input.Y += 1;
+            if (up)
+                velocity.Y += 1;
 
-            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-                input.Y -= 1;
+            if (down)
+                velocity.Y -= 1;
 
-            input = input.Normalize();
-            Vector2 direction = input * movable.Speed;
+            if (aPos)
+                angularVelocity += 1;
+
+            if (aNeg)
+                angularVelocity -= 1;
+
+            velocity = velocity.Normalize();
+            Vector2 direction = velocity * (movable.Speed * delta);
+            Fixed16_16 rotation = angularVelocity * (movable.Speed * delta) / 10;
 
             if (direction != Vector2::Zero())
             {
-                rigidBodyData.ApplyForce(direction);
+                //rigidBodyData.ApplyForce(direction);
+                colliderTransform.MovePosition(direction);
             }
 
+            if (rotation != Fixed16_16(0))
+            {
+                colliderTransform.Rotate(rotation);
+            }
         }
     }
 

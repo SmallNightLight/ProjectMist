@@ -10,11 +10,11 @@ static constexpr short NetworkFPS = 15;
 static constexpr short SimulationFPS = 60;
 static constexpr short RenderingFPS = 60;
 
-static constexpr bool RollbackDebugMode = true; //Always rollback as much as possible
+static constexpr bool RollbackDebugMode = false; //Always rollback as much as possible
 
 static const std::vector<uint16_t> playerInputKeys =
 {
-    GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE
+    GLFW_KEY_W, GLFW_KEY_S, GLFW_KEY_A, GLFW_KEY_D, GLFW_KEY_Q, GLFW_KEY_E, GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, GLFW_MOUSE_BUTTON_MIDDLE
 };
 
 static const std::vector<uint16_t> otherInputKeys =

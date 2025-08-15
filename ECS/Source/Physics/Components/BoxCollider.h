@@ -71,10 +71,10 @@ private:
 
         return std::array<Vector2, 4>
         {
-            Vector2(left, top),
-            Vector2(right, top),
+            Vector2(left, bottom),
             Vector2(right, bottom),
-            Vector2(left, bottom)
+            Vector2(right, top),
+            Vector2(left, top)
         };
     }
 

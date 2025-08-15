@@ -104,17 +104,33 @@ public:
         }
     }
 
+    void AddObjects2()
+    {
+        //Ground
+        PhysicsUtils::CreateBox(baseLayer, Vector2(0, -10), Fixed16_16(100), Fixed16_16(20), Static);
+
+        //Box
+        Entity box2 = PhysicsUtils::CreateBox(baseLayer, Vector2(0, 1), Fixed16_16(4), Fixed16_16(4), Dynamic, Fixed16_16(200));
+        baseLayer.GetComponent<ColliderTransform>(box2).SetRotation(Fixed16_16(0, 7854));
+        baseLayer.AddComponent(box2, Movable(Fixed16_16(5)));
+    }
+
     void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs, uint32_t id)
     {
         UpdateDebug(inputs);
 
-        Fixed16_16 stepTime = deltaTime / PhysicsIterations;
+        Input* playerInput = inputs[0];
+        movingSystem->Update(deltaTime, playerInput->GetKey(GLFW_KEY_W), playerInput->GetKey(GLFW_KEY_S), playerInput->GetKey(GLFW_KEY_A), playerInput->GetKey(GLFW_KEY_D), playerInput->GetKey(GLFW_KEY_Q), playerInput->GetKey(GLFW_KEY_E));
+        rigidBodySystem->HandleCollisions(currentFrame, id);
+        //rigidBodySystem->IntegrateForces(deltaTime);
+        //rigidBodySystem->SetupContacts(Fixed16_16(1) / deltaTime);
 
         for (uint8_t i = 0; i < PhysicsIterations; ++i)
         {
-            rigidBodySystem->ApplyVelocity(stepTime);
-            rigidBodySystem->HandleCollisions(currentFrame, i, id);
+            //rigidBodySystem->SolveContacts();
         }
+
+        //rigidBodySystem->IntegrateVelocities(deltaTime);
 
         ++currentFrame;
     }
@@ -126,16 +142,19 @@ public:
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
             {
                 PhysicsUtils::CreateRandomCircleFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                std::cout << "Create new circle\n";
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_RIGHT))
             {
                 PhysicsUtils::CreateRandomBoxFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                std::cout << "Create new box\n";
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_MIDDLE))
             {
                 PhysicsUtils::CreateRandomPolygonFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                std::cout << "Create new convex\n";
             }
         }
     }
@@ -151,11 +170,11 @@ public:
         //Debug
         if (PhysicsDebugMode)
         {
-            RenderDebugInfo(rigidBodySystem->collisionsRE);
-
             circleColliderRenderer->RenderDebugOverlay();
             boxColliderRenderer->RenderDebugOverlay();
             polygonColliderRenderer->RenderDebugOverlay();
+
+            RenderDebugInfo(rigidBodySystem->ContactPairs);
         }
     }
 
@@ -436,73 +455,42 @@ private:
         }
     }
 
-    static void RenderDebugInfo(std::vector<CollisionInfo>& collisions)
+    static void RenderDebugInfo(std::vector<ContactPair>& contactPairs)
     {
-        for (CollisionInfo collision : collisions)
+        for (ContactPair contactPair : contactPairs)
         {
             //Render normal of collision
-            float normalLength = 1 + collision.Depth.ToFloating<float>();
+            float normalLength = contactPair.Penetration.ToFloating<float>();
             glLineWidth(2.0f);
             glColor3f(1.0f, 0.0f, 0.0f);
             glBegin(GL_LINES);
-            glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
-            glVertex2f(collision.Contact1.X.ToFloating<float>() + collision.Normal.X.ToFloating<float>() * normalLength, collision.Contact1.Y.ToFloating<float>() + collision.Normal.Y.ToFloating<float>() * normalLength);
+            glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>(), contactPair.Contacts[0].Position.Y.ToFloating<float>());
+            glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() + contactPair.Normal.X.ToFloating<float>() * normalLength, contactPair.Contacts[0].Position.Y.ToFloating<float>() + contactPair.Normal.Y.ToFloating<float>() * normalLength);
             glEnd();
 
             //Render contact points
             float size = 0.4f;
-            if (collision.ContactCount > 0)
+            if (contactPair.ContactCount > 0)
             {
                 glLineWidth(2.0f);
                 glColor3f(0.5f, 0.5f, 0.5f);
                 glBegin(GL_LINES);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() + size);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() + size);
+                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() - size, contactPair.Contacts[0].Position.Y.ToFloating<float>() - size);
+                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() + size, contactPair.Contacts[0].Position.Y.ToFloating<float>() + size);
+                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() + size, contactPair.Contacts[0].Position.Y.ToFloating<float>() - size);
+                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() - size, contactPair.Contacts[0].Position.Y.ToFloating<float>() + size);
                 glEnd();
             }
-            if (collision.ContactCount > 1)
+
+            if (contactPair.ContactCount > 1)
             {
                 glLineWidth(2.0f);
                 glBegin(GL_LINES);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() + size);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() + size);
+                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() - size, contactPair.Contacts[1].Position.Y.ToFloating<float>() - size);
+                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() + size, contactPair.Contacts[1].Position.Y.ToFloating<float>() + size);
+                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() + size, contactPair.Contacts[1].Position.Y.ToFloating<float>() - size);
+                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() - size, contactPair.Contacts[1].Position.Y.ToFloating<float>() + size);
                 glEnd();
-            }
-
-            if (collision.ContactCount > 0)
-            {
-                if (collision.IsDynamic1)
-                {
-                    glColor3f(0.0f, 1.0f, 0.0f);
-                }
-                else
-                {
-                    glColor3f(0.0f, 0.0f, 1.0f);
-                }
-
-                glBegin(GL_POINTS);
-                glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
-                glEnd();
-
-                if (collision.IsDynamic2)
-                {
-                    glColor3f(0.0f, 1.0f, 0.0f);
-                }
-                else
-                {
-                    glColor3f(0.0f, 0.0f, 1.0f);
-                }
-
-                if (collision.ContactCount > 1)
-                {
-                    glBegin(GL_POINTS);
-                    glVertex2f(collision.Contact2.X.ToFloating<float>(), collision.Contact2.Y.ToFloating<float>());
-                    glEnd();
-                }
             }
         }
     }

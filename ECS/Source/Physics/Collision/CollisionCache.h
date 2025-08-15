@@ -7,6 +7,7 @@
 #include "CollisionTable2.h"
 #include "CollisionResponseTable.h"
 #include "CollisionResponseTable2.h"
+#include "CollisionResponseTable3.h"
 #include "../../ECS/ECSSettings.h"
 
 #include <vector>
@@ -103,6 +104,10 @@ private:
     //Can use non-deterministic map as it not used in iteration
     std::vector<CollisionTable2> collisionPairData;
     std::vector<CollisionResponseTable> collisionData; //Used to get the exact collision response data
+
+public:
+    //std::vector<std::vector<CollisionResponseTable3>> cV;
+private:
 
     //CollisionResponseTable uses external hash table which gives 3.4ms (better)
     //CollisionResponseTable2 uses custom hash table which is 3.7ms

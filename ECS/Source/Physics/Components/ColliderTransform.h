@@ -4,19 +4,8 @@
 #include "../../Math/Stream.h"
 #include "../../Math/HashUtils.h"
 
-enum ColliderType
-{
-    Circle,
-    Box,
-    Convex
-};
-
-enum RigidBodyType
-{
-    Static,
-    Kinematic,
-    Dynamic
-};
+#include "../Additional/ColliderType.h"
+#include "../Additional/RigidBodyType.h"
 
 struct ColliderTransform
 {
