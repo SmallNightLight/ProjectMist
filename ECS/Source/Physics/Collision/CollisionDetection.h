@@ -218,27 +218,9 @@ public:
             //First perform an AABB check, to test if the objects are even able to collide
             if (!colliderTransform1.GetAABBFromTransformed(vertices1).Overlaps(colliderTransform2.GetAABBFromTransformed(vertices2))) return false;
 
-            //contactPair.Penetration = -std::numeric_limits<Fixed16_16>::max();
+            bool collision = GetConvexConvex(contactPair, vertices1, vertices2);
 
-            //if (CheckAxisSeparation(contactPair, vertices1, vertices2, true)) return false;
-            //if (CheckAxisSeparation(contactPair, vertices2, vertices1, false)) return false;
-
-            ContactPair contactPair2;
-            bool b = ConvexConvexCollision2(contactPair2, swap, entity1, entity2, colliderTransform1, colliderTransform2, vertices1, vertices2);
-
-            if (!b) return false;
-
-            contactPair.Penetration = contactPair2.Penetration;
-            contactPair.Normal = contactPair2.Normal;
-            contactPair.ContactCount = contactPair2.ContactCount;
-            contactPair.Contacts = contactPair2.Contacts;
-            contactPair.Contacts[0].Separation = -contactPair.Penetration;
-            contactPair.Contacts[1].Separation = -contactPair.Penetration;
-
-            //Detected a collision
-            //GetContactConvexConvex2(contactPair, vertices1, vertices2);
-
-            //if (contactPair2.ContactCount == 0) return false;
+            if (!collision) return false;
 
             //Create contact data
             CreateContactData(contactPair, swap, GetCenter(vertices1), GetCenter(vertices2), entity1, entity2, colliderTransform1, colliderTransform2);
@@ -392,20 +374,16 @@ public:
             }
       }
 
-      static void ProjectVertices(Vector2Span vertices, const Vector2& axis, Fixed16_16& min, Fixed16_16& max)
+      static inline void ProjectVertices(Vector2Span vertices, const Vector2 normal, Fixed16_16& min, Fixed16_16& max)
       {
             min = std::numeric_limits<Fixed16_16>::max();
             max = -std::numeric_limits<Fixed16_16>::max();
 
             for (Vector2 vertex : vertices)
             {
-                  Fixed16_16 projection = vertex.Dot(axis);
-
-                  if (projection < min)
-                        min = projection;
-
-                  if(projection > max)
-                        max = projection;
+                  Fixed16_16 dot = normal.Dot(vertex);
+                  min = std::min(dot, min);
+                  max = std::max(dot, max);
             }
       }
 
@@ -503,113 +481,76 @@ public:
       /////////////////////////////////////
       ///Test 2
 
-      static bool ConvexConvexCollision2(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, Vector2Span vertices1, Vector2Span vertices2)
+      enum class ReferencePolygon : uint8_t { Entity1, Entity2 };
+
+      struct ReferenceInfo
       {
-            //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABBFromTransformed(vertices1).Overlaps(colliderTransform2.GetAABBFromTransformed(vertices2))) return false;
-
-            if (!CollisionHelper(vertices1, vertices2,contactPair)) return false;
-
-            Manifold manifold;
-            if (!BuildManifold(vertices1, vertices2, contactPair, manifold)) return false;
-
-            contactPair.ContactCount = manifold.count;
-            contactPair.Contacts[0].Position = manifold.points[0].point;
-            contactPair.Contacts[1].Position = manifold.points[1].point;
-            contactPair.Normal = manifold.normal;
-            contactPair.Penetration = manifold.penetration;
-
-            return true;
-      }
-
-      struct PolygonProjection
-      {
-            Fixed16_16 lo;
-            Fixed16_16 hi;
+            ReferencePolygon Polygon;
+            uint8_t Edge;
       };
 
-      struct CollisionResult
+      static bool CheckEdges(ContactPair& contactPair, Vector2Span vertices1, Vector2Span vertices2, ReferencePolygon referencePolygon, ReferenceInfo& referenceInfo)
       {
-            Fixed16_16 Penetration;
-            Vector2 Normal;
-      };
-
-      static PolygonProjection ProjectPolygonAlongAxis(Vector2Span vertices, const Vector2 normal)
-      {
-            PolygonProjection proj;
-            proj.lo = std::numeric_limits<Fixed16_16>::max();
-            proj.hi = -std::numeric_limits<Fixed16_16>::max();
-            for (uint8_t i = 0; i < vertices.size; i++)
+            for (uint8_t i = 0; i < vertices1.size; i++)
             {
-                  Fixed16_16 d = normal.Dot(vertices[i]);
-                  proj.lo = std::min(d, proj.lo);
-                  proj.hi = std::max(d, proj.hi);
-            }
-            return proj;
-      }
+                  Vector2 a = vertices1[i];
+                  Vector2 b = vertices1[(i + 1) % vertices1.size];
+                  Vector2 edge = b - a;
 
-      // Separating Axis Theorem for convex polygons
-      static bool CollisionHelper(Vector2Span vertices1, Vector2Span vertices2, ContactPair& contactPair)
-      {
-            Fixed16_16 minPenetration = std::numeric_limits<Fixed16_16>::max();
-            Vector2 bestNormal = Vector2(0, 0);
+                  assert(edge != Vector2(0, 0) && "Vertices on polygon should not overlap");
 
-            auto checkEdges = [&](Vector2Span poly)
-            {
-                  for (uint8_t i = 0; i < poly.size; i++)
+                  Vector2 normal = edge.PerpendicularInverse().Normalize();
+                  Fixed16_16 Min1, Min2, Max1, Max2;
+
+                  ProjectVertices(vertices1, normal, Min1, Max1);
+                  ProjectVertices(vertices2, normal, Min2, Max2);
+
+                  if (Max1 < Min2 || Max2 < Min1) return false; //Separating axis found
+
+                  Fixed16_16 penetration = fpm::min(Max1 - Min2, Max2 - Min1);
+                  if (penetration < contactPair.Penetration)
                   {
-                        Vector2 a = poly[i];
-                        Vector2 b = poly[(i + 1) % poly.size];
-                        Vector2 edge = b - a;
+                        contactPair.Penetration = penetration;
+                        contactPair.Normal = normal;
 
-                        assert(edge != Vector2(0, 0) && "Vertices on polygon should not overlap");
-
-                        Vector2 normal = edge.PerpendicularInverse().Normalize();
-
-                        PolygonProjection projA = ProjectPolygonAlongAxis(vertices1, normal);
-                        PolygonProjection projB = ProjectPolygonAlongAxis(vertices2, normal);
-
-                        if (projA.hi < projB.lo || projB.hi < projA.lo) return false; //Separating axis found
-
-                        Fixed16_16 overlap = fpm::min(projA.hi - projB.lo, projB.hi - projA.lo);
-                        if (overlap < minPenetration)
-                        {
-                              minPenetration = overlap;
-                              bestNormal = normal;
-                        }
+                        referenceInfo.Polygon = referencePolygon;
+                        referenceInfo.Edge = i;
                   }
-
-                  return true;
-            };
-
-            if (!checkEdges(vertices1)) return false;
-            if (!checkEdges(vertices2)) return false;
-
-            // Collision confirmed
-            contactPair.Penetration = minPenetration;
-
-            // Ensure normal points from A to B
-            if ((GetCenter(vertices2) - GetCenter(vertices1)).Dot(bestNormal) < 0)
-                  bestNormal = -bestNormal;
-
-            contactPair.Normal = bestNormal;
+            }
 
             return true;
       }
 
-      struct ManifoldPoint
+      static bool GetConvexConvex(ContactPair& contactPair, Vector2Span vertices1, Vector2Span vertices2)
       {
-            Vector2 point = Vector2(0, 0);
-            Fixed16_16 separation = Fixed16_16(0);
-      };
+            assert(vertices1.size > 0 && vertices2.size > 0 && "Polygon cannot have zero vertices");
 
-      struct Manifold
-      {
-            uint8_t count = 0;
-            Vector2 normal = Vector2(0, 0);
-            Fixed16_16 penetration = Fixed16_16(0);
-            ManifoldPoint points[2];
-      };
+            contactPair.Penetration = std::numeric_limits<Fixed16_16>::max();
+            contactPair.Normal = Vector2(0, 0);
+
+            ReferenceInfo referenceInfo;
+
+            //Detect collision between two convex shapes using the SAT
+            if (!CheckEdges(contactPair, vertices1, vertices2, ReferencePolygon::Entity1, referenceInfo)) return false;
+            if (!CheckEdges(contactPair, vertices2, vertices1, ReferencePolygon::Entity2, referenceInfo)) return false;
+
+            //Get contacts
+
+            bool inverse = false;
+            // Ensure normal points from A to B
+            if ((GetCenter(vertices2) - GetCenter(vertices1)).Dot(contactPair.Normal) < 0)
+            {
+                  std::cout << "Inverse" << std::endl;
+                  contactPair.Normal = -contactPair.Normal;
+                  inverse = true;
+            }
+            else
+            {
+                  std::cout << "Perfect" << std::endl;
+            }
+
+            return BuildManifold(vertices1, vertices2, contactPair, referenceInfo, inverse);
+      }
 
       static inline Vector2 EdgeNormal(Vector2Span vertices, uint8_t i)
       {
@@ -626,10 +567,10 @@ public:
             for (int i = 0; i < vertices.size; ++i)
             {
                   Vector2 n = EdgeNormal(vertices, i);
-                  Fixed16_16 d = n.Dot(normal);
-                  if (d > maxDot)
+                  Fixed16_16 dot = n.Dot(normal);
+                  if (dot > maxDot)
                   {
-                        maxDot = d;
+                        maxDot = dot;
                         idx = i;
                   }
             }
@@ -655,35 +596,28 @@ public:
             return idx;
       }
 
-      struct ClipResult
+      static uint8_t ClipSegmentToHalfSpace(const std::array<Vector2, 2>& clipPoints, const Vector2 n, const Fixed16_16 o, std::array<Vector2, 2>& outClipPoints)
       {
-            int n = 0;
-            Vector2 pts[2];
-      };
-
-      static ClipResult ClipSegmentToHalfspace(const Vector2 a, const Vector2 b, const Vector2 n, const Fixed16_16 o)
-      {
-            ClipResult out;
-
-            Fixed16_16 da = n.Dot(a) - o;
-            Fixed16_16 db = n.Dot(b) - o;
+            uint8_t count = 0;
+            Fixed16_16 da = n.Dot(clipPoints[0]) - o;
+            Fixed16_16 db = n.Dot(clipPoints[1]) - o;
 
             //Keep points on or inside (<= 0)
-            if (da <= Fixed16_16(0)) { out.pts[out.n++] = a; }
-            if (db <= Fixed16_16(0)) { out.pts[out.n++] = b; }
+            if (da <= Fixed16_16(0)) { outClipPoints[count++] = clipPoints[0]; }
+            if (db <= Fixed16_16(0)) { outClipPoints[count++] = clipPoints[1]; }
 
             //Check if the points are on different sides
             if ((da < Fixed16_16(0) && db > Fixed16_16(0)) || (da > Fixed16_16(0) && db < Fixed16_16(0)))
             {
                   Fixed16_16 t = da / (da - db);
-                  Vector2 p = a + (b - a) * t;
-                  out.pts[out.n++] = p;
+                  Vector2 p = clipPoints[0] + (clipPoints[1] - clipPoints[0]) * t;
+                  outClipPoints[count++] = p;
             }
 
-            return out;
+            return count;
       }
 
-      static bool BuildManifold(Vector2Span vertices1, Vector2Span vertices2, ContactPair& contactPair, Manifold& manifold)
+      static bool BuildManifold(Vector2Span vertices1, Vector2Span vertices2, ContactPair& contactPair, const ReferenceInfo& referenceInfo, bool inverse)
       {
             //Decide reference vs incident polygon by which face is most aligned with SAT normal
             int refEdgeA = FindReferenceEdge(vertices1, contactPair.Normal);
@@ -691,6 +625,15 @@ public:
 
             Fixed16_16 dotA = EdgeNormal(vertices1, refEdgeA).Dot(contactPair.Normal);
             Fixed16_16 dotB = EdgeNormal(vertices2, refEdgeB).Dot(contactPair.Normal);
+
+            bool same = ((dotA < dotB) != (referenceInfo.Polygon == ReferencePolygon::Entity2)) && dotA != dotB;
+            std::cout << ((referenceInfo.Polygon == ReferencePolygon::Entity2) ? "True" : "False")<< std::endl;
+            std::cout << ((dotA < dotB) ? "True" : "False")<< std::endl;
+
+            bool rr = inverse && (referenceInfo.Polygon == ReferencePolygon::Entity2);
+            bool same2 = rr == dotA < dotB;
+
+            bool r1 = inverse && referenceInfo.Polygon == ReferencePolygon::Entity2;
 
             if (dotA < dotB)
             {
@@ -715,8 +658,6 @@ public:
             //Find incident edge from the other polygon
             int incEdge = FindIncidentEdge(Inc, refNormal);
             int incSucc = (incEdge + 1) % Inc.size;
-            Vector2 incA = Inc[incEdge];
-            Vector2 incB = Inc[incSucc];
 
             //Clip the incident edge against the two side planes of the reference face
             const Vector2 nL = -refTangent;
@@ -724,28 +665,28 @@ public:
             const Vector2 nR = refTangent;
             const Fixed16_16 oR =  refTangent.Dot(refB);
 
-            ClipResult c1 = ClipSegmentToHalfspace(incA, incB, nL, oL);
-            if (c1.n < 2) return false; //Only possible with imprecision
+            std::array<Vector2, 2> clipPoints1;
+            uint8_t clipCount1 = ClipSegmentToHalfSpace(std::array { Inc[incEdge], Inc[incSucc] }, nL, oL, clipPoints1);
+            if (clipCount1 < 2) return false; //Only possible with imprecision
 
-            ClipResult c2 = ClipSegmentToHalfspace(c1.pts[0], c1.pts[1], nR, oR);
-            if (c2.n < 2) return false; //Only possible with imprecision
+            std::array<Vector2, 2> clipPoints2;
+            uint8_t clipCount2 = ClipSegmentToHalfSpace(clipPoints1, nR, oR, clipPoints2);
+            if (clipCount2 < 2) return false; //Only possible with imprecision
 
             //Keep points that are behind the reference face plane
             Fixed16_16 faceOffset = refNormal.Dot(refA);
             Fixed16_16 kEps = Fixed16_16(0); //Add bias here possible todo
 
-            manifold.count = 0;
-            manifold.normal = contactPair.Normal;
-            manifold.penetration = contactPair.Penetration;
+            contactPair.ContactCount = 0;
 
-            for (int i = 0; i < c2.n && manifold.count < 2; ++i)
+            for (int i = 0; i < clipCount2 && contactPair.ContactCount < 2; ++i)
             {
-                  Fixed16_16 sep = refNormal.Dot(c2.pts[i]) - faceOffset;
-                  if (sep <= kEps)
+                  Fixed16_16 separation = refNormal.Dot(clipPoints2[i]) - faceOffset;
+                  if (separation <= kEps)
                   {
-                        manifold.points[manifold.count].point = c2.pts[i];
-                        manifold.points[manifold.count].separation = sep;
-                        manifold.count++;
+                        contactPair.Contacts[contactPair.ContactCount].Position = clipPoints2[i];
+                        contactPair.Contacts[contactPair.ContactCount].Separation = separation;
+                        ++contactPair.ContactCount;
                   }
             }
 
