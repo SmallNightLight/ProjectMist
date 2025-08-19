@@ -481,16 +481,17 @@ public:
       /////////////////////////////////////
       ///Test 2
 
-      enum class ReferencePolygon : uint8_t { Entity1, Entity2 };
-
-      struct ReferenceInfo
+      struct OverlapData
       {
-            ReferencePolygon Polygon;
+            Fixed16_16 Penetration;
+            Vector2 Normal;
             uint8_t Edge;
       };
 
-      static bool CheckEdges(ContactPair& contactPair, Vector2Span vertices1, Vector2Span vertices2, ReferencePolygon referencePolygon, ReferenceInfo& referenceInfo)
+      static bool CheckEdges(OverlapData& overlapData, Vector2Span vertices1, Vector2Span vertices2, Vector2 center1, Vector2 center2)
       {
+            overlapData.Penetration = std::numeric_limits<Fixed16_16>::max();
+
             for (uint8_t i = 0; i < vertices1.size; i++)
             {
                   Vector2 a = vertices1[i];
@@ -502,19 +503,23 @@ public:
                   Vector2 normal = edge.PerpendicularInverse().Normalize();
                   Fixed16_16 Min1, Min2, Max1, Max2;
 
+                  if ((center2 - center1).Dot(normal) < 0)
+                  {
+                       //normal = -normal;
+                  }
+
                   ProjectVertices(vertices1, normal, Min1, Max1);
                   ProjectVertices(vertices2, normal, Min2, Max2);
 
                   if (Max1 < Min2 || Max2 < Min1) return false; //Separating axis found
 
                   Fixed16_16 penetration = fpm::min(Max1 - Min2, Max2 - Min1);
-                  if (penetration < contactPair.Penetration)
+                  if (penetration < overlapData.Penetration)
                   {
-                        contactPair.Penetration = penetration;
-                        contactPair.Normal = normal;
+                        overlapData.Penetration = penetration;
+                        overlapData.Normal = normal;
 
-                        referenceInfo.Polygon = referencePolygon;
-                        referenceInfo.Edge = i;
+                        overlapData.Edge = i;
                   }
             }
 
@@ -525,31 +530,17 @@ public:
       {
             assert(vertices1.size > 0 && vertices2.size > 0 && "Polygon cannot have zero vertices");
 
-            contactPair.Penetration = std::numeric_limits<Fixed16_16>::max();
-            contactPair.Normal = Vector2(0, 0);
+            Vector2 center1 = GetCenter(vertices1);
+            Vector2 center2 = GetCenter(vertices2);
 
-            ReferenceInfo referenceInfo;
+            OverlapData overlapData1;
+            OverlapData overlapData2;
 
             //Detect collision between two convex shapes using the SAT
-            if (!CheckEdges(contactPair, vertices1, vertices2, ReferencePolygon::Entity1, referenceInfo)) return false;
-            if (!CheckEdges(contactPair, vertices2, vertices1, ReferencePolygon::Entity2, referenceInfo)) return false;
+            if (!CheckEdges(overlapData1, vertices1, vertices2, center1, center2)) return false;
+            if (!CheckEdges(overlapData2, vertices2, vertices1, center1, center2)) return false;
 
-            //Get contacts
-
-            bool inverse = false;
-            // Ensure normal points from A to B
-            if ((GetCenter(vertices2) - GetCenter(vertices1)).Dot(contactPair.Normal) < 0)
-            {
-                  std::cout << "Inverse" << std::endl;
-                  contactPair.Normal = -contactPair.Normal;
-                  inverse = true;
-            }
-            else
-            {
-                  std::cout << "Perfect" << std::endl;
-            }
-
-            return BuildManifold(vertices1, vertices2, contactPair, referenceInfo, inverse);
+            return BuildManifold(vertices1, vertices2, contactPair, overlapData1, overlapData2);
       }
 
       static inline Vector2 EdgeNormal(Vector2Span vertices, uint8_t i)
@@ -559,41 +550,41 @@ public:
             return e.PerpendicularInverse().Normalize();
       }
 
-      static int FindReferenceEdge(Vector2Span vertices, Vector2 normal)
+      static inline uint8_t FindReferenceEdge(Vector2Span vertices, Vector2 normal, Fixed16_16& maxDot)
       {
-            Fixed16_16 maxDot = -std::numeric_limits<Fixed16_16>::max();
-            int idx = 0;
+            maxDot = -std::numeric_limits<Fixed16_16>::max();
+            uint8_t referenceIndex = 0;
 
-            for (int i = 0; i < vertices.size; ++i)
+            for (uint8_t i = 0; i < vertices.size; ++i)
             {
                   Vector2 n = EdgeNormal(vertices, i);
                   Fixed16_16 dot = n.Dot(normal);
                   if (dot > maxDot)
                   {
                         maxDot = dot;
-                        idx = i;
+                        referenceIndex = i;
                   }
             }
 
-            return idx;
+            return referenceIndex;
       }
 
-      static int FindIncidentEdge(Vector2Span vertices, Vector2 referenceNormal)
+      static inline uint8_t FindIncidentEdge(Vector2Span vertices, Vector2 referenceNormal)
       {
             Fixed16_16 minDot = std::numeric_limits<Fixed16_16>::max();
-            int idx = 0;
+            uint8_t incidentIndex = 0;
 
             for (int i = 0; i < vertices.size; ++i)
             {
-                  Fixed16_16 d = referenceNormal.Dot(EdgeNormal(vertices, i));
-                  if (d < minDot)
+                  Fixed16_16 dot = referenceNormal.Dot(EdgeNormal(vertices, i));
+                  if (dot < minDot)
                   {
-                        minDot = d;
-                        idx = i;
+                        minDot = dot;
+                        incidentIndex = i;
                   }
             }
 
-            return idx;
+            return incidentIndex;
       }
 
       static uint8_t ClipSegmentToHalfSpace(const std::array<Vector2, 2>& clipPoints, const Vector2 n, const Fixed16_16 o, std::array<Vector2, 2>& outClipPoints)
@@ -617,47 +608,90 @@ public:
             return count;
       }
 
-      static bool BuildManifold(Vector2Span vertices1, Vector2Span vertices2, ContactPair& contactPair, const ReferenceInfo& referenceInfo, bool inverse)
+      static bool BuildManifold(Vector2Span vertices1, Vector2Span vertices2, ContactPair& contactPair, OverlapData overlapData1, OverlapData overlapData2)
       {
             //Decide reference vs incident polygon by which face is most aligned with SAT normal
-            int refEdgeA = FindReferenceEdge(vertices1, contactPair.Normal);
-            int refEdgeB = FindReferenceEdge(vertices2, contactPair.Normal);
+            Fixed16_16 dotA;
+            uint8_t referenceEdge;
+            Vector2 centerDirection = GetCenter(vertices2) - GetCenter(vertices1);
 
-            Fixed16_16 dotA = EdgeNormal(vertices1, refEdgeA).Dot(contactPair.Normal);
-            Fixed16_16 dotB = EdgeNormal(vertices2, refEdgeB).Dot(contactPair.Normal);
-
-            bool same = ((dotA < dotB) != (referenceInfo.Polygon == ReferencePolygon::Entity2)) && dotA != dotB;
-            std::cout << ((referenceInfo.Polygon == ReferencePolygon::Entity2) ? "True" : "False")<< std::endl;
-            std::cout << ((dotA < dotB) ? "True" : "False")<< std::endl;
-
-            bool rr = inverse && (referenceInfo.Polygon == ReferencePolygon::Entity2);
-            bool same2 = rr == dotA < dotB;
-
-            bool r1 = inverse && referenceInfo.Polygon == ReferencePolygon::Entity2;
-
-            if (dotA < dotB)
+            if (overlapData2.Penetration < overlapData1.Penetration)
             {
-                  contactPair.Normal = -contactPair.Normal;
-                  swap(vertices1, vertices2);
-                  refEdgeA = FindReferenceEdge(vertices1, contactPair.Normal);
+                  Fixed16_16 dotB;
+
+                  if (centerDirection.Dot(overlapData2.Normal) < 0)
+                  {
+                        overlapData2.Normal = -overlapData2.Normal;
+                  }
+
+                  referenceEdge = FindReferenceEdge(vertices1, overlapData2.Normal, dotA);
+                  uint8_t referenceEdge2 = FindReferenceEdge(vertices2, overlapData2.Normal, dotB);
+
+                  if (dotA < dotB)
+                  {
+                        contactPair.Penetration = overlapData2.Penetration;
+                        contactPair.Normal = overlapData2.Normal;
+
+                        swap(vertices1, vertices2);
+
+                        if ((-centerDirection).Dot(contactPair.Normal) < 0)
+                        {
+                              contactPair.Normal = -contactPair.Normal;
+                              referenceEdge = FindReferenceEdge(vertices1, contactPair.Normal, dotA);
+                        }
+                        else
+                        {
+                              referenceEdge = referenceEdge2;
+                        }
+                  }
+                  else
+                  {
+                        contactPair.Penetration = overlapData1.Penetration;
+                        contactPair.Normal = overlapData1.Normal;
+
+                        if (centerDirection.Dot(contactPair.Normal) < 0)
+                        {
+                              contactPair.Normal = -contactPair.Normal;
+                              referenceEdge = FindReferenceEdge(vertices1, contactPair.Normal, dotA);
+                        }
+                  }
+            }
+            else
+            {
+                  contactPair.Penetration = overlapData1.Penetration;
+                  contactPair.Normal = overlapData1.Normal;
+
+                  if (centerDirection.Dot(contactPair.Normal) < 0)
+                  {
+                        contactPair.Normal = -contactPair.Normal;
+                  }
+
+                  referenceEdge = FindReferenceEdge(vertices1, contactPair.Normal, dotA);
             }
 
             Vector2Span Ref = vertices1;
             Vector2Span Inc = vertices2;
-            int refEdge = refEdgeA;
 
             //Reference edge endpoints and basis (tangent + normal)
-            int refSucc = (refEdge + 1) % Ref.size;
-            Vector2 refA = Ref[refEdge];
+            uint8_t refSucc = (referenceEdge + 1) % Ref.size;
+            Vector2 refA = Ref[referenceEdge];
             Vector2 refB = Ref[refSucc];
             Vector2 refTangent = (refB - refA).Normalize();
             Vector2 refNormal = refTangent.PerpendicularInverse().Normalize();
 
             if (refNormal.Dot(contactPair.Normal) < Fixed16_16(0)) refNormal = -refNormal;
 
+            //Draw reference
+            glLineWidth(10.0f);
+            glColor3f(0.0f, 0.0f, 1.0f);
+            glBegin(GL_LINES);
+            glVertex2f(refA.X.ToFloating<float>(), refA.Y.ToFloating<float>());
+            glVertex2f(refB.X.ToFloating<float>(), refB.Y.ToFloating<float>());
+            glEnd();
+
             //Find incident edge from the other polygon
-            int incEdge = FindIncidentEdge(Inc, refNormal);
-            int incSucc = (incEdge + 1) % Inc.size;
+            uint8_t incEdge = FindIncidentEdge(Inc, refNormal);
+            uint8_t incSucc = (incEdge + 1) % Inc.size;
 
             //Clip the incident edge against the two side planes of the reference face
             const Vector2 nL = -refTangent;
@@ -691,6 +725,13 @@ public:
             }
 
             return true;
+      }
+
+      inline static  bool BiasGreaterThan(Fixed16_16 a,Fixed16_16 b)
+      {
+            constexpr Fixed16_16 k_biasRelative = Fixed16_16(0, 95);
+            constexpr Fixed16_16 k_biasAbsolute = Fixed16_16(1) / Fixed16_16(100);
+            return a >= b * k_biasRelative + a * k_biasAbsolute;
       }
 };
 
