@@ -586,14 +586,6 @@ private:
     }
 
 private:
-    template <typename T>
-    inline void swap(T& x, T& y)
-    {
-        T temp = x;
-        x = y;
-        y = temp;
-    }
-
     inline Fixed16_16 clamp(Fixed16_16 value, Fixed16_16 min, Fixed16_16 max)
     {
         return fpm::max(min, fpm::min(value, max));

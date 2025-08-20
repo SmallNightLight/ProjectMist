@@ -218,15 +218,40 @@ public:
             //First perform an AABB check, to test if the objects are even able to collide
             if (!colliderTransform1.GetAABBFromTransformed(vertices1).Overlaps(colliderTransform2.GetAABBFromTransformed(vertices2))) return false;
 
-            bool collision = GetConvexConvex(contactPair, vertices1, vertices2);
+            assert(vertices1.size > 0 && vertices2.size > 0 && "Polygon cannot have zero vertices");
 
-            if (!collision) return false;
+            Vector2 center1 = GetCenter(vertices1);
+            Vector2 center2 = GetCenter(vertices2);
 
-            //Create contact data
-            CreateContactData(contactPair, swap, GetCenter(vertices1), GetCenter(vertices2), entity1, entity2, colliderTransform1, colliderTransform2);
+            OverlapData overlap1;
+            OverlapData overlap2;
+
+            if (!ProjectEdges(overlap1, vertices1, vertices2, center1, center2)) return false;
+            if (!ProjectEdges(overlap2, vertices2, vertices1, center2, center1)) return false;
+
+            Vector2Span Reference, Incident;
+            OverlapData resultOverlap;
+
+            if (BiasGreaterThan(overlap2.Penetration,overlap1.Penetration))
+            {
+                  Reference = vertices1;
+                  Incident = vertices2;
+                  resultOverlap = overlap1;
+            }
+            else
+            {
+                  Reference = vertices2;
+                  Incident = vertices1;
+                  resultOverlap = overlap2;
+            }
+
+            if (!BuildManifold(contactPair, Reference, Incident, resultOverlap)) return false;
+
+            CreateContactData(contactPair, swap, center1, center2, entity1, entity2, colliderTransform1, colliderTransform2);
             return true;
       }
 
+private:
       static void inline CreateContactData(ContactPair& contactPair, bool swap, const Vector2& center1, const Vector2& center2, Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2)
       {
             Vector2 direction = center2 - center1;
@@ -275,38 +300,54 @@ public:
 
 
       //SAT functions
-
-      static bool CheckAxisSeparation(ContactPair& contactPair, Vector2Span vertices1, Vector2Span vertices2, bool refIsPoly1)
+      struct OverlapData
       {
-            for(int i = 0; i < vertices1.size; ++i)
+            Fixed16_16 Penetration;
+            Vector2 Normal;
+            uint8_t Edge;
+            bool Flipped;
+      };
+
+      static bool ProjectEdges(OverlapData& overlapData, Vector2Span vertices1, Vector2Span vertices2, Vector2 center1, Vector2 center2)
+      {
+            overlapData.Penetration = std::numeric_limits<Fixed16_16>::max();
+            overlapData.Flipped = false;
+
+            Vector2 centerDirection = center2 - center1;
+
+            for (uint8_t i = 0; i < vertices1.size; i++)
             {
-                  Vector2 v1 = vertices1[i];
-                  Vector2 v2 = vertices1[(i + 1) % vertices1.size];
+                  Vector2 edge = vertices1[(i + 1) % vertices1.size] - vertices1[i];
 
-                  Vector2 edge = v2 - v1;
-                  Vector2 axis = (-edge).Perpendicular().Normalize();
+                  assert(edge != Vector2(0, 0) && "Vertices on polygon should not overlap");
 
-                  Fixed16_16 min1, max1, min2, max2;
-                  ProjectVertices(vertices1, axis, min1, max1);
-                  ProjectVertices(vertices2, axis, min2, max2);
+                  Vector2 normal = edge.PerpendicularInverse().Normalize();
+                  bool flipped = false;
 
-                  if (min1 >= max2 || min2 >= max1)
+                  if (centerDirection.Dot(normal) < Fixed16_16(0))
                   {
-                        //Separation detected - No collision
-                        return true;
+                        flipped = true;
+                        normal = -normal;
                   }
 
-                  Fixed16_16 axisDepth = fpm::min(max2 - min1, max1 - min2);
-                  if (axisDepth > contactPair.Penetration)
+                  Fixed16_16 minA, maxA, minB, maxB;
+                  ProjectVertices(vertices1, normal, minA, maxA);
+                  ProjectVertices(vertices2, normal, minB, maxB);
+
+                  if (maxA < minB || maxB < minA) return false;
+
+                  Fixed16_16 penetration = fpm::min(maxA - minB, maxB - minA);
+
+                  if (EvaluatePenetrationBias(overlapData, flipped, penetration))
                   {
-                        contactPair.Penetration = axisDepth;
-                        contactPair.Normal = axis;
-                        contactPair.RefIsPoly1 = refIsPoly1;
-                        contactPair.RefEdgeIndex = i;
+                        overlapData.Penetration = penetration;
+                        overlapData.Normal = normal;
+                        overlapData.Edge = i;
+                        overlapData.Flipped = flipped;
                   }
             }
 
-            return false;
+            return true;
       }
 
       static bool CheckCircleAxisSeparation(ContactPair& contactPair, Vector2Span vertices, const Vector2& circlePosition, Fixed16_16 circleRadius, const Vector2& axis)
@@ -336,20 +377,6 @@ public:
             FindClosestContact(contactPair, circlePosition, vertices, minDistanceSquared);
       }
 
-      static inline void GetContactConvexConvex2(ContactPair& contactPair, Vector2Span vertices1, Vector2Span vertices2)
-      {
-            long minDistanceSquared = std::numeric_limits<long>::max();
-
-            for (const Vector2& vertex : vertices1)
-            {
-                  FindClosestContact(contactPair, vertex, vertices2, minDistanceSquared);
-            }
-            for (const Vector2& vertex : vertices2)
-            {
-                  FindClosestContact(contactPair, vertex, vertices1, minDistanceSquared);
-            }
-      }
-
       static void FindClosestContact(ContactPair& contactPair, Vector2 point, Vector2Span vertices, long& minDistanceSquared)
       {
             for (int i = 0; i < vertices.size; ++i)
@@ -374,19 +401,6 @@ public:
             }
       }
 
-      static inline void ProjectVertices(Vector2Span vertices, const Vector2 normal, Fixed16_16& min, Fixed16_16& max)
-      {
-            min = std::numeric_limits<Fixed16_16>::max();
-            max = -std::numeric_limits<Fixed16_16>::max();
-
-            for (Vector2 vertex : vertices)
-            {
-                  Fixed16_16 dot = normal.Dot(vertex);
-                  min = std::min(dot, min);
-                  max = std::max(dot, max);
-            }
-      }
-
       static void ProjectCircle(const Vector2& center, const Fixed16_16& radius, const Vector2& axis, Fixed16_16& min, Fixed16_16& max)
       {
             Vector2 directionAndRadius = axis * radius;
@@ -402,16 +416,17 @@ public:
             }
       }
 
-      static Vector2 GetCenter(Vector2Span vertices)
+      static inline void ProjectVertices(Vector2Span vertices, const Vector2 normal, Fixed16_16& min, Fixed16_16& max)
       {
-            Vector2 sum(0, 0);
+            min = std::numeric_limits<Fixed16_16>::max();
+            max = -std::numeric_limits<Fixed16_16>::max();
 
-            for (auto& vertex : vertices)
+            for (Vector2 vertex : vertices)
             {
-                  sum += vertex;
+                  Fixed16_16 dot = normal.Dot(vertex);
+                  min = std::min(dot, min);
+                  max = std::max(dot, max);
             }
-
-            return sum / vertices.size;
       }
 
       static Vector2 GetClosestPointToCircle(Vector2 center, Vector2Span vertices)
@@ -458,125 +473,70 @@ public:
             return p.RawDistanceSquared(closestPoint);
       }
 
-      static constexpr inline bool AlmostEqual(long x, long y, long epsilon)
+      static bool BuildManifold(ContactPair& contactPair, Vector2Span ReferenceVertices, Vector2Span IncidentVertices, const OverlapData& overlapData)
       {
-            return (x >= y - epsilon) && (x <= y + epsilon);
-      }
+            contactPair.Penetration = overlapData.Penetration;
+            contactPair.Normal = overlapData.Normal;
 
-private:
-      template <typename T>
-      inline static void swap(T& x, T& y)
-      {
-            T temp = x;
-            x = y;
-            y = temp;
-      }
+            Vector2 reference1 = ReferenceVertices[overlapData.Edge];
+            Vector2 reference2 = ReferenceVertices[(overlapData.Edge + 1) % ReferenceVertices.size];
 
-private:
-      ComponentCollection<CircleCollider>* circleColliderCollection;
-      ComponentCollection<BoxCollider>* boxColliderCollection;
-      ComponentCollection<PolygonCollider>* polygonColliderCollection;
+            Vector2 refTangent = (reference2 - reference1).Normalize();
+            Vector2 refNormal = refTangent.PerpendicularInverse().Normalize();
 
-public:
-      /////////////////////////////////////
-      ///Test 2
+            if (refNormal.Dot(overlapData.Normal) < Fixed16_16(0))
+                  refNormal = -refNormal;
 
-      struct OverlapData
-      {
-            Fixed16_16 Penetration;
-            Vector2 Normal;
-            uint8_t Edge;
-      };
+            //Find incident edge from the other polygon
+            uint8_t incident1 = FindIncidentEdge(IncidentVertices, refNormal);
+            uint8_t incident2 = (incident1 + 1) % IncidentVertices.size;
 
-      static bool CheckEdges(OverlapData& overlapData, Vector2Span vertices1, Vector2Span vertices2, Vector2 center1, Vector2 center2)
-      {
-            overlapData.Penetration = std::numeric_limits<Fixed16_16>::max();
+            //Clip the incident edge against the two side planes of the reference face
+            const Vector2 nL = -refTangent;
+            const Fixed16_16 oL = -refTangent.Dot(reference1);
+            const Vector2 nR = refTangent;
+            const Fixed16_16 oR = refTangent.Dot(reference2);
 
-            for (uint8_t i = 0; i < vertices1.size; i++)
+            std::array<Vector2, 2> clipPoints1;
+            uint8_t clipCount1 = ClipSegmentToHalfSpace(std::array { IncidentVertices[incident1], IncidentVertices[incident2] }, nL, oL, clipPoints1);
+            if (clipCount1 < 2) return false; //Only possible with imprecision
+
+            std::array<Vector2, 2> clipPoints2;
+            uint8_t clipCount2 = ClipSegmentToHalfSpace(clipPoints1, nR, oR, clipPoints2);
+            if (clipCount2 < 2) return false; //Only possible with imprecision
+
+            //Keep points that are behind the reference face plane
+            Fixed16_16 faceOffset = refNormal.Dot(reference1);
+            constexpr Fixed16_16 maxSeparation = Fixed16_16(0); //Add bias here possible todo
+
+            contactPair.ContactCount = 0;
+
+            for (int i = 0; i < clipCount2 && contactPair.ContactCount < 2; ++i)
             {
-                  Vector2 a = vertices1[i];
-                  Vector2 b = vertices1[(i + 1) % vertices1.size];
-                  Vector2 edge = b - a;
-
-                  assert(edge != Vector2(0, 0) && "Vertices on polygon should not overlap");
-
-                  Vector2 normal = edge.PerpendicularInverse().Normalize();
-                  Fixed16_16 Min1, Min2, Max1, Max2;
-
-                  if ((center2 - center1).Dot(normal) < 0)
+                  Fixed16_16 separation = refNormal.Dot(clipPoints2[i]) - faceOffset;
+                  if (separation <= maxSeparation)
                   {
-                       //normal = -normal;
-                  }
-
-                  ProjectVertices(vertices1, normal, Min1, Max1);
-                  ProjectVertices(vertices2, normal, Min2, Max2);
-
-                  if (Max1 < Min2 || Max2 < Min1) return false; //Separating axis found
-
-                  Fixed16_16 penetration = fpm::min(Max1 - Min2, Max2 - Min1);
-                  if (penetration < overlapData.Penetration)
-                  {
-                        overlapData.Penetration = penetration;
-                        overlapData.Normal = normal;
-
-                        overlapData.Edge = i;
+                        contactPair.Contacts[contactPair.ContactCount].Position = clipPoints2[i];
+                        contactPair.Contacts[contactPair.ContactCount].Separation = separation;
+                        ++contactPair.ContactCount;
                   }
             }
 
             return true;
       }
 
-      static bool GetConvexConvex(ContactPair& contactPair, Vector2Span vertices1, Vector2Span vertices2)
-      {
-            assert(vertices1.size > 0 && vertices2.size > 0 && "Polygon cannot have zero vertices");
-
-            Vector2 center1 = GetCenter(vertices1);
-            Vector2 center2 = GetCenter(vertices2);
-
-            OverlapData overlapData1;
-            OverlapData overlapData2;
-
-            //Detect collision between two convex shapes using the SAT
-            if (!CheckEdges(overlapData1, vertices1, vertices2, center1, center2)) return false;
-            if (!CheckEdges(overlapData2, vertices2, vertices1, center1, center2)) return false;
-
-            return BuildManifold(vertices1, vertices2, contactPair, overlapData1, overlapData2);
-      }
-
-      static inline Vector2 EdgeNormal(Vector2Span vertices, uint8_t i)
-      {
-            uint8_t j = (i + 1) % vertices.size;
-            Vector2 e = vertices[j] - vertices[i];
-            return e.PerpendicularInverse().Normalize();
-      }
-
-      static inline uint8_t FindReferenceEdge(Vector2Span vertices, Vector2 normal, Fixed16_16& maxDot)
-      {
-            maxDot = -std::numeric_limits<Fixed16_16>::max();
-            uint8_t referenceIndex = 0;
-
-            for (uint8_t i = 0; i < vertices.size; ++i)
-            {
-                  Vector2 n = EdgeNormal(vertices, i);
-                  Fixed16_16 dot = n.Dot(normal);
-                  if (dot > maxDot)
-                  {
-                        maxDot = dot;
-                        referenceIndex = i;
-                  }
-            }
-
-            return referenceIndex;
-      }
-
-      static inline uint8_t FindIncidentEdge(Vector2Span vertices, Vector2 referenceNormal)
+      static uint8_t FindIncidentEdge(Vector2Span vertices, Vector2 referenceNormal)
       {
             Fixed16_16 minDot = std::numeric_limits<Fixed16_16>::max();
             uint8_t incidentIndex = 0;
 
             for (int i = 0; i < vertices.size; ++i)
             {
-                  Fixed16_16 dot = referenceNormal.Dot(EdgeNormal(vertices, i));
+                  uint8_t j = (i + 1) % vertices.size;
+                  Vector2 e = vertices[j] - vertices[i];
+                  Vector2 normal = e.PerpendicularInverse().Normalize();
+                  Fixed16_16 dot = referenceNormal.Dot(normal);
+
                   if (dot < minDot)
                   {
                         minDot = dot;
@@ -608,131 +568,56 @@ public:
             return count;
       }
 
-      static bool BuildManifold(Vector2Span vertices1, Vector2Span vertices2, ContactPair& contactPair, OverlapData overlapData1, OverlapData overlapData2)
+      static inline bool EvaluatePenetrationBias(const OverlapData& overlay1, bool flipped2, Fixed16_16 penetration2)
       {
-            //Decide reference vs incident polygon by which face is most aligned with SAT normal
-            Fixed16_16 dotA;
-            uint8_t referenceEdge;
-            Vector2 centerDirection = GetCenter(vertices2) - GetCenter(vertices1);
-
-            if (overlapData2.Penetration < overlapData1.Penetration)
+            if (overlay1.Flipped && !flipped2)
             {
-                  Fixed16_16 dotB;
-
-                  if (centerDirection.Dot(overlapData2.Normal) < 0)
-                  {
-                        overlapData2.Normal = -overlapData2.Normal;
-                  }
-
-                  referenceEdge = FindReferenceEdge(vertices1, overlapData2.Normal, dotA);
-                  uint8_t referenceEdge2 = FindReferenceEdge(vertices2, overlapData2.Normal, dotB);
-
-                  if (dotA < dotB)
-                  {
-                        contactPair.Penetration = overlapData2.Penetration;
-                        contactPair.Normal = overlapData2.Normal;
-
-                        swap(vertices1, vertices2);
-
-                        if ((-centerDirection).Dot(contactPair.Normal) < 0)
-                        {
-                              contactPair.Normal = -contactPair.Normal;
-                              referenceEdge = FindReferenceEdge(vertices1, contactPair.Normal, dotA);
-                        }
-                        else
-                        {
-                              referenceEdge = referenceEdge2;
-                        }
-                  }
-                  else
-                  {
-                        contactPair.Penetration = overlapData1.Penetration;
-                        contactPair.Normal = overlapData1.Normal;
-
-                        if (centerDirection.Dot(contactPair.Normal) < 0)
-                        {
-                              contactPair.Normal = -contactPair.Normal;
-                              referenceEdge = FindReferenceEdge(vertices1, contactPair.Normal, dotA);
-                        }
-                  }
+                  return penetration2.raw_value() < overlay1.Penetration.raw_value() + 10;
             }
-            else
+            if (!overlay1.Flipped && flipped2)
             {
-                  contactPair.Penetration = overlapData1.Penetration;
-                  contactPair.Normal = overlapData1.Normal;
-
-                  if (centerDirection.Dot(contactPair.Normal) < 0)
-                  {
-                        contactPair.Normal = -contactPair.Normal;
-                  }
-
-                  referenceEdge = FindReferenceEdge(vertices1, contactPair.Normal, dotA);
+                  return penetration2.raw_value() + 10 < overlay1.Penetration.raw_value();
             }
 
-            Vector2Span Ref = vertices1;
-            Vector2Span Inc = vertices2;
-
-            //Reference edge endpoints and basis (tangent + normal)
-            uint8_t refSucc = (referenceEdge + 1) % Ref.size;
-            Vector2 refA = Ref[referenceEdge];
-            Vector2 refB = Ref[refSucc];
-            Vector2 refTangent = (refB - refA).Normalize();
-            Vector2 refNormal = refTangent.PerpendicularInverse().Normalize();
-
-            if (refNormal.Dot(contactPair.Normal) < Fixed16_16(0)) refNormal = -refNormal;
-
-            //Draw reference
-            glLineWidth(10.0f);
-            glColor3f(0.0f, 0.0f, 1.0f);
-            glBegin(GL_LINES);
-            glVertex2f(refA.X.ToFloating<float>(), refA.Y.ToFloating<float>());
-            glVertex2f(refB.X.ToFloating<float>(), refB.Y.ToFloating<float>());
-            glEnd();
-
-            //Find incident edge from the other polygon
-            uint8_t incEdge = FindIncidentEdge(Inc, refNormal);
-            uint8_t incSucc = (incEdge + 1) % Inc.size;
-
-            //Clip the incident edge against the two side planes of the reference face
-            const Vector2 nL = -refTangent;
-            const Fixed16_16 oL = -refTangent.Dot(refA);
-            const Vector2 nR = refTangent;
-            const Fixed16_16 oR =  refTangent.Dot(refB);
-
-            std::array<Vector2, 2> clipPoints1;
-            uint8_t clipCount1 = ClipSegmentToHalfSpace(std::array { Inc[incEdge], Inc[incSucc] }, nL, oL, clipPoints1);
-            if (clipCount1 < 2) return false; //Only possible with imprecision
-
-            std::array<Vector2, 2> clipPoints2;
-            uint8_t clipCount2 = ClipSegmentToHalfSpace(clipPoints1, nR, oR, clipPoints2);
-            if (clipCount2 < 2) return false; //Only possible with imprecision
-
-            //Keep points that are behind the reference face plane
-            Fixed16_16 faceOffset = refNormal.Dot(refA);
-            Fixed16_16 kEps = Fixed16_16(0); //Add bias here possible todo
-
-            contactPair.ContactCount = 0;
-
-            for (int i = 0; i < clipCount2 && contactPair.ContactCount < 2; ++i)
-            {
-                  Fixed16_16 separation = refNormal.Dot(clipPoints2[i]) - faceOffset;
-                  if (separation <= kEps)
-                  {
-                        contactPair.Contacts[contactPair.ContactCount].Position = clipPoints2[i];
-                        contactPair.Contacts[contactPair.ContactCount].Separation = separation;
-                        ++contactPair.ContactCount;
-                  }
-            }
-
-            return true;
+            return penetration2 < overlay1.Penetration;
       }
 
-      inline static  bool BiasGreaterThan(Fixed16_16 a,Fixed16_16 b)
+      static inline bool BiasGreaterThan(Fixed16_16 a, Fixed16_16 b)
       {
-            constexpr Fixed16_16 k_biasRelative = Fixed16_16(0, 95);
+            constexpr Fixed16_16 k_biasRelative = Fixed16_16(0, 9);
             constexpr Fixed16_16 k_biasAbsolute = Fixed16_16(1) / Fixed16_16(100);
             return a >= b * k_biasRelative + a * k_biasAbsolute;
       }
+
+      static Vector2 GetCenter(Vector2Span vertices)
+      {
+            Vector2 sum(0, 0);
+
+            for (auto& vertex : vertices)
+            {
+                  sum += vertex;
+            }
+
+            return sum / vertices.size;
+      }
+
+      static constexpr inline bool AlmostEqual(long x, long y, long epsilon)
+      {
+            return (x >= y - epsilon) && (x <= y + epsilon);
+      }
+
+      template <typename T>
+      inline static void swap(T& x, T& y)
+      {
+            T temp = x;
+            x = y;
+            y = temp;
+      }
+
+private:
+      ComponentCollection<CircleCollider>* circleColliderCollection;
+      ComponentCollection<BoxCollider>* boxColliderCollection;
+      ComponentCollection<PolygonCollider>* polygonColliderCollection;
 };
 
 //todo: validate shapes with ccw

@@ -122,15 +122,15 @@ public:
         Input* playerInput = inputs[0];
         movingSystem->Update(deltaTime, playerInput->GetKey(GLFW_KEY_W), playerInput->GetKey(GLFW_KEY_S), playerInput->GetKey(GLFW_KEY_A), playerInput->GetKey(GLFW_KEY_D), playerInput->GetKey(GLFW_KEY_Q), playerInput->GetKey(GLFW_KEY_E));
         rigidBodySystem->HandleCollisions(currentFrame, id);
-        //rigidBodySystem->IntegrateForces(deltaTime);
-        //rigidBodySystem->SetupContacts(Fixed16_16(1) / deltaTime);
+        rigidBodySystem->IntegrateForces(deltaTime);
+        rigidBodySystem->SetupContacts(Fixed16_16(1) / deltaTime);
 
         for (uint8_t i = 0; i < PhysicsIterations; ++i)
         {
-            //rigidBodySystem->SolveContacts();
+            rigidBodySystem->SolveContacts();
         }
 
-        //rigidBodySystem->IntegrateVelocities(deltaTime);
+        rigidBodySystem->IntegrateVelocities(deltaTime);
 
         ++currentFrame;
     }
