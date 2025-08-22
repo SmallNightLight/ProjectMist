@@ -201,7 +201,7 @@ public:
     void AddObjects()
     {
         //Add objects
-        worldManager.GetPhysicsWorld().AddObjects2();
+        worldManager.GetPhysicsWorld().AddObjects();
 
         //Setup cache
         worldManager.GetPhysicsWorld().InitializeCache(&cacheManager);

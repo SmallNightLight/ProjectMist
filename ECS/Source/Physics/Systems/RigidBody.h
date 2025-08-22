@@ -222,32 +222,40 @@ public:
         }
     }
 
-    // void CorrectCollisions(const ContactPair& contactPair, Fixed16_16 fraction)
-    // {
-    //     ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(contactPair.Entity1);
-    //     ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(contactPair.Entity2);
-    //
-    //     for (int i = 0; i < contactPair.contactCount; ++i)
-    //     {
-    //         const Contact& contact = contactPair.contacts[i];
-    //         Fixed16_16 correctionDepth = -contact.separation * fraction; // separation is negative when penetrating
-    //
-    //         if (!contactPair.isDynamicA)
-    //         {
-    //             txB.MovePosition(contact.normal * correctionDepth);
-    //         }
-    //         else if (!contactPair.isDynamicB)
-    //         {
-    //             txA.MovePosition(-contact.normal * correctionDepth);
-    //         }
-    //         else
-    //         {
-    //             Vector2 direction = contact.normal * (correctionDepth / 2);
-    //             txA.MovePosition(-direction);
-    //             txB.MovePosition(direction);
-    //         }
-    //     }
-    // }
+    void IntegratePositions(Fixed16_16 deltaTime)
+    {
+        for (ContactPair& contactPair : ContactPairs)
+        {
+            ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(contactPair.Entity1);
+            ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(contactPair.Entity2);
+            RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(contactPair.Entity1);
+            RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(contactPair.Entity2);
+
+            for (Contact& contact : contactPair.Contacts)
+            {
+                constexpr Fixed16_16 steeringConstant = Fixed16_16(0, 7);
+                constexpr Fixed16_16 maxCorrection = -Fixed16_16(5);
+                constexpr Fixed16_16 slop = Fixed16_16(1) / Fixed16_16(100);
+
+                Fixed16_16 steeringForce = clamp(steeringConstant * (contact.Separation + slop), maxCorrection, Fixed16_16(0));
+                Vector2 impulse = contactPair.Normal * (-steeringForce * contact.MassNormal);
+
+                if (!colliderTransform1.IsStatic)
+                {
+                    colliderTransform1.MovePosition(-impulse * rigidBodyData1.InverseMass);
+                    Vector2 pointToA = contact.Position - colliderTransform1.Position;
+                    colliderTransform1.Rotate(-pointToA.Cross(impulse) * rigidBodyData1.InverseInertia);
+                }
+
+                if (!colliderTransform2.IsStatic)
+                {
+                    colliderTransform2.MovePosition(impulse * rigidBodyData2.InverseMass);
+                    Vector2 pointToB = contact.Position - colliderTransform2.Position;
+                    colliderTransform2.Rotate(pointToB.Cross(impulse) * rigidBodyData2.InverseInertia);
+                }
+            }
+        }
+    }
 
     void ResolveCollisions()
     {
@@ -462,7 +470,7 @@ private:
     void PreStep(ContactPair& contactPair, Fixed16_16 inverseDelta)
     {
         constexpr Fixed16_16 k_allowedPenetration = Fixed16_16(1) / Fixed16_16(100);
-        Fixed16_16 k_biasFactor = Fixed16_16(0, 2);
+        Fixed16_16 k_biasFactor = Fixed16_16(0, 0);
 
         ColliderTransform colliderTransform1 = colliderTransformCollection->GetComponent(contactPair.Entity1);
         ColliderTransform colliderTransform2 = colliderTransformCollection->GetComponent(contactPair.Entity2);
@@ -491,7 +499,28 @@ private:
             kTangent += rigidBodyData1.InverseInertia * (r1.Dot(r1) - rt1 * rt1) + rigidBodyData2.InverseInertia * (r2.Dot(r2) - rt2 * rt2);
             contact.MassTangent = Fixed16_16(1) / kTangent;
 
-            contact.Bias = -k_biasFactor * inverseDelta * fpm::min(Fixed16_16(0), contact.Separation + k_allowedPenetration);
+            Fixed16_16 bias = -k_biasFactor * inverseDelta * fpm::min(Fixed16_16(0), contact.Separation + k_allowedPenetration);
+
+            if (bias > Fixed16_16(2))
+            {
+                std::cout << "Detected Large Bias" << std::endl;
+
+                constexpr Fixed16_16 k_slop = Fixed16_16(0,1);   // 0.01
+                constexpr Fixed16_16 percent = Fixed16_16(0,2);  // 20% correction
+
+                Fixed16_16 penetration = fpm::max(contactPair.Penetration - k_slop, Fixed16_16(0));
+                if (penetration > Fixed16_16(0))
+                {
+                    //Position correction
+                    //CorrectCollisions(contactPair, Fixed16_16(1));
+                }
+
+                //contact.Bias = -inverseDelta * fpm::min(Fixed16_16(0), contact.Separation + k_allowedPenetration);
+            }
+            else
+            {
+                contact.Bias = bias;
+            }
 
             //accumulateImpulses?? todo
             if (AccumulateImpulses)
@@ -507,7 +536,7 @@ private:
             }
         }
     }
-
+public:
     void ApplyImpulse(ContactPair contactPair)
     {
         ColliderTransform colliderTransform1 = colliderTransformCollection->GetComponent(contactPair.Entity1);
