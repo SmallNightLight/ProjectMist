@@ -80,6 +80,7 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/ContactPair.h
         Source/Physics/Additional/ColliderType.h
         Source/Physics/Additional/RigidBodyType.h
+        Source/Physics/Collision/ImpulseCache.h
 )
 
 add_subdirectory(Source/Math)

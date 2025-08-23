@@ -237,12 +237,14 @@ public:
                   Reference = vertices1;
                   Incident = vertices2;
                   resultOverlap = overlap1;
+                  resultOverlap.Flipped = false; //Use flipped as indication for the feature pair
             }
             else
             {
                   Reference = vertices2;
                   Incident = vertices1;
                   resultOverlap = overlap2;
+                  resultOverlap.Flipped = true; //Use flipped as indication for the feature pair
             }
 
             if (!BuildManifold(contactPair, Reference, Incident, resultOverlap)) return false;
@@ -270,9 +272,9 @@ private:
                         Contact& contact = contactPair.Contacts[i];
                         contact.R1 = contact.Position - colliderTransform2.Position;
                         contact.R2 = contact.Position - colliderTransform1.Position;
-                        contact.Pn = Fixed16_16(0);
-                        contact.Pt = Fixed16_16(0);
-                        contact.Pnb = Fixed16_16(0);
+                        contact.LastImpulses.Pn = Fixed16_16(0);
+                        contact.LastImpulses.Pt = Fixed16_16(0);
+                        contact.LastImpulses.Pnb = Fixed16_16(0);
                         contact.Feature.value = 0;
                   }
 
@@ -288,16 +290,15 @@ private:
                         Contact& contact = contactPair.Contacts[i];
                         contact.R1 = contact.Position - colliderTransform1.Position;
                         contact.R2 = contact.Position - colliderTransform2.Position;
-                        contact.Pn = Fixed16_16(0);
-                        contact.Pt = Fixed16_16(0);
-                        contact.Pnb = Fixed16_16(0);
+                        contact.LastImpulses.Pn = Fixed16_16(0);
+                        contact.LastImpulses.Pt = Fixed16_16(0);
+                        contact.LastImpulses.Pnb = Fixed16_16(0); //todo?
                         contact.Feature.value = 0;
                   }
             }
 
-            contactPair.Friction = Fixed16_16(1) / Fixed16_16(5); //TODO
+            contactPair.Friction = Fixed16_16(1) / Fixed16_16(3); //TODO
       }
-
 
       //SAT functions
       struct OverlapData
@@ -475,7 +476,6 @@ private:
 
       static bool BuildManifold(ContactPair& contactPair, Vector2Span ReferenceVertices, Vector2Span IncidentVertices, const OverlapData& overlapData)
       {
-            contactPair.Penetration = overlapData.Penetration;
             contactPair.Normal = overlapData.Normal;
 
             Vector2 reference1 = ReferenceVertices[overlapData.Edge];
@@ -516,8 +516,13 @@ private:
                   Fixed16_16 separation = refNormal.Dot(clipPoints2[i]) - faceOffset;
                   if (separation <= maxSeparation)
                   {
-                        contactPair.Contacts[contactPair.ContactCount].Position = clipPoints2[i];
-                        contactPair.Contacts[contactPair.ContactCount].Separation = separation;
+                        auto& contact = contactPair.Contacts[contactPair.ContactCount];
+                        contact.Position = clipPoints2[i];
+                        contact.Separation = separation;
+                        contact.Feature.edges.ReferenceEdge = overlapData.Edge;
+                        contact.Feature.edges.IncidentEdge = incident1;
+                        contact.Feature.edges.Flipped = overlapData.Flipped;
+
                         ++contactPair.ContactCount;
                   }
             }

@@ -122,7 +122,6 @@ public:
         Input* playerInput = inputs[0];
         movingSystem->Update(deltaTime, playerInput->GetKey(GLFW_KEY_W), playerInput->GetKey(GLFW_KEY_S), playerInput->GetKey(GLFW_KEY_A), playerInput->GetKey(GLFW_KEY_D), playerInput->GetKey(GLFW_KEY_Q), playerInput->GetKey(GLFW_KEY_E));
         rigidBodySystem->HandleCollisions(currentFrame, id);
-        //rigidBodySystem->PositionalCorrection();
         rigidBodySystem->IntegrateForces(deltaTime);
         rigidBodySystem->SetupContacts(Fixed16_16(1) / deltaTime);
 
@@ -132,7 +131,7 @@ public:
         }
 
         rigidBodySystem->IntegrateVelocities(deltaTime);
-        rigidBodySystem->IntegratePositions(deltaTime);
+        rigidBodySystem->IntegratePositions();
 
         ++currentFrame;
     }
@@ -461,37 +460,28 @@ private:
     {
         for (ContactPair contactPair : contactPairs)
         {
-            //Render normal of collision
-            float normalLength = contactPair.Penetration.ToFloating<float>();
-            glLineWidth(2.0f);
-            glColor3f(1.0f, 0.0f, 0.0f);
-            glBegin(GL_LINES);
-            glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>(), contactPair.Contacts[0].Position.Y.ToFloating<float>());
-            glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() + contactPair.Normal.X.ToFloating<float>() * normalLength, contactPair.Contacts[0].Position.Y.ToFloating<float>() + contactPair.Normal.Y.ToFloating<float>() * normalLength);
-            glEnd();
-
-            //Render contact points
-            float size = 0.4f;
-            if (contactPair.ContactCount > 0)
+            for (uint8_t i = 0; i < contactPair.ContactCount; ++i)
             {
+                Contact& contact = contactPair.Contacts[i];
+
+                //Render contact normal
+                float normalLength = -contact.Separation.ToFloating<float>() * 20;
+                glLineWidth(2.0f);
+                glColor3f(1.0f, 0.0f, 0.0f);
+                glBegin(GL_LINES);
+                glVertex2f(contact.Position.X.ToFloating<float>(), contact.Position.Y.ToFloating<float>());
+                glVertex2f(contact.Position.X.ToFloating<float>() + contactPair.Normal.X.ToFloating<float>() * normalLength, contact.Position.Y.ToFloating<float>() + contactPair.Normal.Y.ToFloating<float>() * normalLength);
+                glEnd();
+
+                //Render contact point
+                constexpr float size = 0.4f;
                 glLineWidth(2.0f);
                 glColor3f(0.5f, 0.5f, 0.5f);
                 glBegin(GL_LINES);
-                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() - size, contactPair.Contacts[0].Position.Y.ToFloating<float>() - size);
-                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() + size, contactPair.Contacts[0].Position.Y.ToFloating<float>() + size);
-                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() + size, contactPair.Contacts[0].Position.Y.ToFloating<float>() - size);
-                glVertex2f(contactPair.Contacts[0].Position.X.ToFloating<float>() - size, contactPair.Contacts[0].Position.Y.ToFloating<float>() + size);
-                glEnd();
-            }
-
-            if (contactPair.ContactCount > 1)
-            {
-                glLineWidth(2.0f);
-                glBegin(GL_LINES);
-                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() - size, contactPair.Contacts[1].Position.Y.ToFloating<float>() - size);
-                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() + size, contactPair.Contacts[1].Position.Y.ToFloating<float>() + size);
-                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() + size, contactPair.Contacts[1].Position.Y.ToFloating<float>() - size);
-                glVertex2f(contactPair.Contacts[1].Position.X.ToFloating<float>() - size, contactPair.Contacts[1].Position.Y.ToFloating<float>() + size);
+                glVertex2f(contact.Position.X.ToFloating<float>() - size, contact.Position.Y.ToFloating<float>() - size);
+                glVertex2f(contact.Position.X.ToFloating<float>() + size, contact.Position.Y.ToFloating<float>() + size);
+                glVertex2f(contact.Position.X.ToFloating<float>() + size, contact.Position.Y.ToFloating<float>() - size);
+                glVertex2f(contact.Position.X.ToFloating<float>() - size, contact.Position.Y.ToFloating<float>() + size);
                 glEnd();
             }
         }

@@ -7,13 +7,21 @@ union FeaturePair
 {
     struct Edges
     {
-        uint8_t inEdge1;
-        uint8_t outEdge1;
-        uint8_t inEdge2;
-        uint8_t outEdge2;
-    } e;
+        uint8_t ReferenceEdge;
+        uint8_t IncidentEdge;
+        uint16_t Flipped;
+    } edges;
 
     uint32_t value;
+};
+
+struct AccumulatedImpulse
+{
+    AccumulatedImpulse() = default;
+
+    Fixed16_16 Pn;  //Accumulated normal impulse
+    Fixed16_16 Pt;  //Accumulated tangent impulse
+    Fixed16_16 Pnb; //Accumulated normal impulse for position bias
 };
 
 struct Contact
@@ -22,27 +30,22 @@ struct Contact
 
     Vector2 Position;
     Vector2 R1, R2;
+    AccumulatedImpulse LastImpulses;
     Fixed16_16 Separation;
-    Fixed16_16 Pn;	                    //Accumulated normal impulse
-    Fixed16_16 Pt;	                    //Accumulated tangent impulse
-    Fixed16_16 Pnb;	                    //Accumulated normal impulse for position bias
     Fixed16_16 MassNormal, MassTangent;
-    Fixed16_16 Bias;
     FeaturePair Feature;
 };
 
 struct ContactPair
 {
+    ContactPair() = default;
+
     Entity Entity1;
     Entity Entity2;
 
-    uint8_t ContactCount;
     std::array<Contact, 2> Contacts;
+    uint8_t ContactCount;
 
     Vector2 Normal;
-    Fixed16_16 Friction = Fixed16_16(1) / Fixed16_16(5);
-
-    bool RefIsPoly1;
-    uint8_t  RefEdgeIndex;// todo
-    Fixed16_16 Penetration;
+    Fixed16_16 Friction;
 };
