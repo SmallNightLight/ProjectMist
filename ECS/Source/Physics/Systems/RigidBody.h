@@ -33,10 +33,9 @@ public:
     {
         collisionCache = pCollisionCache;
         physicsCache = pPhysicsCache;
-        physicsCache->Initialize();
     }
 
-    void SetupForBroadPhase(Fixed16_16 deltaTime)
+    void SetupForBroadPhase()
     {
         for (const Entity& entity : Entities)
         {
@@ -49,37 +48,6 @@ public:
             colliderTransform.LastPosition = colliderTransform.Position;
             rigidBodyData.LastVelocity = rigidBodyData.Velocity;
             rigidBodyData.LastAngularVelocity = rigidBodyData.AngularVelocity;
-        }
-    }
-
-    void ApplyVelocity(Fixed16_16 deltaTime)
-    {
-        for (const Entity& entity : Entities)
-        {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
-
-            if (colliderTransform.IsStatic) continue;
-
-            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
-
-            rigidBodyData.Velocity += rigidBodyData.Force * rigidBodyData.InverseMass * deltaTime;
-
-            if (colliderTransform.IsDynamic)
-            {
-                rigidBodyData.Velocity += Gravity * deltaTime;
-            }
-
-            //bool applyVelocity = rigidBodyData.Velocity.RawMagnitudeSquared() > VelocityEpsilon && rigidBodyData.Velocity.RawMagnitudeSquared() >= rigidBodyData.LastVelocity.RawMagnitudeSquared();
-            //bool applyAngularVelocity = rigidBodyData.AngularVelocity > AngularVelocityEpsilon || rigidBodyData.AngularVelocity < -AngularVelocityEpsilon;
-
-            colliderTransform.LastPosition = colliderTransform.Position;
-            rigidBodyData.LastVelocity = rigidBodyData.Velocity;
-            rigidBodyData.LastAngularVelocity = rigidBodyData.AngularVelocity;
-
-            colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
-            rigidBodyData.Force = Vector2::Zero();
-
-            colliderTransform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
         }
     }
 
@@ -178,21 +146,6 @@ public:
         }
     }
 
-    void IntegrateForces(Fixed16_16 deltaTime)
-    {
-        for (const Entity& entity : Entities)
-        {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
-
-            if (colliderTransform.IsStatic) continue;
-
-            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
-
-            rigidBodyData.Velocity += (Gravity + rigidBodyData.Force * rigidBodyData.InverseMass) * deltaTime;
-            //rigidBodyData.AngularVelocity += deltaTime * rigidBodyData.InverseInertia * rigidBodyData.Torque; //todo
-        }
-    }
-
     static inline CollisionCheckInfo GetCollisionCheckInfo(Entity entity1, Entity entity2, RigidBodyData& rigidBodyData1, RigidBodyData& rigidBodyData2)
     {
         return CollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
@@ -235,18 +188,20 @@ public:
         }
     }
 
-    // void WrapEntities(Camera camera)
-    // {
-    //     for (const Entity& entity : Entities)
-    //     {
-    //         ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
-    //
-    //         if (colliderTransform.Position.X < camera.Left) { colliderTransform.MovePosition(Vector2(camera.Width / camera.ZoomLevel, Fixed16_16(0))); }
-    //         if (colliderTransform.Position.X > camera.Right) { colliderTransform.MovePosition(Vector2(-camera.Width / camera.ZoomLevel, Fixed16_16(0))); }
-    //         if (colliderTransform.Position.Y < camera.Bottom) { colliderTransform.MovePosition(Vector2(Fixed16_16(0), camera.Height / camera.ZoomLevel)); }
-    //         if (colliderTransform.Position.Y > camera.Top) { colliderTransform.MovePosition(Vector2(Fixed16_16(0), -camera.Height / camera.ZoomLevel)); }
-    //     }
-    // }
+    void IntegrateForces(Fixed16_16 deltaTime)
+    {
+        for (const Entity& entity : Entities)
+        {
+            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+
+            if (colliderTransform.IsStatic) continue;
+
+            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
+
+            rigidBodyData.Velocity += (Gravity + rigidBodyData.Force * rigidBodyData.InverseMass) * deltaTime;
+            //rigidBodyData.AngularVelocity += deltaTime * rigidBodyData.InverseInertia * rigidBodyData.Torque; //todo
+        }
+    }
 
     static constexpr bool AccumulateImpulses = true;
 

@@ -8,6 +8,7 @@
 #include "../../Physics/Physics.h"
 #include "../Input/Input.h"
 #include "../../Math/Stream.h"
+#include "PhysicsWorldData.h"
 
 #include <vector>
 #include <array>
@@ -16,10 +17,10 @@
 class PhysicsWorld : public World
 {
 public:
-    explicit PhysicsWorld(PhysicsLayer& layer) : baseLayer(layer), currentFrame(1), numberGenerator(std::mt19937(12))
+    explicit PhysicsWorld(PhysicsLayer& player, PhysicsWorldData& pPhysicsWorldData) : baseLayer(player), physicsWorldData(pPhysicsWorldData)
     {
-        SetupComponents(layer);
-        SetupSystems(layer);
+        SetupComponents(player);
+        SetupSystems(player);
         InitializeCamera();
     }
 
@@ -56,17 +57,12 @@ public:
 
     void InitializeCache(CacheManager* cache)
     {
-        rigidBodySystem->InitializeCache(cache->GetCollisionCache(), &physicsCache);
+        rigidBodySystem->InitializeCache(cache->GetCollisionCache(), &physicsWorldData.Cache);
     }
 
     void InitializeCamera()
     {
         camera = Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20));
-    }
-
-    void OverwriteFrame(FrameNumber frame)
-    {
-        currentFrame = frame;
     }
 
     void AddObjects()
@@ -87,7 +83,7 @@ public:
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomCircle(baseLayer, numberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
+            PhysicsUtils::CreateRandomCircle(baseLayer, physicsWorldData.NumberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
         }
 
         baseLayer.AddComponent(10, Movable(Fixed16_16(20)));
@@ -95,12 +91,12 @@ public:
         //Add boxes/
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomBox(baseLayer, numberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
+            PhysicsUtils::CreateRandomBox(baseLayer, physicsWorldData.NumberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
         }
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomPolygon(baseLayer, numberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
+            PhysicsUtils::CreateRandomPolygon(baseLayer, physicsWorldData.NumberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
         }
     }
 
@@ -121,7 +117,8 @@ public:
 
         Input* playerInput = inputs[0];
         movingSystem->Update(deltaTime, playerInput->GetKey(GLFW_KEY_W), playerInput->GetKey(GLFW_KEY_S), playerInput->GetKey(GLFW_KEY_A), playerInput->GetKey(GLFW_KEY_D), playerInput->GetKey(GLFW_KEY_Q), playerInput->GetKey(GLFW_KEY_E));
-        rigidBodySystem->HandleCollisions(currentFrame, id);
+
+        rigidBodySystem->HandleCollisions(physicsWorldData.CurrentFrame, id);
         rigidBodySystem->IntegrateForces(deltaTime);
         rigidBodySystem->SetupContacts(Fixed16_16(1) / deltaTime);
 
@@ -133,7 +130,7 @@ public:
         rigidBodySystem->IntegrateVelocities(deltaTime);
         rigidBodySystem->IntegratePositions();
 
-        ++currentFrame;
+        ++physicsWorldData.CurrentFrame;
     }
 
     void UpdateDebug(std::vector<Input*>& inputs)
@@ -142,19 +139,19 @@ public:
         {
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
             {
-                PhysicsUtils::CreateRandomCircleFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomCircleFromPosition(baseLayer, physicsWorldData.NumberGenerator, input->GetMousePosition(camera));
                 std::cout << "Create new circle\n";
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_RIGHT))
             {
-                PhysicsUtils::CreateRandomBoxFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomBoxFromPosition(baseLayer, physicsWorldData.NumberGenerator, input->GetMousePosition(camera));
                 std::cout << "Create new box\n";
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_MIDDLE))
             {
-                PhysicsUtils::CreateRandomPolygonFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomPolygonFromPosition(baseLayer, physicsWorldData.NumberGenerator, input->GetMousePosition(camera));
                 std::cout << "Create new convex\n";
             }
         }
@@ -181,12 +178,12 @@ public:
 
     inline FrameNumber GetCurrentFrame() const
     {
-        return currentFrame;
+        return physicsWorldData.CurrentFrame;
     }
 
     inline std::mt19937 GetNumberGenerator() const
     {
-        return numberGenerator;
+        return physicsWorldData.NumberGenerator;
     }
 
     //Serialization
@@ -207,10 +204,10 @@ public:
         std::vector<PhysicsSignature> signatures;
 
         //Write current frame
-        stream.WriteInteger<FrameNumber>(currentFrame);
+        stream.WriteInteger<FrameNumber>(physicsWorldData.CurrentFrame);
 
         //Write number generator
-        SerializeGenerator(stream, numberGenerator);
+        SerializeGenerator(stream, physicsWorldData.NumberGenerator);
 
         //Write the signatures of all active entities
         SerializeEntities(stream, entities, signatures);
@@ -239,10 +236,10 @@ public:
         std::vector<PhysicsSignature> signatures;
         std::array<uint32_t, MAXENTITIES> entityIndexes;
 
-        currentFrame = stream.ReadInteger<FrameNumber>();
+        physicsWorldData.CurrentFrame = stream.ReadInteger<FrameNumber>();
 
         //Read the number generator
-        DeserializeGenerator(stream, numberGenerator);
+        DeserializeGenerator(stream, physicsWorldData.NumberGenerator);
 
         //Read the signatures of all active entities
         DeserializeEntities(stream, entities, signatures);
@@ -489,9 +486,7 @@ private:
 
 private:
     PhysicsLayer& baseLayer;
-    FrameNumber currentFrame;
-    std::mt19937 numberGenerator;
-    PhysicsCache physicsCache;
+    PhysicsWorldData& physicsWorldData;
 
     //Systems
     RigidBody* rigidBodySystem;

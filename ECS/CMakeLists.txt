@@ -83,6 +83,7 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/ImpulseCache.h
         Source/ECS/EntityPair.h
         Source/Physics/Collision/PhysicsCache.h
+        Source/Game/Worlds/PhysicsWorldData.h
 )
 
 add_subdirectory(Source/Math)

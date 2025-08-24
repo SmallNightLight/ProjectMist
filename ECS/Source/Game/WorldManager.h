@@ -7,7 +7,10 @@
 class WorldManager
 {
 public:
-    WorldManager() : LastConfirmedFrame(1), BaseLayer(PhysicsLayer()), ConfirmedLayer(PhysicsLayer()), BasePhysicsWorld(BaseLayer) { }
+    WorldManager() :
+        BaseLayer(PhysicsLayer()), ConfirmedLayer(PhysicsLayer()),
+        BasePhysicsWorldData(1, 12), ConfirmedPhysicsWorldData(1, 0),
+        BasePhysicsWorld(BaseLayer, BasePhysicsWorldData) { }
 
     void NextFrame(FrameNumber confirmedFrame)
     {
@@ -15,7 +18,7 @@ public:
         {
             //Save confirmed game state
             ConfirmedLayer.Overwrite(BaseLayer);
-            LastConfirmedFrame = BasePhysicsWorld.GetCurrentFrame();
+            ConfirmedPhysicsWorldData = BasePhysicsWorldData;
         }
     }
 
@@ -24,18 +27,18 @@ public:
     {
         FrameNumber currentFrame = BasePhysicsWorld.GetCurrentFrame();
 
-        if (currentFrame <= LastConfirmedFrame) return currentFrame - LastConfirmedFrame;
+        if (currentFrame <= ConfirmedPhysicsWorldData.CurrentFrame) return currentFrame - ConfirmedPhysicsWorldData.CurrentFrame;
 
         //Restore last confirmed game state
         BaseLayer.Overwrite(ConfirmedLayer);
-        BasePhysicsWorld.OverwriteFrame(LastConfirmedFrame);
-        return currentFrame - LastConfirmedFrame;
+        BasePhysicsWorldData = ConfirmedPhysicsWorldData; //todo check if same LastConfirmedFrame
+        return currentFrame - ConfirmedPhysicsWorldData.CurrentFrame;
     }
 
     void Reset()
     {
         ConfirmedLayer.Overwrite(BaseLayer);
-        LastConfirmedFrame = BasePhysicsWorld.GetCurrentFrame();
+        ConfirmedPhysicsWorldData = BasePhysicsWorldData;
     }
 
     PhysicsWorld& GetPhysicsWorld()
@@ -44,8 +47,9 @@ public:
     }
 
 private:
-    FrameNumber LastConfirmedFrame;
     PhysicsLayer BaseLayer;                    //Layer that gets updated
     PhysicsLayer ConfirmedLayer;               //Layer of the last confirmed frame, which is only used to save to and restore from
-    PhysicsWorld BasePhysicsWorld;
+    PhysicsWorldData BasePhysicsWorldData;
+    PhysicsWorldData ConfirmedPhysicsWorldData;
+    PhysicsWorld BasePhysicsWorld;  //todo reorder
 };
