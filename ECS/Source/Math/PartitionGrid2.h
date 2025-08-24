@@ -31,19 +31,19 @@ static constexpr Vector2uI CellOffsets[4] =
     Vector2uI(1, 1)   //Right-Below
 };
 
-struct EntityPair
+struct EntityPair2
 {
     Entity Entity1;
     Entity Entity2;
 
-    EntityPair(Entity e1, Entity e2) : Entity1(e1), Entity2(e2) { }
+    EntityPair2(Entity e1, Entity e2) : Entity1(e1), Entity2(e2) { }
 
-    bool operator==(const EntityPair other) const
+    bool operator==(const EntityPair2 other) const
     {
         return Entity1 == other.Entity1 && Entity2 == other.Entity2;
     }
 
-    bool operator!=(const EntityPair other) const
+    bool operator!=(const EntityPair2 other) const
     {
         return Entity1 != other.Entity1 || Entity2 != other.Entity2;
     }
@@ -178,9 +178,9 @@ struct PartitionGrid2 //assuming that all entities have the same size (or the gi
         return cellY * CellCountX + cellX;
     }
 
-    [[nodiscard]] std::vector<EntityPair> GetEntityPairs() const
+    [[nodiscard]] std::vector<EntityPair2> GetEntityPairs() const
     {
-        std::vector<EntityPair> entityPairs;
+        std::vector<EntityPair2> entityPairs;
         entityPairs.reserve(MAXENTITIES * 5);
 
         for(Cell cellX = 0; cellX < CellCountX; ++cellX)

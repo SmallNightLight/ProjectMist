@@ -4,6 +4,7 @@
 #include "../PhysicsSettings.h"
 #include "../Collision/CollisionDetection.h"
 #include "../Collision/CollisionCache.h"
+#include "../Collision/PhysicsCache.h"
 
 #include <vector>
 
@@ -23,13 +24,16 @@ public:
         polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
 
         collisionCache = nullptr;
+        physicsCache = nullptr;
 
         Entities.Initialize();
     }
 
-    void InitializeCache(CollisionCache* cache)
+    void InitializeCache(CollisionCache* pCollisionCache, PhysicsCache* pPhysicsCache)
     {
-        collisionCache = cache;
+        collisionCache = pCollisionCache;
+        physicsCache = pPhysicsCache;
+        physicsCache->Initialize();
     }
 
     void SetupForBroadPhase(Fixed16_16 deltaTime)
@@ -143,9 +147,10 @@ public:
                     }
                 }
 
-                ContactPair contactPair = ContactPair();
+                ContactPair contactPair = ContactPair();    //Value initialization to give the impulses zero values
                 if (collisionDetection.DetectCollisionAndCorrect(entity1, entity2, colliderTransform1, colliderTransform2, contactPair))
                 {
+                    SetImpulses(contactPair);
                     ContactPairs.emplace_back(contactPair);
                     collisionCache->CacheCollisionPair(currentFrameNumber, pairData);
 
@@ -201,12 +206,32 @@ public:
         //     rigidBodyData1.MassScale, rigidBodyData2.MassScale);
     }
 
-    void RotateAllEntities(Fixed16_16 delta) const
+    inline void SetImpulses(ContactPair& contactPair) const
     {
-        for (const Entity& entity : Entities)
+        if (contactPair.ContactCount == 0) return;
+
+        EntityPair entityPair = EntityPair::Make(contactPair.Entity1, contactPair.Entity2);
+        ImpulseData lastImpulseData;
+
+        ImpulseData newImpulseData;
+        newImpulseData.EntityKey = entityPair;
+        newImpulseData.ContactCount = contactPair.ContactCount;
+
+        if (physicsCache->TryGetImpulses(entityPair, lastImpulseData))
         {
-            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
-            rigidBodyData.AngularVelocity = Fixed16_16::pi() / 2;
+            for (uint8_t i = 0; i < contactPair.ContactCount; ++i)
+            {
+                Contact& newContact = contactPair.Contacts[i];
+                for (uint8_t j = 0; j < lastImpulseData.ContactCount; ++j)
+                {
+                    if (newContact.LastImpulse.Feature.Value == lastImpulseData.LastImpulses[j].Feature.Value)
+                    {
+                        //Warm starting
+                        newContact.LastImpulse = lastImpulseData.LastImpulses[j];
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -223,7 +248,7 @@ public:
     //     }
     // }
 
-    static constexpr bool AccumulateImpulses = false;
+    static constexpr bool AccumulateImpulses = true;
 
     void SetupContacts(Fixed16_16 inverseDelta)
     {
@@ -255,11 +280,10 @@ public:
 
                 //contact.Bias = -k_biasFactor * inverseDelta * fpm::min(Fixed16_16(0), contact.Separation + k_allowedPenetration);
 
-                //accumulateImpulses?? todo
                 if (AccumulateImpulses)
                 {
                     //Apply normal + friction impulse
-                    Vector2 P = contactPair.Normal * contact.LastImpulses.Pn + tangent * contact.LastImpulses.Pt;
+                    Vector2 P = contactPair.Normal * contact.LastImpulse.Pn + tangent * contact.LastImpulse.Pt;
 
                     rigidBodyData1.Velocity -= P * rigidBodyData1.InverseMass;
                     rigidBodyData1.AngularVelocity -= rigidBodyData1.InverseInertia * contact.R1.Cross(P);
@@ -289,12 +313,12 @@ public:
                 Fixed16_16 vn = dv.Dot(contactPair.Normal);
 
                 Fixed16_16 dPn = contact.MassNormal * (-vn); //todo check if bias ofr position correction (-vn + contact.Bias);
-                if (AccumulateImpulses) //todo World::accumulateImpulses
+                if (AccumulateImpulses)
                 {
                     //Clamp the accumulated impulse
-                    Fixed16_16 Pn0 = contact.LastImpulses.Pn;
-                    contact.LastImpulses.Pn = fpm::max(Pn0 + dPn, Fixed16_16(0));
-                    dPn = contact.LastImpulses.Pn - Pn0;
+                    Fixed16_16 Pn0 = contact.LastImpulse.Pn;
+                    contact.LastImpulse.Pn = fpm::max(Pn0 + dPn, Fixed16_16(0));
+                    dPn = contact.LastImpulse.Pn - Pn0;
                 }
                 else
                 {
@@ -317,15 +341,15 @@ public:
                 Fixed16_16 vt = dv.Dot(tangent);
                 Fixed16_16 dPt = contact.MassTangent * -vt;
 
-                if (AccumulateImpulses) //todo World::accumulateImpulses
+                if (AccumulateImpulses)
                 {
                     //Compute friction impulse
-                    Fixed16_16 maxPt = contactPair.Friction *  contact.LastImpulses.Pn;
+                    Fixed16_16 maxPt = contactPair.Friction *  contact.LastImpulse.Pn;
 
                     //Clamp friction
-                    Fixed16_16 oldTangentImpulse =  contact.LastImpulses.Pt;
-                    contact.LastImpulses.Pt = clamp(oldTangentImpulse + dPt, -maxPt, maxPt);
-                    dPt =  contact.LastImpulses.Pt - oldTangentImpulse;
+                    Fixed16_16 oldTangentImpulse =  contact.LastImpulse.Pt;
+                    contact.LastImpulse.Pt = clamp(oldTangentImpulse + dPt, -maxPt, maxPt);
+                    dPt =  contact.LastImpulse.Pt - oldTangentImpulse;
                 }
                 else
                 {
@@ -365,6 +389,8 @@ public:
 
     void IntegratePositions()
     {
+        physicsCache->Flip();
+
         for (ContactPair& contactPair : ContactPairs)
         {
             ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(contactPair.Entity1);
@@ -374,6 +400,7 @@ public:
 
             for (Contact& contact : contactPair.Contacts)
             {
+                //Position correction
                 constexpr Fixed16_16 steeringConstant = Fixed16_16(0, 5);
                 constexpr Fixed16_16 maxCorrection = -Fixed16_16(5);
                 constexpr Fixed16_16 slop = Fixed16_16(1) / Fixed16_16(100);
@@ -395,6 +422,18 @@ public:
                     colliderTransform2.Rotate(r2.Cross(impulse) * rigidBodyData2.InverseInertia);
                 }
             }
+
+            //Cache impulses
+            ImpulseData newImpulses;
+            newImpulses.EntityKey = EntityPair::Make(contactPair.Entity1, contactPair.Entity2);
+            newImpulses.ContactCount = contactPair.ContactCount;
+
+            for (uint8_t i = 0; i < contactPair.ContactCount; ++i)
+            {
+                newImpulses.LastImpulses[i] = contactPair.Contacts[i].LastImpulse;
+            }
+
+            physicsCache->Cache(newImpulses);
         }
     }
 
@@ -539,6 +578,7 @@ private:
 
     //Caching
     CollisionCache* collisionCache;
+    PhysicsCache* physicsCache;
 
 public:
     std::vector<ContactPair> ContactPairs;

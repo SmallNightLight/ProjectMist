@@ -186,7 +186,7 @@ public:
                 sleepTime += sleepDuration;
             }
 
-            if (worldManager.GetPhysicsWorld().GetCurrentFrame() >= 100000) break;
+            if (worldManager.GetPhysicsWorld().GetCurrentFrame() >= 1000) break;
         }
 
         std::cout << "Average frame time (Lower is better) ms: " << 1000 * averageFrameTime / frameCount << std::endl;

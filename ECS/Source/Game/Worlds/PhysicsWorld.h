@@ -56,7 +56,7 @@ public:
 
     void InitializeCache(CacheManager* cache)
     {
-        rigidBodySystem->InitializeCache(cache->GetCollisionCache());
+        rigidBodySystem->InitializeCache(cache->GetCollisionCache(), &physicsCache);
     }
 
     void InitializeCamera()
@@ -491,6 +491,7 @@ private:
     PhysicsLayer& baseLayer;
     FrameNumber currentFrame;
     std::mt19937 numberGenerator;
+    PhysicsCache physicsCache;
 
     //Systems
     RigidBody* rigidBodySystem;

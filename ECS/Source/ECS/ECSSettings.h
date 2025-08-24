@@ -7,18 +7,20 @@
 static constexpr uint8_t MaxRollBackFrames = 15; //amount of save states
 
 //ECS
-using Entity = std::uint32_t;
-using ComponentType = std::uint8_t;
-using SystemType = std::uint8_t;
-using WorldType = std::uint8_t;
-using FrameNumber = std::uint32_t;
+using Entity = uint32_t;
+using UInt_E = Entity;
+using EntityTwice = uint64_t;    //Should be double the size of Entity
+using ComponentType = uint8_t;
+using SystemType = uint8_t;
+using WorldType = uint8_t;
+using FrameNumber = uint32_t;
 
-static constexpr std::uint32_t MAXENTITIES = 500;
+static constexpr uint32_t MAXENTITIES = 500;
 static constexpr Entity ENTITYNULL = MAXENTITIES + 1;
 
 //Types
 static constexpr int32_t QUADTREE_MAX_DEPTH = 8;
-using NodeID = std::uint32_t;
+using NodeID = uint32_t;
 static constexpr NodeID NODENULL (-1);
 
 

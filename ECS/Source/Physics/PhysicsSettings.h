@@ -2,7 +2,7 @@
 
 #include "../Math/FixedTypes.h"
 
-constexpr uint8_t PhysicsIterations = 10;
+constexpr uint8_t PhysicsIterations = 5;
 
 constexpr int64_t VelocityEpsilon = (Fixed16_16(1) / Fixed16_16(1000)).GetValueIntermediate();
 constexpr Fixed16_16 AngularVelocityEpsilon = Fixed16_16(1) / Fixed16_16(100);

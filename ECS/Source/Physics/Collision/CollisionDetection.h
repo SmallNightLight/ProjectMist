@@ -272,10 +272,6 @@ private:
                         Contact& contact = contactPair.Contacts[i];
                         contact.R1 = contact.Position - colliderTransform2.Position;
                         contact.R2 = contact.Position - colliderTransform1.Position;
-                        contact.LastImpulses.Pn = Fixed16_16(0);
-                        contact.LastImpulses.Pt = Fixed16_16(0);
-                        contact.LastImpulses.Pnb = Fixed16_16(0);
-                        contact.Feature.value = 0;
                   }
 
                   contactPair.Normal = -contactPair.Normal;
@@ -290,10 +286,6 @@ private:
                         Contact& contact = contactPair.Contacts[i];
                         contact.R1 = contact.Position - colliderTransform1.Position;
                         contact.R2 = contact.Position - colliderTransform2.Position;
-                        contact.LastImpulses.Pn = Fixed16_16(0);
-                        contact.LastImpulses.Pt = Fixed16_16(0);
-                        contact.LastImpulses.Pnb = Fixed16_16(0); //todo?
-                        contact.Feature.value = 0;
                   }
             }
 
@@ -519,9 +511,9 @@ private:
                         auto& contact = contactPair.Contacts[contactPair.ContactCount];
                         contact.Position = clipPoints2[i];
                         contact.Separation = separation;
-                        contact.Feature.edges.ReferenceEdge = overlapData.Edge;
-                        contact.Feature.edges.IncidentEdge = incident1;
-                        contact.Feature.edges.Flipped = overlapData.Flipped;
+                        contact.LastImpulse.Feature.edges.ReferenceEdge = overlapData.Edge;
+                        contact.LastImpulse.Feature.edges.IncidentEdge = incident1;
+                        contact.LastImpulse.Feature.edges.Flipped = overlapData.Flipped;
 
                         ++contactPair.ContactCount;
                   }

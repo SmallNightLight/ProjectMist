@@ -3,6 +3,8 @@
 #include "../../ECS/ECSSettings.h"
 #include "../../Math/FixedTypes.h"
 
+#include <type_traits>
+
 union FeaturePair
 {
     struct Edges
@@ -12,7 +14,7 @@ union FeaturePair
         uint16_t Flipped;
     } edges;
 
-    uint32_t value;
+    uint32_t Value;
 };
 
 struct AccumulatedImpulse
@@ -22,6 +24,16 @@ struct AccumulatedImpulse
     Fixed16_16 Pn;  //Accumulated normal impulse
     Fixed16_16 Pt;  //Accumulated tangent impulse
     Fixed16_16 Pnb; //Accumulated normal impulse for position bias
+    FeaturePair Feature;
+};
+
+struct ImpulseData
+{
+    ImpulseData() = default;
+
+    EntityPair EntityKey;
+    std::array<AccumulatedImpulse, 2> LastImpulses;
+    uint8_t ContactCount;
 };
 
 struct Contact
@@ -30,10 +42,9 @@ struct Contact
 
     Vector2 Position;
     Vector2 R1, R2;
-    AccumulatedImpulse LastImpulses;
     Fixed16_16 Separation;
     Fixed16_16 MassNormal, MassTangent;
-    FeaturePair Feature;
+    AccumulatedImpulse LastImpulse;
 };
 
 struct ContactPair
@@ -49,3 +60,5 @@ struct ContactPair
     Vector2 Normal;
     Fixed16_16 Friction;
 };
+
+static_assert(std::is_trivially_default_constructible_v<ImpulseData>, "Impulse cache needs to be trivial");

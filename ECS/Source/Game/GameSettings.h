@@ -10,7 +10,7 @@ static constexpr short NetworkFPS = 15;
 static constexpr short SimulationFPS = 60;
 static constexpr short RenderingFPS = 60;
 
-static constexpr bool RollbackDebugMode = false; //Always rollback as much as possible
+static constexpr bool RollbackDebugMode = true; //Always rollback as much as possible
 
 static const std::vector<uint16_t> playerInputKeys =
 {

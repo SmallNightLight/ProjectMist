@@ -81,6 +81,8 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Additional/ColliderType.h
         Source/Physics/Additional/RigidBodyType.h
         Source/Physics/Collision/ImpulseCache.h
+        Source/ECS/EntityPair.h
+        Source/Physics/Collision/PhysicsCache.h
 )
 
 add_subdirectory(Source/Math)

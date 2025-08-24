@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECSSettings.h"
+#include "EntityPair.h"
 
 #include "EntitySet.h"
 #include "EntityQueue.h"
