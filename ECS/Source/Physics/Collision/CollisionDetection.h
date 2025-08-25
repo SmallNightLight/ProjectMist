@@ -13,7 +13,7 @@ public:
             polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
       }
 
-      bool DetectCollisionAndCorrect(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, ContactPair& contactPair) const
+      bool DetectCollision(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, ContactPair& contactPair) const
       {
             //Skip if none of the objects are dynamic
             if (!colliderTransform1.IsDynamic && !colliderTransform2.IsDynamic) return false;

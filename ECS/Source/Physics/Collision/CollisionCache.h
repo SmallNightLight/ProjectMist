@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CollisionCheckInfo.h"
-#include "CollisionResponseInfo.h"
+#include "ContactPair.h"
 #include "CollisionPairData.h"
 #include "CollisionTable.h"
 #include "CollisionTable2.h"
@@ -21,7 +21,7 @@ public:
         collisionData.resize(frameDepth);
     }
 
-    inline void CacheCollision(FrameNumber frame, const CollisionCheckInfo& check, const CollisionResponseInfo& responseInfo)
+    inline void CacheCollision(FrameNumber frame, const CollisionCheckInfo& check, const ContactPair& responseInfo)
     {
         collisionData[GetIndex(frame)].CacheCollision(check, responseInfo);
     }
@@ -84,7 +84,7 @@ public:
         return collisionPairData[GetIndex(frame)].TryGetCollisionPair(pairData, outCollision);
     }
 
-    bool TryGetCollisionData(FrameNumber frame, const CollisionCheckInfo& check, CollisionResponseInfo& outResponseInfo) const
+    bool TryGetCollisionData(FrameNumber frame, const CollisionCheckInfo& check, ContactPair& outResponseInfo) const
     {
         assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldestFrame");
         assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");

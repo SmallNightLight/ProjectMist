@@ -17,7 +17,6 @@ struct ColliderTransform
     bool IsKinematic;
     bool IsDynamic;
 
-    Vector2 LastPosition;
     bool Active;
 
     inline ColliderTransform() noexcept = default;
@@ -29,7 +28,6 @@ struct ColliderTransform
         IsStatic(type == Static),
         IsKinematic(type == Kinematic),
         IsDynamic(type == Dynamic),
-        LastPosition(position),
         Active(true),
         BoundingBox(Vector2(0, 0), Vector2(0, 0)),
         Hash(0),
@@ -49,7 +47,6 @@ struct ColliderTransform
         IsKinematic = stream.ReadBool();
         IsDynamic = stream.ReadBool();
 
-        LastPosition = Position; //TODO: Probably dont want to set it equal to pos?
         Active = true;
 
         BoundingBox = AABB(Vector2(0, 0), Vector2(0, 0));
@@ -179,7 +176,7 @@ struct ColliderTransform
         if (!HashUpdateRequired) return Hash;
 
         //Recompute hash
-        Hash = CombineHash(static_cast<uint32_t>(LastPosition.X.raw_value()), static_cast<uint32_t>(LastPosition.Y.raw_value()));
+        Hash = CombineHash(static_cast<uint32_t>(Position.X.raw_value()), static_cast<uint32_t>(Position.Y.raw_value()));
         Hash = CombineHash(Hash, static_cast<uint32_t>(Rotation.raw_value()));
         Hash = CombineHash(Hash, static_cast<uint32_t>(entity));
 

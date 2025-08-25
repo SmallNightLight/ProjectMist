@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CollisionCheckInfo.h"
-#include "CollisionResponseInfo.h"
+#include "ContactPair.h"
 
 #include "unordered_dense.h"
 
@@ -13,12 +13,12 @@ public:
         collisions.reserve(64);
     }
 
-    inline void CacheCollision(const CollisionCheckInfo& check, const CollisionResponseInfo& responseInfo)
+    inline void CacheCollision(const CollisionCheckInfo& check, const ContactPair& responseInfo)
     {
         collisions[check] = responseInfo;
     }
 
-    inline bool TryGetCollision(const CollisionCheckInfo& check, CollisionResponseInfo& outResponseInfo) const
+    inline bool TryGetCollision(const CollisionCheckInfo& check, ContactPair& outResponseInfo) const
     {
         auto collisionResponseData = collisions.find(check);
         if (collisionResponseData != collisions.end())
@@ -36,5 +36,5 @@ public:
     }
 
 private:
-    ankerl::unordered_dense::segmented_map<CollisionCheckInfo, CollisionResponseInfo, CollisionCheckInfoHash> collisions;
+    ankerl::unordered_dense::segmented_map<CollisionCheckInfo, ContactPair, CollisionCheckInfoHash> collisions;
 };

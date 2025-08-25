@@ -35,33 +35,16 @@ public:
         physicsCache = pPhysicsCache;
     }
 
-    void SetupForBroadPhase()
-    {
-        for (const Entity& entity : Entities)
-        {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
-
-            if (colliderTransform.IsStatic) continue;
-
-            RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
-
-            colliderTransform.LastPosition = colliderTransform.Position;
-            rigidBodyData.LastVelocity = rigidBodyData.Velocity;
-            rigidBodyData.LastAngularVelocity = rigidBodyData.AngularVelocity;
-        }
-    }
-
     void HandleCollisions(FrameNumber frame, uint32_t id)
     {
         assert(collisionCache && "CollisionCache is null");
 
         //Update & Validate collision cache
         currentFrameNumber = frame;
-        bool useCache = false && collisionCache->UpdateFrame(currentFrameNumber);
+        bool useCache = collisionCache->UpdateFrame(currentFrameNumber);
 
         ContactPairs.clear();
         CollisionChecks.clear();
-        CachedResponseInfo.clear();
 
         for (Entity* it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
@@ -79,7 +62,7 @@ public:
                 ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
                 uint32_t hash2 = colliderTransform2.GetHash(entity2);
 
-                CollisionPairData pairData = CollisionPairData(entity1, entity2, colliderTransform1.LastPosition, colliderTransform2.LastPosition, colliderTransform1.Rotation, colliderTransform2.Rotation, hash1, hash2);
+                CollisionPairData pairData = CollisionPairData(entity1, entity2, colliderTransform1.Position, colliderTransform2.Position, colliderTransform1.Rotation, colliderTransform2.Rotation, hash1, hash2);
 
                 //Check if collision already occurred in the past
                 bool foundCollision = false;
@@ -98,39 +81,33 @@ public:
                 RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
                 RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
 
-                if (foundCollision)
+                if (foundCollision) //todo add ordering to cache
                 {
                     //Get collision response data
                     check = GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
 
-                    CollisionResponseInfo responseInfo;
-                    if (collisionCache->TryGetCollisionData(currentFrameNumber, check, responseInfo))
+                    ContactPair cP;
+                    if (collisionCache->TryGetCollisionData(currentFrameNumber, check, cP))
                     {
-                        CachedResponseInfo.emplace_back(responseInfo);
-                        //continue;
-                    }
-                    else
-                    {
-                        //todo WHAT NOW SKIP CD?
+                        ContactPairs.emplace_back(cP);
+                        continue;
                     }
                 }
 
                 ContactPair contactPair = ContactPair();    //Value initialization to give the impulses zero values
-                if (collisionDetection.DetectCollisionAndCorrect(entity1, entity2, colliderTransform1, colliderTransform2, contactPair))
+                if (collisionDetection.DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, contactPair))
                 {
                     SetImpulses(contactPair);
                     ContactPairs.emplace_back(contactPair);
                     collisionCache->CacheCollisionPair(currentFrameNumber, pairData);
 
-                    if (foundCollision)
+                    if (!foundCollision)
                     {
-                        // Hitting this means in a rollback a difference occurred
-                        CollisionChecks.emplace_back(check);
+                        check = GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
                     }
-                    else
-                    {
-                        CollisionChecks.emplace_back(GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2));
-                    }
+
+                    CollisionChecks.emplace_back(check);
+                    collisionCache->CacheCollision(currentFrameNumber, check, contactPair);
                 }
                 else
                 {
@@ -153,8 +130,8 @@ public:
         //Version 2 (currently slower) - no caching
         // return CollisionCheckInfo(
         //     entity1, entity2,
-        //     rigidBodyData1.LastVelocity, rigidBodyData2.LastVelocity,
-        //     rigidBodyData1.LastAngularVelocity, rigidBodyData2.LastAngularVelocity,
+        //     rigidBodyData1.Velocity, rigidBodyData2.Velocity,
+        //     rigidBodyData1.AngularVelocity, rigidBodyData2.AngularVelocity,
         //     rigidBodyData1.GravityScale, rigidBodyData2.GravityScale,
         //     rigidBodyData1.MassScale, rigidBodyData2.MassScale);
     }
@@ -538,6 +515,6 @@ private:
 public:
     std::vector<ContactPair> ContactPairs;
     std::vector<CollisionCheckInfo> CollisionChecks;
-    std::vector<CollisionResponseInfo> CachedResponseInfo;
+    //std::vector<CollisionResponseInfo> CachedResponseInfo;
     EntitySet<MAXENTITIES> Entities;
 };

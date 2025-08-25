@@ -23,8 +23,6 @@ struct RigidBodyData
     uint8_t MassScale;
 
     uint32_t Hash;
-    Vector2 LastVelocity;
-    Fixed16_16 LastAngularVelocity;
 
 public:
     inline RigidBodyData() noexcept = default;
@@ -41,8 +39,6 @@ public:
         GravityScale(1),
         MassScale(1),
         Hash(0),
-        LastVelocity(0, 0),
-        LastAngularVelocity(0),
         HashUpdateRequired(true) { }
 
     constexpr inline explicit RigidBodyData(const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction) :
@@ -57,8 +53,6 @@ public:
         GravityScale(0),
         MassScale(0),
         Hash(0),
-        LastVelocity(0, 0),
-        LastAngularVelocity(0),
         HashUpdateRequired(true) { }
 
     inline explicit RigidBodyData(Stream& stream)
@@ -76,9 +70,6 @@ public:
         MassScale = stream.ReadInteger<uint8_t>();
 
         Hash = 0;
-
-        LastVelocity = Velocity;
-        LastAngularVelocity = AngularVelocity;
 
         HashUpdateRequired = true;
     }
