@@ -3,6 +3,7 @@
 #include "../Math/FixedTypes.h"
 
 constexpr uint8_t PhysicsIterations = 5;
+static constexpr uint32_t MaxCollisionCount = 500;
 
 constexpr int64_t VelocityEpsilon = (Fixed16_16(1) / Fixed16_16(1000)).GetValueIntermediate();
 constexpr Fixed16_16 AngularVelocityEpsilon = Fixed16_16(1) / Fixed16_16(100);

@@ -67,7 +67,6 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/CollisionCheckInfo.h
         Source/Physics/Collision/CollisionPairData.h
         Source/Physics/Collision/CollisionTable.h
-        Source/Physics/Collision/CollisionTable2.h
         Source/Physics/Collision/CollisionResponseTable.h
         Source/Physics/Collision/CollisionResponseTable2.h
         Source/Physics/Collision/unordered_dense.h
@@ -80,10 +79,10 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/ContactPair.h
         Source/Physics/Additional/ColliderType.h
         Source/Physics/Additional/RigidBodyType.h
-        Source/Physics/Collision/ImpulseCache.h
         Source/ECS/EntityPair.h
         Source/Physics/Collision/PhysicsCache.h
         Source/Game/Worlds/PhysicsWorldData.h
+        Source/Physics/Cache/SortedCache.h
 )
 
 add_subdirectory(Source/Math)

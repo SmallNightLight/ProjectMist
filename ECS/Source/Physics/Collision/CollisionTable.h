@@ -1,11 +1,11 @@
 #pragma once
 
 #include "CollisionPairData.h"
+#include "unordered_dense.h"
 
 #include <array>
-#include <bitset>
 #include <cstdint>
-#include <unordered_map>
+#include <cstring>
 
 class CollisionTable
 {
@@ -64,7 +64,7 @@ public:
 
     inline void Reset()
     {
-        data.fill(0);
+        std::memset(data.data(), 0, sizeof(data));
         backupCollisions.clear();
     }
 
@@ -78,5 +78,5 @@ private:
 
     alignas(64) std::array<uint8_t, Capacity> data;
 
-    std::unordered_map<CollisionPairData, bool, CollisionPairDataHash> backupCollisions;
+    ankerl::unordered_dense::map<CollisionPairData, bool, CollisionPairDataHash> backupCollisions;
 };

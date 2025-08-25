@@ -15,4 +15,9 @@ struct EntityPair
     {
         return Key < other.Key;
     }
+
+    inline constexpr bool operator==(const EntityPair& other) const noexcept
+    {
+        return Key == other.Key;
+    }
 };

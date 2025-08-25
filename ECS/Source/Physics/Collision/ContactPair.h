@@ -34,6 +34,16 @@ struct ImpulseData
     EntityPair EntityKey;
     std::array<AccumulatedImpulse, 2> LastImpulses;
     uint8_t ContactCount;
+
+    inline constexpr bool operator<(const ImpulseData& other) const noexcept
+    {
+        return EntityKey < other.EntityKey;
+    }
+
+    inline constexpr bool operator==(const ImpulseData& other) const noexcept
+    {
+        return EntityKey == other.EntityKey;
+    }
 };
 
 struct Contact

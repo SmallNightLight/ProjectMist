@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ImpulseCache.h"
-
 class PhysicsCache
 {
 public:
