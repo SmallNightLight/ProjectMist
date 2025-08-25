@@ -57,7 +57,7 @@ public:
             {
                 const Entity& entity2 = *it2;
 
-                //Entities should be ordered
+                //Entity pairs should be ordered
 
                 ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
                 uint32_t hash2 = colliderTransform2.GetHash(entity2);
@@ -97,7 +97,7 @@ public:
                 ContactPair contactPair = ContactPair();    //Value initialization to give the impulses zero values
                 if (collisionDetection.DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, contactPair))
                 {
-                    SetImpulses(contactPair);
+                    SetupContactPair(contactPair, rigidBodyData1, rigidBodyData2);
                     ContactPairs.emplace_back(contactPair);
                     collisionCache->CacheCollisionPair(currentFrameNumber, pairData);
 
@@ -136,32 +136,55 @@ public:
         //     rigidBodyData1.MassScale, rigidBodyData2.MassScale);
     }
 
-    inline void SetImpulses(ContactPair& contactPair) const
+    inline void SetupContactPair(ContactPair& contactPair, const RigidBodyData& rigidBodyData1, const RigidBodyData& rigidBodyData2) const
     {
-        if (contactPair.ContactCount == 0) return;
+        if (contactPair.ContactCount == 0) return; //todo remove
 
-        EntityPair entityPair = EntityPair::Make(contactPair.Entity1, contactPair.Entity2);
-        ImpulseData lastImpulseData;
-
-        ImpulseData newImpulseData;
-        newImpulseData.EntityKey = entityPair;
-        newImpulseData.ContactCount = contactPair.ContactCount;
-
-        if (physicsCache->TryGetImpulses(entityPair, lastImpulseData))
+        //Apply previous impulses
+        if (WarmStarting)
         {
-            for (uint8_t i = 0; i < contactPair.ContactCount; ++i)
+            EntityPair entityPair = EntityPair::Make(contactPair.Entity1, contactPair.Entity2);
+            ImpulseData lastImpulseData;
+
+            ImpulseData newImpulseData;
+            newImpulseData.EntityKey = entityPair;
+            newImpulseData.ContactCount = contactPair.ContactCount;
+
+            if (physicsCache->TryGetImpulseData(entityPair, lastImpulseData))
             {
-                Contact& newContact = contactPair.Contacts[i];
-                for (uint8_t j = 0; j < lastImpulseData.ContactCount; ++j)
+                for (uint8_t i = 0; i < contactPair.ContactCount; ++i)
                 {
-                    if (newContact.LastImpulse.Feature.Value == lastImpulseData.LastImpulses[j].Feature.Value)
+                    Contact& newContact = contactPair.Contacts[i];
+                    for (uint8_t j = 0; j < lastImpulseData.ContactCount; ++j)
                     {
-                        //Warm starting
-                        newContact.LastImpulse = lastImpulseData.LastImpulses[j];
-                        break;
+                        if (newContact.LastImpulse.Feature.Value == lastImpulseData.LastImpulses[j].Feature.Value)
+                        {
+                            //Warm starting
+                            newContact.LastImpulse = lastImpulseData.LastImpulses[j];
+                            break;
+                        }
                     }
                 }
             }
+        }
+
+        //Precompute tangents on all contacts
+        for (int i = 0; i < contactPair.ContactCount; ++i)
+        {
+            Contact& contact = contactPair.Contacts[i];
+
+            Fixed16_16 rn1 = contact.R1.Dot(contactPair.Normal);
+            Fixed16_16 rn2 = contact.R2.Dot(contactPair.Normal);
+            Fixed16_16 kNormal = rigidBodyData1.InverseMass + rigidBodyData2.InverseMass;
+            kNormal += rigidBodyData1.InverseInertia * (contact.R1.Dot(contact.R1) - rn1 * rn1) + rigidBodyData2.InverseInertia * (contact.R2.Dot(contact.R2) - rn2 * rn2);
+            contact.MassNormal = Fixed16_16(1) / kNormal;
+
+            Vector2 tangent = contactPair.Normal.Perpendicular();
+            Fixed16_16 rt1 = contact.R1.Dot(tangent);
+            Fixed16_16 rt2 = contact.R2.Dot(tangent);
+            Fixed16_16 kTangent = rigidBodyData1.InverseMass + rigidBodyData2.InverseMass;
+            kTangent += rigidBodyData1.InverseInertia * (contact.R1.Dot(contact.R1) - rt1 * rt1) + rigidBodyData2.InverseInertia * (contact.R2.Dot(contact.R2) - rt2 * rt2);
+            contact.MassTangent = Fixed16_16(1) / kTangent;
         }
     }
 
@@ -180,40 +203,22 @@ public:
         }
     }
 
-    static constexpr bool AccumulateImpulses = true;
+    static constexpr bool WarmStarting = true;
 
-    void SetupContacts(Fixed16_16 inverseDelta)
+    void SetupContacts()
     {
-        constexpr Fixed16_16 k_allowedPenetration = Fixed16_16(1) / Fixed16_16(100);
-        constexpr Fixed16_16 k_biasFactor = Fixed16_16(0, 0);
-
-        for (ContactPair& contactPair : ContactPairs)
+        if (WarmStarting)
         {
-            RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(contactPair.Entity1);
-            RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(contactPair.Entity2);
-
-            for (int i = 0; i < contactPair.ContactCount; ++i)
+            for (ContactPair& contactPair : ContactPairs)
             {
-                Contact& contact = contactPair.Contacts[i];
+                RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(contactPair.Entity1);
+                RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(contactPair.Entity2);
 
-                //Precompute normal mass, tangent mass, and bias.
-                Fixed16_16 rn1 = contact.R1.Dot(contactPair.Normal);
-                Fixed16_16 rn2 = contact.R2.Dot(contactPair.Normal);
-                Fixed16_16 kNormal = rigidBodyData1.InverseMass + rigidBodyData2.InverseMass;
-                kNormal += rigidBodyData1.InverseInertia * (contact.R1.Dot(contact.R1) - rn1 * rn1) + rigidBodyData2.InverseInertia * (contact.R2.Dot(contact.R2) - rn2 * rn2);
-                contact.MassNormal = Fixed16_16(1) / kNormal;
-
-                Vector2 tangent = contactPair.Normal.Perpendicular();
-                Fixed16_16 rt1 = contact.R1.Dot(tangent);
-                Fixed16_16 rt2 = contact.R2.Dot(tangent);
-                Fixed16_16 kTangent = rigidBodyData1.InverseMass + rigidBodyData2.InverseMass;
-                kTangent += rigidBodyData1.InverseInertia * (contact.R1.Dot(contact.R1) - rt1 * rt1) + rigidBodyData2.InverseInertia * (contact.R2.Dot(contact.R2) - rt2 * rt2);
-                contact.MassTangent = Fixed16_16(1) / kTangent;
-
-                //contact.Bias = -k_biasFactor * inverseDelta * fpm::min(Fixed16_16(0), contact.Separation + k_allowedPenetration);
-
-                if (AccumulateImpulses)
+                for (int i = 0; i < contactPair.ContactCount; ++i)
                 {
+                    Contact& contact = contactPair.Contacts[i];
+                    Vector2 tangent = contactPair.Normal.Perpendicular(); //todo already calculated before?
+
                     //Apply normal + friction impulse
                     Vector2 P = contactPair.Normal * contact.LastImpulse.Pn + tangent * contact.LastImpulse.Pt;
 
@@ -244,8 +249,8 @@ public:
                 //Compute normal impulse
                 Fixed16_16 vn = dv.Dot(contactPair.Normal);
 
-                Fixed16_16 dPn = contact.MassNormal * (-vn); //todo check if bias ofr position correction (-vn + contact.Bias);
-                if (AccumulateImpulses)
+                Fixed16_16 dPn = contact.MassNormal * -vn;
+                if (WarmStarting)
                 {
                     //Clamp the accumulated impulse
                     Fixed16_16 Pn0 = contact.LastImpulse.Pn;
@@ -273,7 +278,7 @@ public:
                 Fixed16_16 vt = dv.Dot(tangent);
                 Fixed16_16 dPt = contact.MassTangent * -vt;
 
-                if (AccumulateImpulses)
+                if (WarmStarting)
                 {
                     //Compute friction impulse
                     Fixed16_16 maxPt = contactPair.Friction *  contact.LastImpulse.Pn;
@@ -321,7 +326,7 @@ public:
 
     void IntegratePositions()
     {
-        physicsCache->Flip();
+        physicsCache->ResetImpulses();
 
         for (ContactPair& contactPair : ContactPairs)
         {
@@ -365,7 +370,7 @@ public:
                 newImpulses.LastImpulses[i] = contactPair.Contacts[i].LastImpulse;
             }
 
-            physicsCache->Cache(newImpulses);
+            physicsCache->CacheImpulseData(newImpulses);
         }
     }
 

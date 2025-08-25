@@ -120,7 +120,7 @@ public:
 
         rigidBodySystem->HandleCollisions(physicsWorldData.CurrentFrame, id);
         rigidBodySystem->IntegrateForces(deltaTime);
-        rigidBodySystem->SetupContacts(Fixed16_16(1) / deltaTime);
+        rigidBodySystem->SetupContacts();
 
         for (uint8_t i = 0; i < PhysicsIterations; ++i)
         {
