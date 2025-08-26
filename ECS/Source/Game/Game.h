@@ -265,7 +265,7 @@ public:
                     {
                         worldManager.NextFrame(lastConfirmedFrame);
                         std::vector<Input*> inputs = clientHandler.GetAllClientInputs(basePhysicsWorld.GetCurrentFrame());
-                        basePhysicsWorld.Update(deltaTime, inputs, clientHandler.GetClientID());
+                        basePhysicsWorld.Update(deltaTime, inputs);
                     }
                 }
             }
@@ -273,7 +273,7 @@ public:
 
         worldManager.NextFrame(lastConfirmedFrame);
         std::vector<Input*> inputs = clientHandler.GetAllClientInputs(currentFrame);
-        basePhysicsWorld.Update(deltaTime, inputs, clientHandler.GetClientID());
+        basePhysicsWorld.Update(deltaTime, inputs);
         clientHandler.SendGameData(basePhysicsWorld);
     }
 

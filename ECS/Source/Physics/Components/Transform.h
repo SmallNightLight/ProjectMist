@@ -9,11 +9,12 @@ struct Transform
     Fixed16_16 Rotation; //Radians
     bool TransformUpdateRequired;
     bool AABBUpdateRequired;
+    bool Changed;   //Non-persistent flag for caching
 
     inline Transform() noexcept = default;
 
     constexpr inline explicit Transform(Vector2 position, Fixed16_16 rotation) :
-        Position(position), Rotation(rotation), TransformUpdateRequired(true), AABBUpdateRequired(true) { }
+        Position(position), Rotation(rotation), TransformUpdateRequired(true), AABBUpdateRequired(true), Changed(true) { }
 
     inline explicit Transform(Stream& stream)
     {
@@ -23,6 +24,7 @@ struct Transform
 
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
+        Changed = true;
     }
 
     Vector2 TransformVector(const Vector2 vector) const
@@ -66,5 +68,15 @@ struct Transform
         //Write transform data
         stream.WriteVector2(Position);
         stream.WriteFixed(Rotation);
+    }
+
+    inline constexpr bool operator==(const Transform& other) const noexcept
+    {
+        return Position == other.Position && Rotation == other.Rotation;
+    }
+
+    inline constexpr bool operator!=(const Transform& other) const noexcept
+    {
+        return Position != other.Position || Rotation != other.Rotation;
     }
 };

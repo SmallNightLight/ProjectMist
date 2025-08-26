@@ -1,6 +1,5 @@
 #pragma once
 
-#include "CollisionInfo.h"
 #include "ContactPair.h"
 
 class CollisionDetection

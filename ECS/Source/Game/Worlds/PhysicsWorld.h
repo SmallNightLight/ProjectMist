@@ -114,14 +114,14 @@ public:
         baseLayer.AddComponent(box2, Movable(Fixed16_16(5)));
     }
 
-    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs, uint32_t id)
+    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs)
     {
         UpdateDebug(inputs);
 
         Input* playerInput = inputs[0];
         movingSystem->Update(deltaTime, playerInput->GetKey(GLFW_KEY_W), playerInput->GetKey(GLFW_KEY_S), playerInput->GetKey(GLFW_KEY_A), playerInput->GetKey(GLFW_KEY_D), playerInput->GetKey(GLFW_KEY_Q), playerInput->GetKey(GLFW_KEY_E));
 
-        rigidBodySystem->HandleCollisions(physicsWorldData.CurrentFrame, id);
+        rigidBodySystem->HandleCollisions(physicsWorldData.CurrentFrame);
         rigidBodySystem->IntegrateForces(deltaTime);
         rigidBodySystem->SetupContacts();
 

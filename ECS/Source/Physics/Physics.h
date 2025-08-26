@@ -11,10 +11,9 @@
 #include "Cache/SortedCache.h"
 
 #include "Collision/ContactPair.h"
-using ImpulseCache = SortedCache<ImpulseData, MaxCollisionCount>;
+using ImpulseCache = SortedCache<EntityPair, ImpulseData, MaxCollisionCount>;
 
-#include "Collision/CollisionPairData.h"
-using CollisionPairCache = SortedCache<CollisionPairData, 3000>;
+using CollisionPairCache = SortedCache<EntityPair, EntityPair, 3000>;
 
 //Components
 #include "PhysicsComponents.h"

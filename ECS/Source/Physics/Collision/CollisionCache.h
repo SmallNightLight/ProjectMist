@@ -2,10 +2,10 @@
 
 #include "CollisionCheckInfo.h"
 #include "ContactPair.h"
-#include "CollisionPairData.h"
 #include "CollisionResponseTable.h"
 #include "CollisionResponseTable2.h"
 #include "CollisionResponseTable3.h"
+#include "../Cache/TransformCache.h"
 #include "../../ECS/ECSSettings.h"
 
 #include <vector>
@@ -15,8 +15,22 @@ class CollisionCache
 public:
     explicit CollisionCache(FrameNumber depth, FrameNumber startFrame = 0) : frameDepth(depth), oldestFrame(startFrame), startIndex(0), frameCount(0)
     {
+        transformData.resize(frameDepth);
         collisionPairData.resize(frameDepth);
         collisionData.resize(frameDepth);
+
+        //Initialize caches
+        for (FrameNumber i = 0; i < frameDepth; ++i)
+        {
+            transformData[i].Initialize();
+            collisionPairData[i].Initialize();
+            collisionData[i].Reset(); //? todo
+        }
+    }
+
+    inline void CacheTransformCollection(FrameNumber frame, ComponentCollection<Transform>* transformCollection)
+    {
+        transformData[GetIndex(frame)].Cache(transformCollection);
     }
 
     inline void CacheCollision(FrameNumber frame, const CollisionCheckInfo& check, const ContactPair& responseInfo)
@@ -24,16 +38,9 @@ public:
         collisionData[GetIndex(frame)].CacheCollision(check, responseInfo);
     }
 
-    inline void CacheCollisionPair(FrameNumber frame, CollisionPairData& collisionPair)
+    inline void CacheCollisionPair(FrameNumber frame, EntityPair entityPair)
     {
-        collisionPair.Collision = true;
-        collisionPairData[GetIndex(frame)].Cache(collisionPair);
-    }
-
-    inline void CacheNonCollision(FrameNumber frame, CollisionPairData& collisionPair)
-    {
-        collisionPair.Collision = false;
-        collisionPairData[GetIndex(frame)].Cache(collisionPair);
+        collisionPairData[GetIndex(frame)].Cache(entityPair);
     }
 
     bool UpdateFrame(FrameNumber frame)
@@ -62,6 +69,7 @@ public:
             {
                 //Clear cache
                 uint32_t clearIndex = (startIndex + i) % frameDepth;
+                transformData[clearIndex].Reset();
                 collisionPairData[clearIndex].Reset();
                 collisionData[clearIndex].Reset();
             }
@@ -76,16 +84,20 @@ public:
         return true;
     }
 
-    bool TryGetPairData(FrameNumber frame, const CollisionPairData& pairData, bool& outCollision)
+    bool TryGetTransform(FrameNumber frame, Entity entity, Transform& transform)
     {
         assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldest frame");
         assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
 
-        CollisionPairData otherCollisionPair;
-        bool found = collisionPairData[GetIndex(frame)].TryGet(pairData.EntityKey, otherCollisionPair);
-        found &= pairData.IsDataEqual(otherCollisionPair);
-        outCollision = otherCollisionPair.Collision;
-        return found;
+        return transformData[GetIndex(frame)].TryGetTransform(entity, transform);
+    }
+
+    bool TryGetPairData(FrameNumber frame, EntityPair entityPair)
+    {
+        assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldest frame");
+        assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
+
+        return collisionPairData[GetIndex(frame)].HasKey(entityPair);
     }
 
     bool TryGetCollisionData(FrameNumber frame, const CollisionCheckInfo& check, ContactPair& outResponseInfo) const
@@ -93,9 +105,7 @@ public:
         assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldestFrame");
         assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
 
-        uint32_t index = GetIndex(frame);
-
-        return collisionData[index].TryGetCollision(check, outResponseInfo);
+        return collisionData[GetIndex(frame)].TryGetCollision(check, outResponseInfo);
     }
 
     inline constexpr void ResetIndex(FrameNumber frame) noexcept
@@ -111,6 +121,7 @@ private:
 
 private:
     //Can use non-deterministic map as it not used in iteration
+    std::vector<TransformCache> transformData;
     std::vector<CollisionPairCache> collisionPairData;
     std::vector<CollisionResponseTable> collisionData; //Used to get the exact collision response data
 

@@ -6,13 +6,14 @@
 #include <cassert>
 #include <type_traits>
 
-template<typename T, uint32_t Size>
+template<typename KeyType, typename ValueType, uint32_t Size>
 class SortedCache
 {
-    static_assert(std::is_copy_assignable_v<T>, "T must be copy assignable");
-    static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
-    static_assert(std::is_convertible_v<decltype(std::declval<const T&>() < std::declval<const T&>()), bool>, "T must have operator<");
-    static_assert(std::is_convertible_v<decltype(std::declval<const T&>() == std::declval<const T&>()), bool>, "T must have operator==");
+    static_assert(std::is_copy_assignable_v<ValueType>, "Value type must be copy assignable");
+    static_assert(std::is_copy_constructible_v<ValueType>, "Value type must be copy constructible");
+    static_assert(std::is_convertible_v<decltype(std::declval<const ValueType&>() < std::declval<const ValueType&>()), bool>, "ValueType must support operator< with itself");
+    static_assert(std::is_convertible_v<decltype(std::declval<const ValueType&>() == std::declval<const KeyType&>()), bool>, "ValueType must support operator== with KeyType");
+    static_assert(std::is_convertible_v<decltype(std::declval<const KeyType&>() < std::declval<const ValueType&>()), bool>, "KeyType must support operator< with ValueType");
 
 public:
     inline SortedCache() noexcept = default;
@@ -24,37 +25,61 @@ public:
         count = 0;
     }
 
-    ///Cache the data of an entity pair. Function needs to be called with sorted entity keys (with entityA1 < entityB1 || (entityA1 == entityB1 && entityA2 < entityB2)).
-    ///From entity with lsb to msb
-    inline constexpr void Cache(const T& value)
+    ///Cache the value. Function needs to be called with sorted keys (with keyA1 < keyB1 || (keyA1 == keyB1 && keyA2 < keyB2)).
+    ///From key with lsb to msb
+    inline constexpr void Cache(const ValueType& value)
     {
         assert(count < Size && "Trying to cache impulses, but buffer is full");
-        assert((count == 0 || data[count - 1].EntityKey < value.EntityKey) && "Keys must be cached in sorted order"); //todo < and == and /// desc
+        assert((count == 0 || data[count - 1] < value) && "Keys must be cached in sorted order"); //todo < and == and /// desc
 
         data[count++] = value;
     }
 
-    ///Get impulses in same order as the entities have been cached. The entity key should also be in order.
+    ///Get impulses in same order as the keys have been cached. The key should also be in order.
     ///Current index needs to be 0 before calling this function for the first time
-    inline constexpr bool TryGet(EntityPair entityPair, T& result) noexcept
+    inline constexpr bool TryGet(KeyType key, ValueType& result) noexcept
     {
         while (currentIndex < count)
         {
-            T& impulseData = data[currentIndex];
-            if (impulseData.EntityKey.Key == entityPair.Key)
+            ValueType& currentValue = data[currentIndex];
+            if (currentValue == key)
             {
                 ++currentIndex;
-                result = impulseData;
+                result = currentValue;
                 return true;
             }
 
-            if (entityPair.Key < impulseData.EntityKey.Key)
+            if (key < currentValue)
             {
-                //Entity key does not exist in cache
+                //key does not exist in cache
                 return false;
             }
 
-            //Entity pair in list is not anymore present
+            //Key in list is not anymore present
+            ++currentIndex;
+        }
+
+        return false;
+    }
+
+    inline constexpr bool HasKey(KeyType key) noexcept
+    {
+        while (currentIndex < count)
+        {
+            ValueType& currentValue = data[currentIndex];
+            if (currentValue == key)
+            {
+                ++currentIndex;
+                return true;
+            }
+
+            if (key < currentValue)
+            {
+                //key does not exist in cache
+                return false;
+            }
+
+            //Key in list is not anymore present
             ++currentIndex;
         }
 
@@ -76,7 +101,7 @@ public:
 private:
     uint32_t currentIndex;
     uint32_t count;
-    std::array<T, Size> data;
+    std::array<ValueType, Size> data;
 
-    static_assert(std::is_trivially_default_constructible_v<T>, "Type for sorted cache needs to be trivial");
+    static_assert(std::is_trivially_default_constructible_v<ValueType>, "Type for sorted cache needs to be trivial");
 };

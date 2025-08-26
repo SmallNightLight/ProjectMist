@@ -33,14 +33,19 @@ struct ImpulseData
     std::array<AccumulatedImpulse, 2> LastImpulses;
     uint8_t ContactCount;
 
-    inline constexpr bool operator==(const ImpulseData& other) const noexcept
+    friend inline constexpr bool operator==(const ImpulseData& left, const EntityPair& right) noexcept
     {
-        return EntityKey == other.EntityKey;
+        return left.EntityKey == right;
     }
 
-    inline constexpr bool operator<(const ImpulseData& other) const noexcept
+    friend inline constexpr bool operator<(const ImpulseData& left, const ImpulseData& right) noexcept
     {
-        return EntityKey < other.EntityKey;
+        return left.EntityKey < right.EntityKey;
+    }
+
+    friend inline constexpr bool operator<(const EntityPair& left, const ImpulseData& right) noexcept
+    {
+        return left < right.EntityKey;
     }
 };
 

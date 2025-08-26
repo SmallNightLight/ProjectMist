@@ -36,7 +36,7 @@ public:
         physicsCache = pPhysicsCache;
     }
 
-    void HandleCollisions(FrameNumber frame, uint32_t id)
+    void HandleCollisions(FrameNumber frame)
     {
         assert(collisionCache && "CollisionCache is null");
 
@@ -47,6 +47,33 @@ public:
         ContactPairs.clear();
         CollisionChecks.clear();
         collisionCache->ResetIndex(currentFrameNumber);
+
+        //Setup transform from cache
+        if (useCache)
+        {
+            Transform cachedTransform;
+            for (const Entity& entity : Entities)
+            {
+                if (collisionCache->TryGetTransform(currentFrameNumber, entity, cachedTransform))
+                {
+                    Transform& transform = transformCollection->GetComponent(entity);
+                    transformCollection->GetComponent(entity).Changed = transform != cachedTransform;
+                }
+                else
+                {
+                    transformCollection->GetComponent(entity).Changed = true;
+                }
+            }
+        }
+        else
+        {
+            for (const Entity& entity : Entities)
+            {
+                transformCollection->GetComponent(entity).Changed = true;
+            }
+        }
+
+        collisionCache->CacheTransformCollection(currentFrameNumber, transformCollection);
 
         for (Entity* it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
@@ -61,18 +88,18 @@ public:
                 //Entity pairs should be ordered
 
                 Transform& transform2 = transformCollection->GetComponent(entity2);
-                CollisionPairData pairData = CollisionPairData(entity1, entity2, transform1.Position, transform2.Position, transform1.Rotation, transform2.Rotation);
+                EntityPair entityPair = EntityPair::Make(entity1, entity2);
 
                 //Check if collision already occurred in the past
                 bool foundCollision = false;
 
-                if (useCache)
+                if (useCache && !transform1.Changed && !transform2.Changed)
                 {
-                    bool collision;
-                    foundCollision = collisionCache->TryGetPairData(currentFrameNumber, pairData, collision);
+                    //The collision has already happened before (same position and rotation)
+                    foundCollision = true;
+                    bool collision = collisionCache->TryGetPairData(currentFrameNumber, entityPair);
 
-                    if (foundCollision && !collision)
-                        continue;
+                    if (!collision) continue; //todo does not work with overwrite
                 }
 
                 CollisionCheckInfo check;
@@ -101,7 +128,7 @@ public:
                 {
                     SetupContactPair(contactPair, rigidBodyData1, rigidBodyData2);
                     ContactPairs.emplace_back(contactPair);
-                    collisionCache->CacheCollisionPair(currentFrameNumber, pairData);
+                    collisionCache->CacheCollisionPair(currentFrameNumber, entityPair);
 
                     if (!foundCollision)
                     {
@@ -111,17 +138,10 @@ public:
                     CollisionChecks.emplace_back(check);
                     collisionCache->CacheCollision(currentFrameNumber, check, contactPair);
                 }
-                else
-                {
-                    //Cache result
-                    collisionCache->CacheNonCollision(currentFrameNumber, pairData);
-                }
-            }
-        }
 
-        if (LogCollisions)
-        {
-            //CollisionInfo::LogCollisions(ContactPair, frame, id); todo
+                //In case of no collision, it is not cached as the fact that it is not present in the cache means that there is not collision.
+                //Only possible since we first check if the entity has changed during rollback
+            }
         }
     }
 
@@ -380,129 +400,6 @@ public:
             physicsCache->CacheImpulseData(newImpulses);
         }
     }
-
-    // void ResolveCollision(const ContactPair& contactPair, const CollisionCheckInfo& check, bool cacheResults)
-    // {
-    //     assert(collisionCache && "CollisionCache is null");
-    //
-    //     Transform transform1 = transformCollection->GetComponent(contactPair.Entity1);
-    //     Transform transform2 = transformCollection->GetComponent(contactPair.Entity2);
-    //
-    //     RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(contactPair.Entity1);
-    //     RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(contactPair.Entity2);
-    //
-    //     Vector2 newVelocity1 = rigidBodyData1.Velocity;
-    //     Vector2 newVelocity2 = rigidBodyData2.Velocity;
-    //     Fixed16_16 newAngularVelocity1 = rigidBodyData1.AngularVelocity;
-    //     Fixed16_16 newAngularVelocity2 = rigidBodyData2.AngularVelocity;
-    //
-    //     std::array<Vector2, 2> contacts {collisionInfo.Contact1, collisionInfo.Contact2};
-    //     std::array<Vector2, 2> impulses { };
-    //     std::array<Vector2, 2> r1 { };
-    //     std::array<Vector2, 2> r2 { };
-    //     std::array<Fixed16_16, 2> j { };
-    //
-    //     Fixed16_16 restitution = min(rigidBodyData1.Restitution, rigidBodyData2.Restitution);
-    //
-    //     Fixed16_16 inverseMass1 = collisionInfo.IsDynamic1 ? rigidBodyData1.InverseMass : Fixed16_16(0);
-    //     Fixed16_16 inverseMass2 = collisionInfo.IsDynamic2 ? rigidBodyData2.InverseMass : Fixed16_16(0);
-    //
-    //     Fixed16_16 inverseInertia1 = collisionInfo.IsDynamic1 ? rigidBodyData1.InverseInertia : Fixed16_16(0);
-    //     Fixed16_16 inverseInertia2 = collisionInfo.IsDynamic2 ? rigidBodyData2.InverseInertia : Fixed16_16(0);
-    //
-    //     Fixed16_16 staticFriction = (rigidBodyData1.StaticFriction + rigidBodyData2.StaticFriction) / 2;
-    //     Fixed16_16 dynamicFriction = (rigidBodyData1.DynamicFriction + rigidBodyData2.DynamicFriction) / 2;
-    //
-    //     for(int i = 0; i < collisionInfo.ContactCount; ++i)
-    //     {
-    //         r1[i] = contacts[i] - transform1.Position;
-    //         r2[i] = contacts[i] - transform2.Position;
-    //
-    //         Vector2 perpendicular1 = r1[i].Perpendicular();
-    //         Vector2 perpendicular2 = r2[i].Perpendicular();
-    //
-    //         Vector2 relativeVelocity = (newVelocity2 + perpendicular2 * newAngularVelocity2) - (newVelocity1 + perpendicular1 * newAngularVelocity1);
-    //         Fixed16_16 velocityMagnitude = relativeVelocity.Dot(collisionInfo.Normal);
-    //
-    //         if (velocityMagnitude > 0) continue;
-    //
-    //         Fixed16_16 dot1 =  perpendicular1.Dot(collisionInfo.Normal);
-    //         Fixed16_16 dot2 =  perpendicular2.Dot(collisionInfo.Normal);
-    //
-    //         j[i] = -((Fixed16_16(1) + restitution) * velocityMagnitude / (inverseMass1 + inverseMass2 + dot1 * dot1 * inverseInertia1 + dot2 * dot2 * inverseInertia2)) / collisionInfo.ContactCount;
-    //         impulses[i] = collisionInfo.Normal * j[i];
-    //     }
-    //
-    //     for(int i = 0; i < collisionInfo.ContactCount; ++i)
-    //     {
-    //         Vector2 impulse = impulses[i];
-    //
-    //         newVelocity1 -= impulse * inverseMass1;
-    //         newVelocity2 += impulse * inverseMass2;
-    //
-    //         newAngularVelocity1 -= r1[i].Cross(impulse) * inverseInertia1;
-    //         newAngularVelocity2 += r2[i].Cross(impulse) * inverseInertia2;
-    //     }
-    //
-    //     impulses = { };
-    //
-    //     //Friction
-    //     for(int i = 0; i < collisionInfo.ContactCount; ++i)
-    //     {
-    //         Vector2 perpendicular1 = r1[i].Perpendicular();
-    //         Vector2 perpendicular2 = r2[i].Perpendicular();
-    //
-    //         Vector2 relativeVelocity = (newVelocity2 + perpendicular2 * newAngularVelocity2) - (newVelocity1 + perpendicular1 * newAngularVelocity1);
-    //         Vector2 tangent = relativeVelocity - collisionInfo.Normal * relativeVelocity.Dot(collisionInfo.Normal);
-    //
-    //         if (Vector2::AlmostEqual(tangent, Vector2::Zero())) continue;
-    //
-    //         tangent = tangent.Normalize();
-    //
-    //         Fixed16_16 dot1 =  perpendicular1.Dot(tangent);
-    //         Fixed16_16 dot2 =  perpendicular2.Dot(tangent);
-    //
-    //         Fixed16_16 jT = -(relativeVelocity.Dot(tangent) / (inverseMass1 + inverseMass2 + dot1 * dot1 * inverseInertia1 + dot2 * dot2 * inverseInertia2)) / collisionInfo.ContactCount;
-    //
-    //         Vector2 frictionImpulse;
-    //
-    //         //Apply coulombs law
-    //         if (fpm::abs(jT) <= j[i] * staticFriction)
-    //         {
-    //             frictionImpulse = tangent * jT;
-    //         }
-    //         else
-    //         {
-    //             frictionImpulse = tangent * (-j[i] * dynamicFriction);
-    //         }
-    //
-    //         impulses[i] = frictionImpulse;
-    //     }
-    //
-    //     for(int i = 0; i < collisionInfo.ContactCount; ++i)
-    //     {
-    //         Vector2 frictionImpulse = impulses[i];
-    //
-    //         newVelocity1 -= frictionImpulse * inverseMass1;
-    //         newVelocity2 += frictionImpulse * inverseMass2;
-    //
-    //         newAngularVelocity1 -= r1[i].Cross(frictionImpulse) * inverseInertia1;
-    //         newAngularVelocity2 += r2[i].Cross(frictionImpulse) * inverseInertia2;
-    //     }
-    //
-    //     if (cacheResults)
-    //     {
-    //         CollisionResponseInfo responseInfo = CollisionResponseInfo(transform1.Position, transform2.Position, newVelocity1, newVelocity2, newAngularVelocity1, newAngularVelocity2);
-    //         collisionCache->CacheCollision(currentFrameNumber, check, responseInfo);
-    //     }
-    //
-    //     //Apply velocities
-    //     rigidBodyData1.Velocity = newVelocity1;
-    //     rigidBodyData2.Velocity = newVelocity2;
-    //     rigidBodyData1.AngularVelocity = newAngularVelocity1;
-    //     rigidBodyData2.AngularVelocity = newAngularVelocity2;
-    // }
-
 
 private:
     inline Fixed16_16 clamp(Fixed16_16 value, Fixed16_16 min, Fixed16_16 max)
