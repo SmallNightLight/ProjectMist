@@ -11,13 +11,14 @@
 class RigidBody
 {
 public:
-    using RequiredComponents = ComponentList<ColliderTransform, RigidBodyData>;
+    using RequiredComponents = ComponentList<Transform, TransformMeta, RigidBodyData>;
 
     explicit RigidBody(PhysicsComponentManager& componentManager) : collisionDetection(componentManager) //TODO: Static objects should not need to have a rigidBody
     {
         currentFrameNumber = 0;
 
-        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        transformCollection = componentManager.GetComponentCollection<Transform>();
+        transformMetaCollection = componentManager.GetComponentCollection<TransformMeta>();
         rigidBodyDataCollection = componentManager.GetComponentCollection<RigidBodyData>();
         circleColliderCollection = componentManager.GetComponentCollection<CircleCollider>();
         boxColliderCollection = componentManager.GetComponentCollection<BoxCollider>();
@@ -45,12 +46,12 @@ public:
 
         ContactPairs.clear();
         CollisionChecks.clear();
+        collisionCache->ResetIndex(currentFrameNumber);
 
         for (Entity* it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
             const Entity& entity1 = *it1;
-            ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(entity1);
-            uint32_t hash1 = colliderTransform1.GetHash(entity1);
+            Transform& transform1 = transformCollection->GetComponent(entity1);
 
             //Detect collisions
             for (Entity* it2 = std::next(it1); it2 != Entities.end(); ++it2)
@@ -59,10 +60,8 @@ public:
 
                 //Entity pairs should be ordered
 
-                ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(entity2);
-                uint32_t hash2 = colliderTransform2.GetHash(entity2);
-
-                CollisionPairData pairData = CollisionPairData(entity1, entity2, colliderTransform1.Position, colliderTransform2.Position, colliderTransform1.Rotation, colliderTransform2.Rotation, hash1, hash2);
+                Transform& transform2 = transformCollection->GetComponent(entity2);
+                CollisionPairData pairData = CollisionPairData(entity1, entity2, transform1.Position, transform2.Position, transform1.Rotation, transform2.Rotation);
 
                 //Check if collision already occurred in the past
                 bool foundCollision = false;
@@ -94,8 +93,11 @@ public:
                     }
                 }
 
+                TransformMeta& transformMeta1 = transformMetaCollection->GetComponent(entity1);
+                TransformMeta& transformMeta2 = transformMetaCollection->GetComponent(entity2);
+
                 ContactPair contactPair = ContactPair();    //Value initialization to give the impulses zero values
-                if (collisionDetection.DetectCollision(entity1, entity2, colliderTransform1, colliderTransform2, contactPair))
+                if (collisionDetection.DetectCollision(entity1, entity2, transform1, transform2, transformMeta1, transformMeta2, contactPair))
                 {
                     SetupContactPair(contactPair, rigidBodyData1, rigidBodyData2);
                     ContactPairs.emplace_back(contactPair);
@@ -192,9 +194,9 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+            TransformMeta& transformMeta = transformMetaCollection->GetComponent(entity);
 
-            if (colliderTransform.IsStatic) continue;
+            if (transformMeta.IsStatic) continue;
 
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
 
@@ -310,14 +312,15 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+            TransformMeta& transformMeta = transformMetaCollection->GetComponent(entity);
 
-            if (colliderTransform.IsStatic) continue;
+            if (transformMeta.IsStatic) continue;
 
+            Transform& transform = transformCollection->GetComponent(entity);
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
 
-            colliderTransform.MovePosition(rigidBodyData.Velocity * deltaTime);
-            colliderTransform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
+            transform.MovePosition(rigidBodyData.Velocity * deltaTime);
+            transform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
 
             rigidBodyData.Force = Vector2(0, 0);
             //rigidBodyData.Torque = Fixed16_16(0); //todo
@@ -330,13 +333,17 @@ public:
 
         for (ContactPair& contactPair : ContactPairs)
         {
-            ColliderTransform& colliderTransform1 = colliderTransformCollection->GetComponent(contactPair.Entity1);
-            ColliderTransform& colliderTransform2 = colliderTransformCollection->GetComponent(contactPair.Entity2);
+            TransformMeta& transformMeta1 = transformMetaCollection->GetComponent(contactPair.Entity1);     //todo the static check is not worth the access also above
+            TransformMeta& transformMeta2 = transformMetaCollection->GetComponent(contactPair.Entity2);
+            Transform& transform1 = transformCollection->GetComponent(contactPair.Entity1);
+            Transform& transform2 = transformCollection->GetComponent(contactPair.Entity2);
             RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(contactPair.Entity1);
             RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(contactPair.Entity2);
 
-            for (Contact& contact : contactPair.Contacts)
+            for (uint8_t i = 0; i < contactPair.ContactCount; ++i)
             {
+                Contact& contact = contactPair.Contacts[i];
+
                 //Position correction
                 constexpr Fixed16_16 steeringConstant = Fixed16_16(0, 5);
                 constexpr Fixed16_16 maxCorrection = -Fixed16_16(5);
@@ -345,18 +352,18 @@ public:
                 Fixed16_16 steeringForce = clamp(steeringConstant * (contact.Separation + slop), maxCorrection, Fixed16_16(0));
                 Vector2 impulse = contactPair.Normal * (-steeringForce * contact.MassNormal);
 
-                if (!colliderTransform1.IsStatic)
+                if (!transformMeta1.IsStatic)
                 {
-                    colliderTransform1.MovePosition(-impulse * rigidBodyData1.InverseMass);
-                    Vector2 r1 = contact.Position - colliderTransform1.Position;
-                    colliderTransform1.Rotate(-r1.Cross(impulse) * rigidBodyData1.InverseInertia);
+                    transform1.MovePosition(-impulse * rigidBodyData1.InverseMass);
+                    Vector2 r1 = contact.Position - transform1.Position;
+                    transform1.Rotate(-r1.Cross(impulse) * rigidBodyData1.InverseInertia);
                 }
 
-                if (!colliderTransform2.IsStatic)
+                if (!transformMeta2.IsStatic)
                 {
-                    colliderTransform2.MovePosition(impulse * rigidBodyData2.InverseMass);
-                    Vector2 r2 = contact.Position - colliderTransform2.Position;
-                    colliderTransform2.Rotate(r2.Cross(impulse) * rigidBodyData2.InverseInertia);
+                    transform2.MovePosition(impulse * rigidBodyData2.InverseMass);
+                    Vector2 r2 = contact.Position - transform2.Position;
+                    transform2.Rotate(r2.Cross(impulse) * rigidBodyData2.InverseInertia);
                 }
             }
 
@@ -378,8 +385,8 @@ public:
     // {
     //     assert(collisionCache && "CollisionCache is null");
     //
-    //     ColliderTransform colliderTransform1 = colliderTransformCollection->GetComponent(contactPair.Entity1);
-    //     ColliderTransform colliderTransform2 = colliderTransformCollection->GetComponent(contactPair.Entity2);
+    //     Transform transform1 = transformCollection->GetComponent(contactPair.Entity1);
+    //     Transform transform2 = transformCollection->GetComponent(contactPair.Entity2);
     //
     //     RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(contactPair.Entity1);
     //     RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(contactPair.Entity2);
@@ -408,8 +415,8 @@ public:
     //
     //     for(int i = 0; i < collisionInfo.ContactCount; ++i)
     //     {
-    //         r1[i] = contacts[i] - colliderTransform1.Position;
-    //         r2[i] = contacts[i] - colliderTransform2.Position;
+    //         r1[i] = contacts[i] - transform1.Position;
+    //         r2[i] = contacts[i] - transform2.Position;
     //
     //         Vector2 perpendicular1 = r1[i].Perpendicular();
     //         Vector2 perpendicular2 = r2[i].Perpendicular();
@@ -485,7 +492,7 @@ public:
     //
     //     if (cacheResults)
     //     {
-    //         CollisionResponseInfo responseInfo = CollisionResponseInfo(colliderTransform1.Position, colliderTransform2.Position, newVelocity1, newVelocity2, newAngularVelocity1, newAngularVelocity2);
+    //         CollisionResponseInfo responseInfo = CollisionResponseInfo(transform1.Position, transform2.Position, newVelocity1, newVelocity2, newAngularVelocity1, newAngularVelocity2);
     //         collisionCache->CacheCollision(currentFrameNumber, check, responseInfo);
     //     }
     //
@@ -507,7 +514,8 @@ private:
     FrameNumber currentFrameNumber;
     CollisionDetection collisionDetection;
 
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<TransformMeta>* transformMetaCollection;
     ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;

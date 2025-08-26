@@ -3,8 +3,6 @@
 #include "../../ECS/ECSSettings.h"
 #include "../../Math/FixedTypes.h"
 
-#include <type_traits>
-
 union FeaturePair
 {
     struct Edges
@@ -35,14 +33,14 @@ struct ImpulseData
     std::array<AccumulatedImpulse, 2> LastImpulses;
     uint8_t ContactCount;
 
-    inline constexpr bool operator<(const ImpulseData& other) const noexcept
-    {
-        return EntityKey < other.EntityKey;
-    }
-
     inline constexpr bool operator==(const ImpulseData& other) const noexcept
     {
         return EntityKey == other.EntityKey;
+    }
+
+    inline constexpr bool operator<(const ImpulseData& other) const noexcept
+    {
+        return EntityKey < other.EntityKey;
     }
 };
 
@@ -70,5 +68,3 @@ struct ContactPair
     Vector2 Normal;
     Fixed16_16 Friction;
 };
-
-static_assert(std::is_trivially_default_constructible_v<ImpulseData>, "Impulse cache needs to be trivial");

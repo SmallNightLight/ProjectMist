@@ -9,8 +9,8 @@
 template<typename T, uint32_t Size>
 class SortedCache
 {
-    static_assert(std::is_copy_assignable_v<T>, "T must be copyable");
-    static_assert(std::is_copy_constructible_v<T>, "T must be copyable");
+    static_assert(std::is_copy_assignable_v<T>, "T must be copy assignable");
+    static_assert(std::is_copy_constructible_v<T>, "T must be copy constructible");
     static_assert(std::is_convertible_v<decltype(std::declval<const T&>() < std::declval<const T&>()), bool>, "T must have operator<");
     static_assert(std::is_convertible_v<decltype(std::declval<const T&>() == std::declval<const T&>()), bool>, "T must have operator==");
 
@@ -24,19 +24,19 @@ public:
         count = 0;
     }
 
-    ///Cache the impulse data of an entity pair. Function needs to be called with sorted entity keys (with entityA1 < entityB1 || (entityA1 == entityB1 && entityA2 < entityB2)).
+    ///Cache the data of an entity pair. Function needs to be called with sorted entity keys (with entityA1 < entityB1 || (entityA1 == entityB1 && entityA2 < entityB2)).
     ///From entity with lsb to msb
     inline constexpr void Cache(const T& value)
     {
         assert(count < Size && "Trying to cache impulses, but buffer is full");
-        assert((count == 0 || data[count - 1].EntityKey < value.EntityKey) && "Keys must be cached in sorted order");
+        assert((count == 0 || data[count - 1].EntityKey < value.EntityKey) && "Keys must be cached in sorted order"); //todo < and == and /// desc
 
         data[count++] = value;
     }
 
     ///Get impulses in same order as the entities have been cached. The entity key should also be in order.
     ///Current index needs to be 0 before calling this function for the first time
-    inline constexpr bool TryGetImpulses(EntityPair entityPair, T& result) noexcept
+    inline constexpr bool TryGet(EntityPair entityPair, T& result) noexcept
     {
         while (currentIndex < count)
         {
@@ -66,6 +66,11 @@ public:
     {
         currentIndex = 0;
         count = 0;
+    }
+
+    inline constexpr void ResetIndex() noexcept
+    {
+        currentIndex = 0;
     }
 
 private:

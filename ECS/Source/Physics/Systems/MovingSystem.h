@@ -7,12 +7,11 @@ struct Input;
 class MovingSystem
 {
 public:
-    using RequiredComponents = ComponentList<ColliderTransform, RigidBodyData, Movable>;
+    using RequiredComponents = ComponentList<Transform, Movable>;
 
     explicit MovingSystem(PhysicsComponentManager& componentManager)
     {
-        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
-        rigidBodyCollection = componentManager.GetComponentCollection<RigidBodyData>();
+        transformCollection = componentManager.GetComponentCollection<Transform>();
         movableCollection = componentManager.GetComponentCollection<Movable>();
 
         Entities.Initialize();
@@ -22,8 +21,7 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
-            RigidBodyData& rigidBodyData = rigidBodyCollection->GetComponent(entity);
+            Transform& transform = transformCollection->GetComponent(entity);
             Movable& movable = movableCollection->GetComponent(entity);
 
             Vector2 velocity = Vector2::Zero();
@@ -53,20 +51,18 @@ public:
 
             if (direction != Vector2::Zero())
             {
-                //rigidBodyData.ApplyForce(direction);
-                colliderTransform.MovePosition(direction);
+                transform.MovePosition(direction);
             }
 
             if (rotation != Fixed16_16(0))
             {
-                colliderTransform.Rotate(rotation);
+                transform.Rotate(rotation);
             }
         }
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
-    ComponentCollection<RigidBodyData>* rigidBodyCollection;
+    ComponentCollection<Transform>* transformCollection;
     ComponentCollection<Movable>* movableCollection;
 
 public:

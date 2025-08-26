@@ -2,12 +2,13 @@
 
 #include <GLFW/glfw3.h>
 
+#include "../../Math/FixedTypes.h"
+#include "../../Math/Stream.h"
 #include "../World.h"
 #include "../CacheManager.h"
 #include "../../Components/Camera.h"
 #include "../../Physics/Physics.h"
 #include "../Input/Input.h"
-#include "../../Math/Stream.h"
 #include "PhysicsWorldData.h"
 
 #include <vector>
@@ -27,7 +28,8 @@ public:
     ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
     void SetupComponents(PhysicsLayer& layer) //TODO: use GetSystem()
     {
-        colliderTransformCollection = layer.GetComponentCollection<ColliderTransform>();
+        transformCollection = layer.GetComponentCollection<Transform>();
+        transformMetaCollection = layer.GetComponentCollection<TransformMeta>();
         rigidBodyDataCollection = layer.GetComponentCollection<RigidBodyData>();
         circleColliderCollection = layer.GetComponentCollection<CircleCollider>();
         boxColliderCollection = layer.GetComponentCollection<BoxCollider>();
@@ -37,7 +39,8 @@ public:
 
         //Create a signature that has all component flags
         includedComponents = 0;
-        includedComponents.set(PhysicsComponentManager::GetComponentType<ColliderTransform>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<Transform>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<TransformMeta>(), true);
         includedComponents.set(PhysicsComponentManager::GetComponentType<RigidBodyData>(), true);
         includedComponents.set(PhysicsComponentManager::GetComponentType<CircleCollider>(), true);
         includedComponents.set(PhysicsComponentManager::GetComponentType<BoxCollider>(), true);
@@ -76,10 +79,10 @@ public:
 
         //Create rotated objects
         Entity e1 = PhysicsUtils::CreateBox(baseLayer, Vector2(10, 10), Fixed16_16(25), Fixed16_16(1), Static);
-        baseLayer.GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
+        baseLayer.GetComponent<Transform>(e1).Rotate(Fixed16_16(0, 1));
 
         Entity e2 = PhysicsUtils::CreateBox(baseLayer, Vector2(-10, 0), Fixed16_16(25), Fixed16_16(1), Static);
-        baseLayer.GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
+        baseLayer.GetComponent<Transform>(e2).Rotate(Fixed16_16(0, -1));
 
         for (int i = 0; i < 15; ++i)
         {
@@ -107,7 +110,7 @@ public:
 
         //Box
         Entity box2 = PhysicsUtils::CreateBox(baseLayer, Vector2(0, 1), Fixed16_16(4), Fixed16_16(4), Dynamic, Fixed16_16(200));
-        baseLayer.GetComponent<ColliderTransform>(box2).SetRotation(Fixed16_16(0, 7854));
+        baseLayer.GetComponent<Transform>(box2).SetRotation(Fixed16_16(0, 7854));
         baseLayer.AddComponent(box2, Movable(Fixed16_16(5)));
     }
 
@@ -216,7 +219,8 @@ public:
         UpdateTransform(entities, signatures);
 
         //Write all component data
-        SerializeComponentCollection<ColliderTransform>(stream, colliderTransformCollection, entities, signatures);
+        SerializeComponentCollection<Transform>(stream, transformCollection, entities, signatures);
+        SerializeComponentCollection<TransformMeta>(stream, transformMetaCollection, entities, signatures);
         SerializeComponentCollection<RigidBodyData>(stream, rigidBodyDataCollection, entities, signatures);
         SerializeComponentCollection<CircleCollider>(stream, circleColliderCollection, entities, signatures);
         SerializeComponentCollection<BoxCollider>(stream, boxColliderCollection, entities, signatures);
@@ -248,7 +252,8 @@ public:
         physicsLayer.IgnoreSignatureChanged(true);
 
         //Write all component data
-        DeserializeComponentCollection<ColliderTransform>(stream, physicsLayer, entityIndexes, signatures);
+        DeserializeComponentCollection<Transform>(stream, physicsLayer, entityIndexes, signatures);
+        DeserializeComponentCollection<TransformMeta>(stream, physicsLayer, entityIndexes, signatures);
         DeserializeComponentCollection<RigidBodyData>(stream, physicsLayer, entityIndexes, signatures);
         DeserializeComponentCollection<CircleCollider>(stream, physicsLayer, entityIndexes, signatures);
         DeserializeComponentCollection<BoxCollider>(stream, physicsLayer, entityIndexes, signatures);
@@ -290,7 +295,7 @@ private:
         }
     }
 
-    void UpdateTransform(const std::vector<Entity>& entities, const std::vector<PhysicsSignature>& signatures) const
+    void UpdateTransform(const std::vector<Entity>& entities, const std::vector<PhysicsSignature>& signatures) const //todo important remove and dont serz transformed
     {
         ComponentType circleColliderComponentType = PhysicsComponentManager::GetComponentType<CircleCollider>();
         ComponentType boxColliderComponentType = PhysicsComponentManager::GetComponentType<BoxCollider>();
@@ -301,21 +306,19 @@ private:
             Entity entity = entities[i];
             PhysicsSignature signature = signatures[i];
 
-            if (signature.test(circleColliderComponentType))
-            {
-                 colliderTransformCollection->GetComponent(entities[i]).OverrideTransformUpdateRequire(false);
-            }
+            if (signature.test(circleColliderComponentType)) continue;
 
             if (signature.test(boxColliderComponentType))
             {
-                auto boxCollider = boxColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
+                BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
+                //boxCollider.GetTransformedVertices()
+                //transformCollection->GetComponent(entities[i]).GetTransformedVertices(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
             }
 
             if (signature.test(polygonColliderComponentType))
             {
-                auto polygonCollider = polygonColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
+                //auto polygonCollider = polygonColliderCollection->GetComponent(entity);
+                //transformCollection->GetComponent(entities[i]).GetTransformedVertices(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
             }
         }
     }
@@ -496,7 +499,8 @@ private:
     MovingSystem* movingSystem;
 
     //Components
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<TransformMeta>* transformMetaCollection;
     ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;

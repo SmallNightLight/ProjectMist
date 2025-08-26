@@ -5,11 +5,12 @@
 class CircleColliderRenderer
 {
 public:
-    using RequiredComponents = ComponentList<ColliderTransform, CircleCollider, ColliderRenderData>;
+    using RequiredComponents = ComponentList<Transform, CircleCollider, ColliderRenderData>;
 
     explicit CircleColliderRenderer(PhysicsComponentManager& componentManager)
     {
-        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        transformCollection = componentManager.GetComponentCollection<Transform>();
+        transformMetaCollection = componentManager.GetComponentCollection<TransformMeta>();
         circleColliderCollection = componentManager.GetComponentCollection<CircleCollider>();
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
 
@@ -23,7 +24,7 @@ public:
 
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
+            Transform& transform = transformCollection->GetComponent(entity);
             CircleCollider& circleCollider = circleColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
@@ -62,8 +63,8 @@ public:
             Vector2 v1 = Vector2::Zero();
             Vector2 v2 = Vector2(circleCollider.GetRadius(), Fixed16_16(0));
 
-            v1 = transform.Transform(v1);
-            v2 = transform.Transform(v2);
+            v1 = transform.TransformVector(v1);
+            v2 = transform.TransformVector(v2);
 
             glLineWidth(2.0f);
             glColor3ub(255, 255, 255);
@@ -81,10 +82,13 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+            if (!transformMetaCollection->HasComponent(entity)) continue;
+
+            Transform& transform = transformCollection->GetComponent(entity);
+            TransformMeta& transformMeta = transformMetaCollection->GetComponent(entity);
             CircleCollider& circleCollider = circleColliderCollection->GetComponent(entity);
 
-            if (colliderTransform.Active)
+            if (transformMeta.Active)
             {
                 glColor3ub(128, 128, 128);
             }
@@ -96,7 +100,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = colliderTransform.GetAABB(circleCollider.GetRadius());
+            AABB boundingBox = circleCollider.GetAABB(transform, transformMeta);
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
@@ -107,7 +111,8 @@ public:
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<TransformMeta>* transformMetaCollection;        //Only for debug todo: remove reference in release build
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 

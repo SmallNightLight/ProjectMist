@@ -209,7 +209,6 @@ public:
 
     void Update(GLFWwindow* window, Fixed16_16 deltaTime)
     {
-        glClear(GL_COLOR_BUFFER_BIT); ///////TODO impORTANTY back to render
         PhysicsWorld& basePhysicsWorld = worldManager.GetPhysicsWorld();
         FrameNumber currentFrame = basePhysicsWorld.GetCurrentFrame();
 
@@ -280,7 +279,7 @@ public:
 
     void Render()
     {
-
+        glClear(GL_COLOR_BUFFER_BIT);
         worldManager.GetPhysicsWorld().Render();
         glfwSwapBuffers(window);
     }

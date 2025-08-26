@@ -9,7 +9,8 @@ public:
     {
         Entity entity = layer.CreateEntity();
 
-        layer.AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Circle, shape));
+        layer.AddComponent(entity, Transform(position, Fixed16_16(0)));
+        layer.AddComponent(entity, TransformMeta(Circle, shape));
         layer.AddComponent(entity, CircleCollider(radius));
 
         if (shape == Static)
@@ -43,7 +44,8 @@ public:
     {
         Entity entity = layer.CreateEntity();
 
-        layer.AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Box, shape));
+        layer.AddComponent(entity, Transform(position, Fixed16_16(0)));
+        layer.AddComponent(entity, TransformMeta(Box, shape));
         layer.AddComponent(entity, BoxCollider(width, height));
 
         if (shape == Static)
@@ -77,7 +79,8 @@ public:
     {
         Entity entity = layer.CreateEntity();
 
-        layer.AddComponent(entity, ColliderTransform(position, Fixed16_16(0), Convex, shape));
+        layer.AddComponent(entity, Transform(position, Fixed16_16(0)));
+        layer.AddComponent(entity, TransformMeta(Convex, shape));
         layer.AddComponent(entity, PolygonCollider(vertices));
 
         if (shape == Static)

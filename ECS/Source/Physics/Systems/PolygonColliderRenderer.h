@@ -5,11 +5,12 @@
 class PolygonColliderRenderer
 {
 public:
-    using RequiredComponents = ComponentList<ColliderTransform, PolygonCollider, ColliderRenderData>;
+    using RequiredComponents = ComponentList<Transform, PolygonCollider, ColliderRenderData>;
 
     explicit PolygonColliderRenderer(PhysicsComponentManager& componentManager)
     {
-        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        transformCollection = componentManager.GetComponentCollection<Transform>();
+        transformMetaCollection = componentManager.GetComponentCollection<TransformMeta>();
         polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
 
@@ -20,12 +21,12 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
+            Transform& transform = transformCollection->GetComponent(entity);
             PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
             //Get transformed vertices
-            Vector2Span vertices = transform.GetTransformedVertices(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
+            Vector2Span vertices = polygonCollider.GetTransformedVertices(transform);
 
             //Draw filled polygon
             glColor3ub(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
@@ -59,10 +60,13 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+            if (!transformMetaCollection->HasComponent(entity)) continue;
+
+            Transform& transform = transformCollection->GetComponent(entity);
+            TransformMeta& transformMeta = transformMetaCollection->GetComponent(entity);
             PolygonCollider& polygonCollider = polygonColliderCollection->GetComponent(entity);
 
-            if (colliderTransform.Active)
+            if (transformMeta.Active)
             {
                 glColor3ub(128, 128, 128);
             }
@@ -74,7 +78,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = colliderTransform.GetAABB(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
+            AABB boundingBox = polygonCollider.GetAABB(transform, transformMeta);
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
@@ -85,7 +89,8 @@ public:
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<TransformMeta>* transformMetaCollection;        //Only for debug todo: remove reference in release build
     ComponentCollection<PolygonCollider>* polygonColliderCollection;
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Components/ColliderTransform.h"
+#include "Components/Transform.h"
+#include "Components/TransformMeta.h"
 #include "Components/RigidBodyData.h"
 #include "Components/CircleCollider.h"
 #include "Components/BoxCollider.h"
@@ -8,4 +9,4 @@
 #include "Components/ColliderRenderData.h"
 #include "Components/Movable.h"
 
-using PhysicsComponents = ComponentList<ColliderTransform, RigidBodyData, CircleCollider, BoxCollider, PolygonCollider, ColliderRenderData, Movable>;
+using PhysicsComponents = ComponentList<Transform, TransformMeta, RigidBodyData, CircleCollider, BoxCollider, PolygonCollider, ColliderRenderData, Movable>;

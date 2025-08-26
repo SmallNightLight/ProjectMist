@@ -13,62 +13,62 @@ public:
             polygonColliderCollection = componentManager.GetComponentCollection<PolygonCollider>();
       }
 
-      bool DetectCollision(Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, ContactPair& contactPair) const
+      bool DetectCollision(Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, TransformMeta& transformMeta1, TransformMeta& transformMeta2, ContactPair& contactPair) const
       {
             //Skip if none of the objects are dynamic
-            if (!colliderTransform1.IsDynamic && !colliderTransform2.IsDynamic) return false;
+            if (!transformMeta1.IsDynamic && !transformMeta2.IsDynamic) return false;
 
             //Check for different shape types and do the correct collision detection
-            if (colliderTransform1.Shape == Circle)
+            if (transformMeta1.Shape == Circle)
             {
-                  if (colliderTransform2.Shape == Circle)
+                  if (transformMeta2.Shape == Circle)
                   {
-                        return CircleCircleCollision(contactPair, entity1, entity2, colliderTransform1, colliderTransform2);
+                        return CircleCircleCollision(contactPair, entity1, entity2, transform1, transform2, transformMeta1, transformMeta2);
                   }
-                  if (colliderTransform2.Shape == Box)
+                  if (transformMeta2.Shape == Box)
                   {
-                        return CircleBoxCollision(contactPair, false, entity1, entity2, colliderTransform1, colliderTransform2);
+                        return CircleBoxCollision(contactPair, false, entity1, entity2, transform1, transform2, transformMeta1, transformMeta2);
                   }
-                  if (colliderTransform2.Shape == Convex)
+                  if (transformMeta2.Shape == Convex)
                   {
-                        return CirclePolygonCollision(contactPair, false, entity1, entity2, colliderTransform1, colliderTransform2);
+                        return CirclePolygonCollision(contactPair, false, entity1, entity2, transform1, transform2, transformMeta1, transformMeta2);
                   }
             }
-            else if (colliderTransform1.Shape == Box)
+            else if (transformMeta1.Shape == Box)
             {
-                  if (colliderTransform2.Shape == Circle)
+                  if (transformMeta2.Shape == Circle)
                   {
-                        return CircleBoxCollision(contactPair, true, entity2, entity1, colliderTransform2, colliderTransform1);
+                        return CircleBoxCollision(contactPair, true, entity2, entity1, transform2, transform1, transformMeta2, transformMeta1);
                   }
-                  if (colliderTransform2.Shape == Box)
+                  if (transformMeta2.Shape == Box)
                   {
-                        return BoxBoxCollision(contactPair, entity1, entity2, colliderTransform1, colliderTransform2);
+                        return BoxBoxCollision(contactPair, entity1, entity2, transform1, transform2, transformMeta1, transformMeta2);
                   }
-                  if (colliderTransform2.Shape == Convex)
+                  if (transformMeta2.Shape == Convex)
                   {
-                        return BoxPolygonCollision(contactPair, false, entity1, entity2, colliderTransform1, colliderTransform2);
+                        return BoxPolygonCollision(contactPair, false, entity1, entity2, transform1, transform2, transformMeta1, transformMeta2);
                   }
             }
-            else if (colliderTransform1.Shape == Convex)
+            else if (transformMeta1.Shape == Convex)
             {
-                  if (colliderTransform2.Shape == Circle)
+                  if (transformMeta2.Shape == Circle)
                   {
-                        return CirclePolygonCollision(contactPair, true, entity2, entity1, colliderTransform2, colliderTransform1);
+                        return CirclePolygonCollision(contactPair, true, entity2, entity1, transform2, transform1, transformMeta2, transformMeta1);
                   }
-                  if (colliderTransform2.Shape == Box)
+                  if (transformMeta2.Shape == Box)
                   {
-                        return BoxPolygonCollision(contactPair, true, entity2, entity1, colliderTransform2, colliderTransform1);
+                        return BoxPolygonCollision(contactPair, true, entity2, entity1, transform2, transform1, transformMeta2, transformMeta1);
                   }
-                  if (colliderTransform2.Shape == Convex)
+                  if (transformMeta2.Shape == Convex)
                   {
-                        return PolygonPolygonCollision(contactPair, entity1, entity2, colliderTransform1, colliderTransform2);
+                        return PolygonPolygonCollision(contactPair, entity1, entity2, transform1, transform2, transformMeta1, transformMeta2);
                   }
             }
 
             return false;
       }
 
-      bool CircleCircleCollision(ContactPair& contactPair, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
+      bool CircleCircleCollision(ContactPair& contactPair, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, TransformMeta& transformMeta1, TransformMeta& transformMeta2) const
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(circleColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
@@ -77,32 +77,26 @@ public:
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             CircleCollider& circleCollider2 = circleColliderCollection->GetComponent(entity2);
 
-            //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABB(circleCollider1.GetRadius()).Overlaps(colliderTransform2.GetAABB(circleCollider2.GetRadius())))
-            {
-                  return false;
-            }
+            //Perform AABB check, to test if entities are able to collide
+            if (!circleCollider1.GetAABB(transform1, transformMeta1).Overlaps(circleCollider2.GetAABB(transform2, transformMeta2))) return false;
 
-            Fixed16_16 distance = colliderTransform1.Position.Distance(colliderTransform2.Position);
+            Fixed16_16 distance = transform1.Position.Distance(transform2.Position);
             Fixed16_16 totalRadius = circleCollider1.GetRadius() + circleCollider2.GetRadius();
 
-            if (distance >= totalRadius)
-            {
-                  //No collision
-                  return false;
-            }
+            //Check if circles overlap
+            if (distance >= totalRadius) return false;
 
             //Create contact data
             contactPair.ContactCount = 1;
-            contactPair.Normal = (colliderTransform2.Position - colliderTransform1.Position).Normalize();
-            contactPair.Contacts[0].Position = colliderTransform1.Position + contactPair.Normal * circleCollider1.GetRadius();
+            contactPair.Normal = (transform2.Position - transform1.Position).Normalize();
+            contactPair.Contacts[0].Position = transform1.Position + contactPair.Normal * circleCollider1.GetRadius();
             contactPair.Contacts[0].Separation = distance - totalRadius;
 
-            CreateContactData(contactPair, false, colliderTransform1.Position, colliderTransform2.Position, entity1, entity2, colliderTransform1, colliderTransform2);
+            CreateContactData(contactPair, false, transform1.Position, transform2.Position, entity1, entity2, transform1, transform2);
             return true;
       }
 
-      bool CircleBoxCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
+      bool CircleBoxCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, TransformMeta& transformMeta1, TransformMeta& transformMeta2) const
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
@@ -111,12 +105,14 @@ public:
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            Vector2Span vertices = colliderTransform2.GetTransformedVertices(boxCollider2.GetTransformedVertices(), boxCollider2.GetVertices());
+            //Perform AABB check, to test if entities are able to collide
+            if (!circleCollider1.GetAABB(transform1, transformMeta1).Overlaps(boxCollider2.GetAABB(transform2, transformMeta2))) return false;
 
-            return CircleConvexCollision(contactPair, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.GetRadius(), vertices);
+            Vector2Span vertices = boxCollider2.GetTransformedVertices(transform2);
+            return CircleConvexCollision(contactPair, swap, entity1, entity2, transform1, transform2, circleCollider1.GetRadius(), vertices);
       }
 
-      bool CirclePolygonCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
+      bool CirclePolygonCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, TransformMeta& transformMeta1, TransformMeta& transformMeta2) const
       {
             assert(circleColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Circle) attached");
             assert(polygonColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Polygon) attached");
@@ -125,12 +121,14 @@ public:
             CircleCollider& circleCollider1 = circleColliderCollection->GetComponent(entity1);
             PolygonCollider& polygonCollider2 = polygonColliderCollection->GetComponent(entity2);
 
-            Vector2Span vertices = colliderTransform2.GetTransformedVertices(polygonCollider2.GetTransformedVertices(), polygonCollider2.GetVertices());
+            //Perform AABB check, to test if entities are able to collide
+            if (!circleCollider1.GetAABB(transform1, transformMeta1).Overlaps(polygonCollider2.GetAABB(transform2, transformMeta2))) return false;
 
-            return CircleConvexCollision(contactPair, swap, entity1, entity2, colliderTransform1, colliderTransform2, circleCollider1.GetRadius(), vertices);
+            Vector2Span vertices = polygonCollider2.GetTransformedVertices(transform2);
+            return CircleConvexCollision(contactPair, swap, entity1, entity2, transform1, transform2, circleCollider1.GetRadius(), vertices);
       }
 
-      bool BoxBoxCollision(ContactPair& contactPair, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
+      bool BoxBoxCollision(ContactPair& contactPair, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, TransformMeta& transformMeta1, TransformMeta& transformMeta2) const
       {
             assert(boxColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Box) attached");
             assert(boxColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Box) attached");
@@ -139,13 +137,15 @@ public:
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             BoxCollider& boxCollider2 = boxColliderCollection->GetComponent(entity2);
 
-            Vector2Span vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.GetTransformedVertices(), boxCollider1.GetVertices());
-            Vector2Span vertices2 = colliderTransform2.GetTransformedVertices(boxCollider2.GetTransformedVertices(), boxCollider2.GetVertices());
+            //Perform AABB check, to test if entities are able to collide
+            if (!boxCollider1.GetAABB(transform1, transformMeta1).Overlaps(boxCollider2.GetAABB(transform2, transformMeta2))) return false;
 
-            return ConvexConvexCollision(contactPair, false, entity1, entity2, colliderTransform1, colliderTransform2, vertices1, vertices2);
+            Vector2Span vertices1 = boxCollider1.GetTransformedVertices(transform1);
+            Vector2Span vertices2 = boxCollider2.GetTransformedVertices(transform2);
+            return ConvexConvexCollision(contactPair, false, entity1, entity2, transform1, transform2, vertices1, vertices2);
       }
 
-      bool BoxPolygonCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
+      bool BoxPolygonCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, TransformMeta& transformMeta1, TransformMeta& transformMeta2) const
       {
             assert(boxColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Box) attached");
             assert(polygonColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Polygon) attached");
@@ -154,13 +154,16 @@ public:
             BoxCollider& boxCollider1 = boxColliderCollection->GetComponent(entity1);
             PolygonCollider& polygonCollider2 = polygonColliderCollection->GetComponent(entity2);
 
-            Vector2Span vertices1 = colliderTransform1.GetTransformedVertices(boxCollider1.GetTransformedVertices(), boxCollider1.GetVertices());
-            Vector2Span vertices2 = colliderTransform2.GetTransformedVertices(polygonCollider2.GetTransformedVertices(), polygonCollider2.GetVertices());
+            //Perform AABB check, to test if entities are able to collide
+            if (!boxCollider1.GetAABB(transform1, transformMeta1).Overlaps(polygonCollider2.GetAABB(transform2, transformMeta2))) return false;
 
-            return ConvexConvexCollision(contactPair, swap, entity1, entity2, colliderTransform1, colliderTransform2, vertices1, vertices2);
+            Vector2Span vertices1 = boxCollider1.GetTransformedVertices(transform1);
+            Vector2Span vertices2 = polygonCollider2.GetTransformedVertices(transform2);
+
+            return ConvexConvexCollision(contactPair, swap, entity1, entity2, transform1, transform2, vertices1, vertices2);
       }
 
-      bool PolygonPolygonCollision(ContactPair& contactPair, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2) const
+      bool PolygonPolygonCollision(ContactPair& contactPair, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, TransformMeta& transformMeta1, TransformMeta& transformMeta2) const
       {
             assert(polygonColliderCollection->HasComponent(entity1) && "Collider type of rigidBody does not have the correct collider (Polygon) attached");
             assert(polygonColliderCollection->HasComponent(entity2) && "Collider type of rigidBody does not have the correct collider (Polygon) attached");
@@ -169,21 +172,18 @@ public:
             PolygonCollider& polygonCollider1 = polygonColliderCollection->GetComponent(entity1);
             PolygonCollider& polygonCollider2 = polygonColliderCollection->GetComponent(entity2);
 
-            Vector2Span vertices1 = colliderTransform1.GetTransformedVertices(polygonCollider1.GetTransformedVertices(), polygonCollider1.GetVertices());
-            Vector2Span vertices2 = colliderTransform2.GetTransformedVertices(polygonCollider2.GetTransformedVertices(), polygonCollider2.GetVertices());
+            //Perform AABB check, to test if entities are able to collide
+            if (!polygonCollider1.GetAABB(transform1, transformMeta1).Overlaps(polygonCollider2.GetAABB(transform2, transformMeta2))) return false;
 
-            return ConvexConvexCollision(contactPair, false, entity1, entity2, colliderTransform1, colliderTransform2, vertices1, vertices2);
+            Vector2Span vertices1 = polygonCollider1.GetTransformedVertices(transform1);
+            Vector2Span vertices2 = polygonCollider2.GetTransformedVertices(transform2);
+
+            return ConvexConvexCollision(contactPair, false, entity1, entity2, transform1, transform2, vertices1, vertices2);
       }
 
-      static bool CircleConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, const Fixed16_16& circleRadius, Vector2Span vertices)
+private:
+      static bool CircleConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, const Fixed16_16& circleRadius, Vector2Span vertices)
       {
-            //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABB(circleRadius).Overlaps(colliderTransform2.GetAABBFromTransformed(vertices)))
-            {
-                  //No collision possible
-                  return false;
-            }
-
             contactPair.Contacts[0].Separation = std::numeric_limits<Fixed16_16>::max();
 
             for(int i = 0; i < vertices.size; ++i)
@@ -194,30 +194,27 @@ public:
                   Vector2 edge = v2 - v1;
                   Vector2 axis = edge.Perpendicular().Normalize();
 
-                  if (CheckCircleAxisSeparation(contactPair, vertices, colliderTransform1.Position, circleRadius, axis)) return false;
+                  if (CheckCircleAxisSeparation(contactPair, vertices, transform1.Position, circleRadius, axis)) return false;
             }
 
-            Vector2 closestVertexToCircle = GetClosestPointToCircle(colliderTransform1.Position, vertices);
-            Vector2 axis = (closestVertexToCircle - colliderTransform1.Position).Normalize();
+            Vector2 closestVertexToCircle = GetClosestPointToCircle(transform1.Position, vertices);
+            Vector2 axis = (closestVertexToCircle - transform1.Position).Normalize();
 
-            if (CheckCircleAxisSeparation(contactPair, vertices, colliderTransform1.Position, circleRadius, axis)) return false;
+            if (CheckCircleAxisSeparation(contactPair, vertices, transform1.Position, circleRadius, axis)) return false;
 
             contactPair.Contacts[0].Separation = -contactPair.Contacts[0].Separation;
             contactPair.Contacts[1].Separation = contactPair.Contacts[0].Separation;
 
             //Detected collision
-            GetContactCircleConvex(contactPair, colliderTransform1.Position, vertices);
+            GetContactCircleConvex(contactPair, transform1.Position, vertices);
 
             //Create contact data
-            CreateContactData(contactPair, swap, colliderTransform1.Position, GetCenter(vertices), entity1, entity2, colliderTransform1, colliderTransform2);
+            CreateContactData(contactPair, swap, transform1.Position, GetCenter(vertices), entity1, entity2, transform1, transform2);
             return true;
       }
 
-      static bool ConvexConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, ColliderTransform& colliderTransform1, ColliderTransform& colliderTransform2, Vector2Span vertices1, Vector2Span vertices2 )
+      static bool ConvexConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, Vector2Span vertices1, Vector2Span vertices2 )
       {
-            //First perform an AABB check, to test if the objects are even able to collide
-            if (!colliderTransform1.GetAABBFromTransformed(vertices1).Overlaps(colliderTransform2.GetAABBFromTransformed(vertices2))) return false;
-
             assert(vertices1.size > 0 && vertices2.size > 0 && "Polygon cannot have zero vertices");
 
             Vector2 center1 = GetCenter(vertices1);
@@ -249,12 +246,11 @@ public:
 
             if (!BuildManifold(contactPair, Reference, Incident, resultOverlap)) return false;
 
-            CreateContactData(contactPair, swap, center1, center2, entity1, entity2, colliderTransform1, colliderTransform2);
+            CreateContactData(contactPair, swap, center1, center2, entity1, entity2, transform1, transform2);
             return true;
       }
 
-private:
-      static void inline CreateContactData(ContactPair& contactPair, bool swap, const Vector2& center1, const Vector2& center2, Entity entity1, Entity entity2, const ColliderTransform& colliderTransform1, const ColliderTransform& colliderTransform2)
+      static void inline CreateContactData(ContactPair& contactPair, bool swap, const Vector2& center1, const Vector2& center2, Entity entity1, Entity entity2, const Transform& transform1, const Transform& transform2)
       {
             Vector2 direction = center2 - center1;
             if (direction.Dot(contactPair.Normal) < 0)
@@ -270,8 +266,8 @@ private:
                   for (int i = 0; i < contactPair.ContactCount; ++i)
                   {
                         Contact& contact = contactPair.Contacts[i];
-                        contact.R1 = contact.Position - colliderTransform2.Position;
-                        contact.R2 = contact.Position - colliderTransform1.Position;
+                        contact.R1 = contact.Position - transform2.Position;
+                        contact.R2 = contact.Position - transform1.Position;
                   }
 
                   contactPair.Normal = -contactPair.Normal;
@@ -284,8 +280,8 @@ private:
                   for (int i = 0; i < contactPair.ContactCount; ++i)
                   {
                         Contact& contact = contactPair.Contacts[i];
-                        contact.R1 = contact.Position - colliderTransform1.Position;
-                        contact.R2 = contact.Position - colliderTransform2.Position;
+                        contact.R1 = contact.Position - transform1.Position;
+                        contact.R2 = contact.Position - transform2.Position;
                   }
             }
 

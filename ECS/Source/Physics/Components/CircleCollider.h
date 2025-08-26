@@ -2,6 +2,8 @@
 
 #include "../../Math/FixedTypes.h"
 #include "../../Math/Stream.h"
+#include "Transform.h"
+#include "TransformMeta.h"
 
 class CircleCollider
 {
@@ -18,6 +20,17 @@ public:
     inline constexpr Fixed16_16 GetRadius() const
     {
         return Radius;
+    }
+
+    const AABB& GetAABB(Transform& transform, TransformMeta& transformMeta)
+    {
+        if (transform.AABBUpdateRequired)
+        {
+            transformMeta.BoundingBox = AABB(Vector2(transform.Position.X - Radius, transform.Position.Y - Radius), Vector2(transform.Position.X + Radius, transform.Position.Y + Radius));
+            transform.AABBUpdateRequired = false;
+        }
+
+        return transformMeta.BoundingBox;
     }
 
     void Serialize(Stream& stream) const

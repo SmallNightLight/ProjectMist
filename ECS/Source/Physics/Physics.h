@@ -14,7 +14,7 @@
 using ImpulseCache = SortedCache<ImpulseData, MaxCollisionCount>;
 
 #include "Collision/CollisionPairData.h"
-using CollisionPairCache = SortedCache<CollisionPairData, MaxCollisionCount>;
+using CollisionPairCache = SortedCache<CollisionPairData, 3000>;
 
 //Components
 #include "PhysicsComponents.h"

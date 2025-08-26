@@ -1,9 +1,7 @@
 #pragma once
 
 #include "../../Math/FixedTypes.h"
-#include "../../Math/Stream.h"
-
-#include "../Additional/RigidBodyType.h"
+#include "../../Math/HashUtils.h"
 
 #include <cassert>
 

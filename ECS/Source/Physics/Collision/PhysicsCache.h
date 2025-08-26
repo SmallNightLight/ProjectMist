@@ -23,7 +23,7 @@ public:
     ///Current index needs to be 0 before calling this function for the first time
     inline constexpr bool TryGetImpulseData(EntityPair entityPair, ImpulseData& outImpulsesData) noexcept
     {
-        return impulseCache.TryGetImpulses(entityPair, outImpulsesData);
+        return impulseCache.TryGet(entityPair, outImpulsesData);
     }
 
     inline constexpr void ResetImpulses() noexcept

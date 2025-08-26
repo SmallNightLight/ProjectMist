@@ -34,7 +34,6 @@ add_executable(ECS Source/main.cpp
         Source/Systems/BlinkingParticles.h
         Source/Physics/Physics.h
         Source/Physics/PhysicsUtils.h
-        Source/Physics/Components/ColliderTransform.h
         Source/Physics/Components/RigidBodyData.h
         Source/Physics/Components/BoxCollider.h
         Source/Physics/Components/CircleCollider.h
@@ -83,6 +82,8 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Collision/PhysicsCache.h
         Source/Game/Worlds/PhysicsWorldData.h
         Source/Physics/Cache/SortedCache.h
+        Source/Physics/Components/Transform.h
+        Source/Physics/Components/TransformMeta.h
 )
 
 add_subdirectory(Source/Math)
