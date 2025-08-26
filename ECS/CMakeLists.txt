@@ -82,6 +82,7 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Components/Transform.h
         Source/Physics/Components/TransformMeta.h
         Source/Physics/Cache/TransformCache.h
+        Source/Physics/Cache/SortedDoubleCache.h
 )
 
 add_subdirectory(Source/Math)

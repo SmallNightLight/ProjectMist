@@ -15,8 +15,6 @@ public:
 
     explicit RigidBody(PhysicsComponentManager& componentManager) : collisionDetection(componentManager) //TODO: Static objects should not need to have a rigidBody
     {
-        currentFrameNumber = 0;
-
         transformCollection = componentManager.GetComponentCollection<Transform>();
         transformMetaCollection = componentManager.GetComponentCollection<TransformMeta>();
         rigidBodyDataCollection = componentManager.GetComponentCollection<RigidBodyData>();
@@ -41,39 +39,15 @@ public:
         assert(collisionCache && "CollisionCache is null");
 
         //Update & Validate collision cache
-        currentFrameNumber = frame;
-        bool useCache = collisionCache->UpdateFrame(currentFrameNumber);
+        bool useCache = collisionCache->UpdateFrame(frame);
 
         ContactPairs.clear();
         CollisionChecks.clear();
-        collisionCache->ResetIndex(currentFrameNumber);
+        collisionCache->Flip();
 
         //Setup transform from cache
-        if (useCache)
-        {
-            Transform cachedTransform;
-            for (const Entity& entity : Entities)
-            {
-                if (collisionCache->TryGetTransform(currentFrameNumber, entity, cachedTransform))
-                {
-                    Transform& transform = transformCollection->GetComponent(entity);
-                    transformCollection->GetComponent(entity).Changed = transform != cachedTransform;
-                }
-                else
-                {
-                    transformCollection->GetComponent(entity).Changed = true;
-                }
-            }
-        }
-        else
-        {
-            for (const Entity& entity : Entities)
-            {
-                transformCollection->GetComponent(entity).Changed = true;
-            }
-        }
-
-        collisionCache->CacheTransformCollection(currentFrameNumber, transformCollection);
+        SetupEntityTransforms(useCache);
+        collisionCache->CacheTransformCollection(transformCollection);
 
         for (Entity* it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
@@ -91,35 +65,32 @@ public:
                 EntityPair entityPair = EntityPair::Make(entity1, entity2);
 
                 //Check if collision already occurred in the past
-                bool foundCollision = false;
-
                 if (useCache && !transform1.Changed && !transform2.Changed)
                 {
                     //The collision has already happened before (same position and rotation)
-                    foundCollision = true;
-                    bool collision = collisionCache->TryGetPairData(currentFrameNumber, entityPair);
+                    bool collision = collisionCache->AdvanceCache(entityPair);
 
-                    if (!collision) continue; //todo does not work with overwrite
+                    if (!collision) continue;
+
+                    RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
+                    RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
+
+                    //Get collision response data
+                    ContactPair cachedContactPair;
+                    if (collisionCache->TryGetCollisionData(GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2), cachedContactPair))
+                    {
+                        ContactPairs.emplace_back(cachedContactPair);
+                    }
+                    else
+                    {
+                        assert(false && "Should not be possible");
+                    }
+
+                    continue;
                 }
-
-                CollisionCheckInfo check;
 
                 RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
                 RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
-
-                if (foundCollision) //todo add ordering to cache
-                {
-                    //Get collision response data
-                    check = GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
-
-                    ContactPair cP;
-                    if (collisionCache->TryGetCollisionData(currentFrameNumber, check, cP))
-                    {
-                        ContactPairs.emplace_back(cP);
-                        continue;
-                    }
-                }
-
                 TransformMeta& transformMeta1 = transformMetaCollection->GetComponent(entity1);
                 TransformMeta& transformMeta2 = transformMetaCollection->GetComponent(entity2);
 
@@ -128,19 +99,42 @@ public:
                 {
                     SetupContactPair(contactPair, rigidBodyData1, rigidBodyData2);
                     ContactPairs.emplace_back(contactPair);
-                    collisionCache->CacheCollisionPair(currentFrameNumber, entityPair);
+                    collisionCache->CacheCollisionPair(entityPair);
 
-                    if (!foundCollision)
-                    {
-                        check = GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
-                    }
-
+                    CollisionCheckInfo check = GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
                     CollisionChecks.emplace_back(check);
-                    collisionCache->CacheCollision(currentFrameNumber, check, contactPair);
+                    collisionCache->CacheCollision(check, contactPair);
                 }
 
                 //In case of no collision, it is not cached as the fact that it is not present in the cache means that there is not collision.
                 //Only possible since we first check if the entity has changed during rollback
+            }
+        }
+    }
+
+    void SetupEntityTransforms(bool useCache)
+    {
+        if (useCache)
+        {
+            Transform cachedTransform;
+            for (const Entity& entity : Entities)
+            {
+                if (collisionCache->TryGetTransform(entity, cachedTransform))
+                {
+                    Transform& transform = transformCollection->GetComponent(entity);
+                    transformCollection->GetComponent(entity).Changed = transform != cachedTransform;
+                }
+                else
+                {
+                    transformCollection->GetComponent(entity).Changed = true;
+                }
+            }
+        }
+        else
+        {
+            for (const Entity& entity : Entities)
+            {
+                transformCollection->GetComponent(entity).Changed = true;
             }
         }
     }
@@ -160,7 +154,7 @@ public:
 
     inline void SetupContactPair(ContactPair& contactPair, const RigidBodyData& rigidBodyData1, const RigidBodyData& rigidBodyData2) const
     {
-        if (contactPair.ContactCount == 0) return; //todo remove
+        if (contactPair.ContactCount == 0) return; //todo remove actually gets called
 
         //Apply previous impulses
         if (WarmStarting)
@@ -408,7 +402,6 @@ private:
     }
 
 private:
-    FrameNumber currentFrameNumber;
     CollisionDetection collisionDetection;
 
     ComponentCollection<Transform>* transformCollection;

@@ -13,7 +13,7 @@
 class CollisionCache
 {
 public:
-    explicit CollisionCache(FrameNumber depth, FrameNumber startFrame = 0) : frameDepth(depth), oldestFrame(startFrame), startIndex(0), frameCount(0)
+    explicit CollisionCache(FrameNumber depth, FrameNumber startFrame = 0) : frameDepth(depth), oldestFrame(startFrame), startIndex(0), frameCount(0), currentIndex(0)
     {
         transformData.resize(frameDepth);
         collisionPairData.resize(frameDepth);
@@ -28,21 +28,8 @@ public:
         }
     }
 
-    inline void CacheTransformCollection(FrameNumber frame, ComponentCollection<Transform>* transformCollection)
-    {
-        transformData[GetIndex(frame)].Cache(transformCollection);
-    }
-
-    inline void CacheCollision(FrameNumber frame, const CollisionCheckInfo& check, const ContactPair& responseInfo)
-    {
-        collisionData[GetIndex(frame)].CacheCollision(check, responseInfo);
-    }
-
-    inline void CacheCollisionPair(FrameNumber frame, EntityPair entityPair)
-    {
-        collisionPairData[GetIndex(frame)].Cache(entityPair);
-    }
-
+    ///Function updates circular buffer and sets the current frame index.
+    ///Call this function before calling the other caching functions
     bool UpdateFrame(FrameNumber frame)
     {
         if (frame < oldestFrame) return false;
@@ -50,6 +37,7 @@ public:
         if (frameCount < frameDepth)
         {
             FrameNumber newFrameCount = std::min(frame - oldestFrame + 1, frameDepth); //ToDO: Check if input collection can also have this
+            currentIndex = GetIndex(frame);
 
             if (newFrameCount > frameCount)
             {
@@ -77,40 +65,53 @@ public:
             //Update the oldestFrame and adjust startIndex accordingly
             oldestFrame = frame - frameDepth + 1;
             startIndex = (startIndex + framesAdvanced) % frameDepth;
+            currentIndex = GetIndex(frame);
+
+            assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldest frame");
+            assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
 
             return false;
         }
 
+        currentIndex = GetIndex(frame);
         return true;
     }
 
-    bool TryGetTransform(FrameNumber frame, Entity entity, Transform& transform)
-    {
-        assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldest frame");
-        assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
+    //Caching
 
-        return transformData[GetIndex(frame)].TryGetTransform(entity, transform);
+    inline void CacheTransformCollection(ComponentCollection<Transform>* transformCollection)
+    {
+        transformData[currentIndex].Cache(transformCollection);
     }
 
-    bool TryGetPairData(FrameNumber frame, EntityPair entityPair)
+    inline void CacheCollision(const CollisionCheckInfo& check, const ContactPair& responseInfo)
     {
-        assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldest frame");
-        assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
-
-        return collisionPairData[GetIndex(frame)].HasKey(entityPair);
+        collisionData[currentIndex].CacheCollision(check, responseInfo);
     }
 
-    bool TryGetCollisionData(FrameNumber frame, const CollisionCheckInfo& check, ContactPair& outResponseInfo) const
+    inline void CacheCollisionPair(EntityPair entityPair)
     {
-        assert(frame >= oldestFrame && "Cannot get pair data with frame that is older than the oldestFrame");
-        assert(frame < oldestFrame + frameDepth && "Cannot get pair data with frame that is in the future");
-
-        return collisionData[GetIndex(frame)].TryGetCollision(check, outResponseInfo);
+        collisionPairData[currentIndex].Cache(entityPair);
     }
 
-    inline constexpr void ResetIndex(FrameNumber frame) noexcept
+    inline bool TryGetTransform(Entity entity, Transform& transform)
     {
-        collisionPairData[GetIndex(frame)].ResetIndex();
+        return transformData[currentIndex].TryGetTransform(entity, transform);
+    }
+
+    inline constexpr bool AdvanceCache(EntityPair entityPair) noexcept
+    {
+        return collisionPairData[currentIndex].AdvanceCache(entityPair);
+    }
+
+    inline bool TryGetCollisionData(const CollisionCheckInfo& check, ContactPair& outResponseInfo) const
+    {
+        return collisionData[currentIndex].TryGetCollision(check, outResponseInfo);
+    }
+
+    inline constexpr void Flip() noexcept
+    {
+        collisionPairData[currentIndex].Flip();
     }
 
 private:
@@ -125,8 +126,6 @@ private:
     std::vector<CollisionPairCache> collisionPairData;
     std::vector<CollisionResponseTable> collisionData; //Used to get the exact collision response data
 
-public:
-    //std::vector<std::vector<CollisionResponseTable3>> cV;
 private:
 
     //CollisionResponseTable uses external hash table which gives 3.4ms (better)
@@ -137,4 +136,5 @@ private:
     FrameNumber oldestFrame;        //Oldest frame where the input it still saved
     FrameNumber startIndex;         //Index of the oldest frame in the inputs, since it is circular
     FrameNumber frameCount;         //Number of frames currently stored in the buffer
+    FrameNumber currentIndex;
 };
