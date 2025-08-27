@@ -51,7 +51,7 @@ public:
             glBegin(GL_POINTS);
             glPointSize(10);
             glColor3ub(255, 255, 255);
-            glVertex2f(transform.Position.X.ToFloating<float>(), transform.Position.Y.ToFloating<float>());
+            glVertex2f(transform.Base.Position.X.ToFloating<float>(), transform.Base.Position.Y.ToFloating<float>());
             glEnd();
         }
     }

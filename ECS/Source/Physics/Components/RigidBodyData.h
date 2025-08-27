@@ -5,10 +5,38 @@
 
 #include <cassert>
 
-struct RigidBodyData
+struct RigidBodyBaseData
 {
     Vector2 Velocity;
     Fixed16_16 AngularVelocity;
+    uint8_t GravityScale;
+    uint8_t MassScale;
+};
+
+struct RigidBodyKey
+{
+    uint64_t Key1;
+    uint64_t Key2;
+
+    inline constexpr bool operator==(const TransformKey& other) const noexcept
+    {
+        return Key1 == other.Key1 && Key2 == other.Key2;
+    }
+
+    inline constexpr bool operator!=(const TransformKey& other) const noexcept
+    {
+        return Key1 != other.Key1 || Key2 != other.Key2;
+    }
+};
+
+struct RigidBodyData
+{
+    union
+    {
+        RigidBodyBaseData Base;
+        RigidBodyKey Key;
+    };
+
     Vector2 Force; //Temporary container for force, reset to 0 in rigidBody after use //TODO: might not work cor with hashing when changed
 
     Fixed16_16 InverseMass;
@@ -17,59 +45,42 @@ struct RigidBodyData
     Fixed16_16 StaticFriction; //TODO: add materials and only save the index instead of he entire friction value (Restitution, StaticFriction, DynamicFriction)
     Fixed16_16 DynamicFriction;
 
-    uint8_t GravityScale;
-    uint8_t MassScale;
-
-    uint32_t Hash;
+    bool Changed;   //Non-persistent flag for caching
 
 public:
     inline RigidBodyData() noexcept = default;
 
     constexpr inline explicit RigidBodyData(const Fixed16_16& mass, const Fixed16_16& restitution, const Fixed16_16& inertia, const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction) :
-        Velocity(0, 0),
-        AngularVelocity(0),
+        Base{ Vector2(0,0), Fixed16_16(0), 1, 1 },
         Force(0, 0),
         InverseMass(1 / mass),
         Restitution(restitution),
         InverseInertia(1 / inertia),
         StaticFriction(staticFriction),
-        DynamicFriction(dynamicFriction),
-        GravityScale(1),
-        MassScale(1),
-        Hash(0),
-        HashUpdateRequired(true) { }
+        DynamicFriction(dynamicFriction) { }
 
     constexpr inline explicit RigidBodyData(const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction) :
-        Velocity(0, 0),
-        AngularVelocity(0),
+    Base{ Vector2(0,0), Fixed16_16(0), 0, 0 },
         Force(0, 0),
         InverseMass(0),
         Restitution(0),
         InverseInertia(0),
         StaticFriction(staticFriction),
-        DynamicFriction(dynamicFriction),
-        GravityScale(0),
-        MassScale(0),
-        Hash(0),
-        HashUpdateRequired(true) { }
+        DynamicFriction(dynamicFriction) { }
 
     inline explicit RigidBodyData(Stream& stream)
     {
-        Velocity = stream.ReadVector2();
-        AngularVelocity = stream.ReadFixed();
+        Base.Velocity = stream.ReadVector2();
+        Base.AngularVelocity = stream.ReadFixed();
+        Base.GravityScale = stream.ReadInteger<uint8_t>();
+        Base.MassScale = stream.ReadInteger<uint8_t>();
+
         Force = stream.ReadVector2();
         InverseMass = stream.ReadFixed();
         Restitution = stream.ReadFixed();
         InverseInertia = stream.ReadFixed();
         StaticFriction = stream.ReadFixed();
         DynamicFriction = stream.ReadFixed();
-
-        GravityScale = stream.ReadInteger<uint8_t>();
-        MassScale = stream.ReadInteger<uint8_t>();
-
-        Hash = 0;
-
-        HashUpdateRequired = true;
     }
 
     constexpr static RigidBodyData CreateStaticRigidBody(const Fixed16_16& staticFriction, const Fixed16_16& dynamicFriction)
@@ -111,14 +122,12 @@ public:
 
     inline void UpdateGravityScale(uint8_t newGravityScale)
     {
-        GravityScale = newGravityScale;
-        HashUpdateRequired = true;
+        Base.GravityScale = newGravityScale;
     }
 
     inline void UpdateMassScale(uint8_t newMassScale)
     {
-        GravityScale = newMassScale;
-        HashUpdateRequired = true;
+        Base.GravityScale = newMassScale;
     }
 
     inline Fixed16_16 Mass() const
@@ -129,18 +138,6 @@ public:
     inline Fixed16_16 Inertia() const
     {
         return 1 / InverseInertia;
-    }
-
-    constexpr inline uint32_t GetHash(Entity entity)
-    {
-        if (!HashUpdateRequired) return Hash;
-
-        //Recompute hash
-        Hash = CombineHash(static_cast<uint32_t>(GravityScale), static_cast<uint32_t>(MassScale));
-        Hash = CombineHash(Hash, static_cast<uint32_t>(entity));
-
-        HashUpdateRequired = false;
-        return Hash;
     }
 
     static Fixed16_16 GetPolygonArea(const std::vector<Vector2>& vertices)
@@ -223,18 +220,16 @@ public:
 
     void Serialize(Stream& stream) const
     {
-        stream.WriteVector2(Velocity);
-        stream.WriteFixed(AngularVelocity);
+        stream.WriteVector2(Base.Velocity);
+        stream.WriteFixed(Base.AngularVelocity);
+        stream.WriteInteger(Base.GravityScale);
+        stream.WriteInteger(Base.MassScale);
+
         stream.WriteVector2(Force);
         stream.WriteFixed(InverseMass);
         stream.WriteFixed(Restitution);
         stream.WriteFixed(InverseInertia);
         stream.WriteFixed(StaticFriction);
         stream.WriteFixed(DynamicFriction);
-        stream.WriteInteger(GravityScale);
-        stream.WriteInteger(MassScale);
     }
-
-private:
-    bool HashUpdateRequired;
 };

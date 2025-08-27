@@ -21,7 +21,6 @@ struct AccumulatedImpulse
 
     Fixed16_16 Pn;  //Accumulated normal impulse
     Fixed16_16 Pt;  //Accumulated tangent impulse
-    Fixed16_16 Pnb; //Accumulated normal impulse for position bias
     FeaturePair Feature;
 };
 
@@ -64,6 +63,7 @@ struct ContactPair
 {
     ContactPair() = default;
 
+    EntityPair EntityKey;
     Entity Entity1;
     Entity Entity2;
 
@@ -72,4 +72,19 @@ struct ContactPair
 
     Vector2 Normal;
     Fixed16_16 Friction;
+
+    friend inline constexpr bool operator==(const ContactPair& left, const EntityPair& right) noexcept
+    {
+        return left.EntityKey == right;
+    }
+
+    friend inline constexpr bool operator<(const ContactPair& left, const ContactPair& right) noexcept
+    {
+        return left.EntityKey < right.EntityKey;
+    }
+
+    friend inline constexpr bool operator<(const EntityPair& left, const ContactPair& right) noexcept
+    {
+        return left < right.EntityKey;
+    }
 };

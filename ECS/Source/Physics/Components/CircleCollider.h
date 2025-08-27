@@ -26,7 +26,7 @@ public:
     {
         if (transform.AABBUpdateRequired)
         {
-            transformMeta.BoundingBox = AABB(Vector2(transform.Position.X - Radius, transform.Position.Y - Radius), Vector2(transform.Position.X + Radius, transform.Position.Y + Radius));
+            transformMeta.BoundingBox = AABB(Vector2(transform.Base.Position.X - Radius, transform.Base.Position.Y - Radius), Vector2(transform.Base.Position.X + Radius, transform.Base.Position.Y + Radius));
             transform.AABBUpdateRequired = false;
         }
 

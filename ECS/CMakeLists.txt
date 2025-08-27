@@ -62,7 +62,6 @@ add_executable(ECS Source/main.cpp
         Source/Game/Input/InputCollection.h
         Source/Game/Input/Input.cpp
         Source/Game/CacheManager.h
-        Source/Physics/Collision/CollisionCheckInfo.h
         Source/Physics/Collision/CollisionResponseTable.h
         Source/Physics/Collision/CollisionResponseTable2.h
         Source/Physics/Collision/unordered_dense.h
@@ -81,8 +80,9 @@ add_executable(ECS Source/main.cpp
         Source/Physics/Cache/SortedCache.h
         Source/Physics/Components/Transform.h
         Source/Physics/Components/TransformMeta.h
-        Source/Physics/Cache/TransformCache.h
+        Source/Physics/Cache/ComponentCollectionCache.h
         Source/Physics/Cache/SortedDoubleCache.h
+        Source/Physics/Cache/SortedDoubleMap.h
 )
 
 add_subdirectory(Source/Math)

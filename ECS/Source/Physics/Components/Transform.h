@@ -3,10 +3,37 @@
 #include "../../Math/FixedTypes.h"
 #include "../../Math/Stream.h"
 
-struct Transform
+struct TransformBase
 {
     Vector2 Position;
     Fixed16_16 Rotation; //Radians
+};
+
+struct TransformKey
+{
+    uint32_t Key1;
+    uint32_t Key2;
+    uint32_t Key3;
+
+    inline constexpr bool operator==(const TransformKey& other) const noexcept
+    {
+        return Key1 == other.Key1 && Key2 == other.Key2  && Key3 == other.Key3;
+    }
+
+    inline constexpr bool operator!=(const TransformKey& other) const noexcept
+    {
+        return Key1 != other.Key1 || Key2 != other.Key2 || Key3 != other.Key3;
+    }
+};
+
+struct Transform
+{
+    union
+    {
+        TransformBase Base;
+        TransformKey Key;
+    };
+
     bool TransformUpdateRequired;
     bool AABBUpdateRequired;
     bool Changed;   //Non-persistent flag for caching
@@ -14,13 +41,13 @@ struct Transform
     inline Transform() noexcept = default;
 
     constexpr inline explicit Transform(Vector2 position, Fixed16_16 rotation) :
-        Position(position), Rotation(rotation), TransformUpdateRequired(true), AABBUpdateRequired(true), Changed(true) { }
+        Base {position, rotation}, TransformUpdateRequired(true), AABBUpdateRequired(true), Changed(true) { }
 
     inline explicit Transform(Stream& stream)
     {
         //Read object data
-        Position = stream.ReadVector2();
-        Rotation = stream.ReadFixed();
+        Base.Position = stream.ReadVector2();
+        Base.Rotation = stream.ReadFixed();
 
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
@@ -29,36 +56,36 @@ struct Transform
 
     Vector2 TransformVector(const Vector2 vector) const
     {
-        Fixed16_16 sin = fpm::sin(Rotation);
-        Fixed16_16 cos = fpm::cos(Rotation);
+        Fixed16_16 sin = fpm::sin(Base.Rotation);
+        Fixed16_16 cos = fpm::cos(Base.Rotation);
 
-        return Vector2(cos * vector.X - sin * vector.Y + Position.X, sin * vector.X + cos * vector.Y + Position.Y);
+        return Vector2(cos * vector.X - sin * vector.Y + Base.Position.X, sin * vector.X + cos * vector.Y + Base.Position.Y);
     }
 
     void MovePosition(Vector2 direction)
     {
-        Position += direction;
+        Base.Position += direction;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
     }
 
     void SetPosition(Vector2 position)
     {
-        Position = position;
+        Base.Position = position;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
     }
 
     void Rotate(Fixed16_16 amount)
     {
-        Rotation += amount;
+        Base.Rotation += amount;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
     }
 
     void SetRotation(Fixed16_16 angle)
     {
-        Rotation = angle;
+        Base.Rotation = angle;
         TransformUpdateRequired = true;
         AABBUpdateRequired = true;
     }
@@ -66,17 +93,7 @@ struct Transform
     void Serialize(Stream& stream) const
     {
         //Write transform data
-        stream.WriteVector2(Position);
-        stream.WriteFixed(Rotation);
-    }
-
-    inline constexpr bool operator==(const Transform& other) const noexcept
-    {
-        return Position == other.Position && Rotation == other.Rotation;
-    }
-
-    inline constexpr bool operator!=(const Transform& other) const noexcept
-    {
-        return Position != other.Position || Rotation != other.Rotation;
+        stream.WriteVector2(Base.Position);
+        stream.WriteFixed(Base.Rotation);
     }
 };

@@ -1,11 +1,6 @@
 #pragma once
 
-#include "CollisionCheckInfo.h"
 #include "ContactPair.h"
-#include "CollisionResponseTable.h"
-#include "CollisionResponseTable2.h"
-#include "CollisionResponseTable3.h"
-#include "../Cache/TransformCache.h"
 #include "../../ECS/ECSSettings.h"
 
 #include <vector>
@@ -15,16 +10,18 @@ class CollisionCache
 public:
     explicit CollisionCache(FrameNumber depth, FrameNumber startFrame = 0) : frameDepth(depth), oldestFrame(startFrame), startIndex(0), frameCount(0), currentIndex(0)
     {
-        transformData.resize(frameDepth);
+        transformCache.resize(frameDepth);
+        rigidBodyDataCache.resize(frameDepth);
         collisionPairData.resize(frameDepth);
         collisionData.resize(frameDepth);
 
         //Initialize caches
         for (FrameNumber i = 0; i < frameDepth; ++i)
         {
-            transformData[i].Initialize();
+            transformCache[i].Initialize();
+            rigidBodyDataCache[i].Initialize();
             collisionPairData[i].Initialize();
-            collisionData[i].Reset(); //? todo
+            collisionData[i].Initialize();
         }
     }
 
@@ -57,7 +54,8 @@ public:
             {
                 //Clear cache
                 uint32_t clearIndex = (startIndex + i) % frameDepth;
-                transformData[clearIndex].Reset();
+                transformCache[clearIndex].Reset();
+                rigidBodyDataCache[clearIndex].Reset();
                 collisionPairData[clearIndex].Reset();
                 collisionData[clearIndex].Reset();
             }
@@ -81,12 +79,12 @@ public:
 
     inline void CacheTransformCollection(ComponentCollection<Transform>* transformCollection)
     {
-        transformData[currentIndex].Cache(transformCollection);
+        transformCache[currentIndex].Cache(transformCollection);
     }
 
-    inline void CacheCollision(const CollisionCheckInfo& check, const ContactPair& responseInfo)
+    inline void CacheRigidBodyDataCollection(ComponentCollection<RigidBodyData>* rigidBodyDataCollection)
     {
-        collisionData[currentIndex].CacheCollision(check, responseInfo);
+        rigidBodyDataCache[currentIndex].Cache(rigidBodyDataCollection);
     }
 
     inline void CacheCollisionPair(EntityPair entityPair)
@@ -94,24 +92,35 @@ public:
         collisionPairData[currentIndex].Cache(entityPair);
     }
 
-    inline bool TryGetTransform(Entity entity, Transform& transform)
+    inline void CacheCollision(const ContactPair& contactPair)
     {
-        return transformData[currentIndex].TryGetTransform(entity, transform);
+        collisionData[currentIndex].Cache(contactPair);
     }
 
-    inline constexpr bool AdvanceCache(EntityPair entityPair) noexcept
+    inline bool TryGetTransform(Entity entity, Transform& transform)
+    {
+        return transformCache[currentIndex].TryGetTransform(entity, transform);
+    }
+
+    inline bool TryGetRigidBodyData(Entity entity, RigidBodyData& result)
+    {
+        return rigidBodyDataCache[currentIndex].TryGetTransform(entity, result);
+    }
+
+    inline constexpr bool AdvancePairCache(EntityPair entityPair) noexcept
     {
         return collisionPairData[currentIndex].AdvanceCache(entityPair);
     }
 
-    inline bool TryGetCollisionData(const CollisionCheckInfo& check, ContactPair& outResponseInfo) const
+    inline constexpr bool AdvanceCollisionCache(EntityPair entityPair, ContactPair& result) noexcept
     {
-        return collisionData[currentIndex].TryGetCollision(check, outResponseInfo);
+        return collisionData[currentIndex].AdvanceCache(entityPair, result);
     }
 
     inline constexpr void Flip() noexcept
     {
         collisionPairData[currentIndex].Flip();
+        collisionData[currentIndex].Flip();
     }
 
 private:
@@ -122,15 +131,12 @@ private:
 
 private:
     //Can use non-deterministic map as it not used in iteration
-    std::vector<TransformCache> transformData;
+    std::vector<TransformCache> transformCache;
+    std::vector<RigidBodyDataCache> rigidBodyDataCache;
     std::vector<CollisionPairCache> collisionPairData;
-    std::vector<CollisionResponseTable> collisionData; //Used to get the exact collision response data
+    std::vector<CollisionResultCache> collisionData; //Used to get the exact collision response data
 
 private:
-
-    //CollisionResponseTable uses external hash table which gives 3.4ms (better)
-    //CollisionResponseTable2 uses custom hash table which is 3.7ms
-
     FrameNumber frameDepth;
 
     FrameNumber oldestFrame;        //Oldest frame where the input it still saved

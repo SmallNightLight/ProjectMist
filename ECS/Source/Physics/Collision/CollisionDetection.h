@@ -79,7 +79,7 @@ public:
             //Perform AABB check, to test if entities are able to collide
             if (!circleCollider1.GetAABB(transform1, transformMeta1).Overlaps(circleCollider2.GetAABB(transform2, transformMeta2))) return false;
 
-            Fixed16_16 distance = transform1.Position.Distance(transform2.Position);
+            Fixed16_16 distance = transform1.Base.Position.Distance(transform2.Base.Position);
             Fixed16_16 totalRadius = circleCollider1.GetRadius() + circleCollider2.GetRadius();
 
             //Check if circles overlap
@@ -87,11 +87,11 @@ public:
 
             //Create contact data
             contactPair.ContactCount = 1;
-            contactPair.Normal = (transform2.Position - transform1.Position).Normalize();
-            contactPair.Contacts[0].Position = transform1.Position + contactPair.Normal * circleCollider1.GetRadius();
+            contactPair.Normal = (transform2.Base.Position - transform1.Base.Position).Normalize();
+            contactPair.Contacts[0].Position = transform1.Base.Position + contactPair.Normal * circleCollider1.GetRadius();
             contactPair.Contacts[0].Separation = distance - totalRadius;
 
-            CreateContactData(contactPair, false, transform1.Position, transform2.Position, entity1, entity2, transform1, transform2);
+            CreateContactData(contactPair, false, transform1.Base.Position, transform2.Base.Position, entity1, entity2, transform1, transform2);
             return true;
       }
 
@@ -181,7 +181,7 @@ public:
       }
 
 private:
-      static bool CircleConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, const Fixed16_16& circleRadius, Vector2Span vertices)
+      static bool CircleConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, const Transform& transform1, const Transform& transform2, const Fixed16_16& circleRadius, Vector2Span vertices)
       {
             contactPair.Contacts[0].Separation = std::numeric_limits<Fixed16_16>::max();
 
@@ -193,26 +193,26 @@ private:
                   Vector2 edge = v2 - v1;
                   Vector2 axis = edge.Perpendicular().Normalize();
 
-                  if (CheckCircleAxisSeparation(contactPair, vertices, transform1.Position, circleRadius, axis)) return false;
+                  if (CheckCircleAxisSeparation(contactPair, vertices, transform1.Base.Position, circleRadius, axis)) return false;
             }
 
-            Vector2 closestVertexToCircle = GetClosestPointToCircle(transform1.Position, vertices);
-            Vector2 axis = (closestVertexToCircle - transform1.Position).Normalize();
+            Vector2 closestVertexToCircle = GetClosestPointToCircle(transform1.Base.Position, vertices);
+            Vector2 axis = (closestVertexToCircle - transform1.Base.Position).Normalize();
 
-            if (CheckCircleAxisSeparation(contactPair, vertices, transform1.Position, circleRadius, axis)) return false;
+            if (CheckCircleAxisSeparation(contactPair, vertices, transform1.Base.Position, circleRadius, axis)) return false;
 
             contactPair.Contacts[0].Separation = -contactPair.Contacts[0].Separation;
             contactPair.Contacts[1].Separation = contactPair.Contacts[0].Separation;
 
             //Detected collision
-            GetContactCircleConvex(contactPair, transform1.Position, vertices);
+            GetContactCircleConvex(contactPair, transform1.Base.Position, vertices);
 
             //Create contact data
-            CreateContactData(contactPair, swap, transform1.Position, GetCenter(vertices), entity1, entity2, transform1, transform2);
+            CreateContactData(contactPair, swap, transform1.Base.Position, GetCenter(vertices), entity1, entity2, transform1, transform2);
             return true;
       }
 
-      static bool ConvexConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, Transform& transform1, Transform& transform2, Vector2Span vertices1, Vector2Span vertices2 )
+      static bool ConvexConvexCollision(ContactPair& contactPair, bool swap, Entity entity1, Entity entity2, const Transform& transform1, const Transform& transform2, Vector2Span vertices1, Vector2Span vertices2 )
       {
             assert(vertices1.size > 0 && vertices2.size > 0 && "Polygon cannot have zero vertices");
 
@@ -261,12 +261,13 @@ private:
             {
                   contactPair.Entity1 = entity2;
                   contactPair.Entity2 = entity1;
+                  contactPair.EntityKey = EntityPair::Make(entity2, entity1);
 
                   for (int i = 0; i < contactPair.ContactCount; ++i)
                   {
                         Contact& contact = contactPair.Contacts[i];
-                        contact.R1 = contact.Position - transform2.Position;
-                        contact.R2 = contact.Position - transform1.Position;
+                        contact.R1 = contact.Position - transform2.Base.Position;
+                        contact.R2 = contact.Position - transform1.Base.Position;
                   }
 
                   contactPair.Normal = -contactPair.Normal;
@@ -275,12 +276,13 @@ private:
             {
                   contactPair.Entity1 = entity1;
                   contactPair.Entity2 = entity2;
+                  contactPair.EntityKey = EntityPair::Make(entity1, entity2);
 
                   for (int i = 0; i < contactPair.ContactCount; ++i)
                   {
                         Contact& contact = contactPair.Contacts[i];
-                        contact.R1 = contact.Position - transform1.Position;
-                        contact.R2 = contact.Position - transform2.Position;
+                        contact.R1 = contact.Position - transform1.Base.Position;
+                        contact.R2 = contact.Position - transform2.Base.Position;
                   }
             }
 

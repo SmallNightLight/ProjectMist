@@ -10,11 +10,12 @@
 //Cache
 #include "Cache/SortedCache.h"
 #include "Cache/SortedDoubleCache.h"
+#include "Cache/SortedDoubleMap.h"
 
 #include "Collision/ContactPair.h"
 using ImpulseCache = SortedCache<EntityPair, ImpulseData, MaxCollisionCount>;
-
 using CollisionPairCache = SortedDoubleCache<EntityPair, 3000>;
+using CollisionResultCache = SortedDoubleMap<EntityPair, ContactPair, MaxCollisionCount>;
 
 //Components
 #include "PhysicsComponents.h"
@@ -22,6 +23,13 @@ using CollisionPairCache = SortedDoubleCache<EntityPair, 3000>;
 using PhysicsComponentManager = ComponentManager<PhysicsComponents>;
 static constexpr uint8_t PhysicsComponentCount = PhysicsComponentManager::GetComponentCount();
 using PhysicsSignature = std::bitset<PhysicsComponentCount>;
+
+//Cache
+#include "Cache/ComponentCollectionCache.h"
+using TransformCache = ComponentCollectionCache<Transform>;
+using RigidBodyDataCache = ComponentCollectionCache<RigidBodyData>;
+#include "Collision/CollisionCache.h"
+#include "Collision/PhysicsCache.h"
 
 //Systems
 #include "PhysicsSystems.h"

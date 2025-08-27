@@ -3,8 +3,6 @@
 #include "../../ECS/ECS.h"
 #include "../PhysicsSettings.h"
 #include "../Collision/CollisionDetection.h"
-#include "../Collision/CollisionCache.h"
-#include "../Collision/PhysicsCache.h"
 
 #include <vector>
 
@@ -42,12 +40,12 @@ public:
         bool useCache = collisionCache->UpdateFrame(frame);
 
         ContactPairs.clear();
-        CollisionChecks.clear();
         collisionCache->Flip();
 
         //Setup transform from cache
         SetupEntityTransforms(useCache);
         collisionCache->CacheTransformCollection(transformCollection);
+        collisionCache->CacheRigidBodyDataCollection(rigidBodyDataCollection);
 
         for (Entity* it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
@@ -68,16 +66,13 @@ public:
                 if (useCache && !transform1.Changed && !transform2.Changed)
                 {
                     //The collision has already happened before (same position and rotation)
-                    bool collision = collisionCache->AdvanceCache(entityPair);
+                    bool collision = collisionCache->AdvancePairCache(entityPair);
 
                     if (!collision) continue;
 
-                    RigidBodyData& rigidBodyData1 = rigidBodyDataCollection->GetComponent(entity1);
-                    RigidBodyData& rigidBodyData2 = rigidBodyDataCollection->GetComponent(entity2);
-
                     //Get collision response data
                     ContactPair cachedContactPair;
-                    if (collisionCache->TryGetCollisionData(GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2), cachedContactPair))
+                    if (collisionCache->AdvanceCollisionCache(entityPair, cachedContactPair))
                     {
                         ContactPairs.emplace_back(cachedContactPair);
                     }
@@ -100,10 +95,7 @@ public:
                     SetupContactPair(contactPair, rigidBodyData1, rigidBodyData2);
                     ContactPairs.emplace_back(contactPair);
                     collisionCache->CacheCollisionPair(entityPair);
-
-                    CollisionCheckInfo check = GetCollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
-                    CollisionChecks.emplace_back(check);
-                    collisionCache->CacheCollision(check, contactPair);
+                    collisionCache->CacheCollision(contactPair);
                 }
 
                 //In case of no collision, it is not cached as the fact that it is not present in the cache means that there is not collision.
@@ -112,7 +104,7 @@ public:
         }
     }
 
-    void SetupEntityTransforms(bool useCache)
+    void SetupEntityTransforms(bool useCache) //optimize inline in the handlecol? todo divide into two bools for both
     {
         if (useCache)
         {
@@ -122,13 +114,28 @@ public:
                 if (collisionCache->TryGetTransform(entity, cachedTransform))
                 {
                     Transform& transform = transformCollection->GetComponent(entity);
-                    transformCollection->GetComponent(entity).Changed = transform != cachedTransform;
+                    transform.Changed = transform.Key != cachedTransform.Key;
                 }
                 else
                 {
                     transformCollection->GetComponent(entity).Changed = true;
                 }
             }
+
+            //Not needed as it only stores contact pairs currently
+            // RigidBodyData cachedRigidBodyData;
+            // for (const Entity& entity : Entities)
+            // {
+            //     if (collisionCache->TryGetRigidBodyData(entity, cachedRigidBodyData))
+            //     {
+            //         RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
+            //         rigidBodyData.Changed = rigidBodyData.Key != cachedRigidBodyData.Key;
+            //     }
+            //     else
+            //     {
+            //         rigidBodyDataCollection->GetComponent(entity).Changed = true;
+            //     }
+            // }
         }
         else
         {
@@ -137,19 +144,6 @@ public:
                 transformCollection->GetComponent(entity).Changed = true;
             }
         }
-    }
-
-    static inline CollisionCheckInfo GetCollisionCheckInfo(Entity entity1, Entity entity2, RigidBodyData& rigidBodyData1, RigidBodyData& rigidBodyData2)
-    {
-        return CollisionCheckInfo(entity1, entity2, rigidBodyData1, rigidBodyData2);
-
-        //Version 2 (currently slower) - no caching
-        // return CollisionCheckInfo(
-        //     entity1, entity2,
-        //     rigidBodyData1.Velocity, rigidBodyData2.Velocity,
-        //     rigidBodyData1.AngularVelocity, rigidBodyData2.AngularVelocity,
-        //     rigidBodyData1.GravityScale, rigidBodyData2.GravityScale,
-        //     rigidBodyData1.MassScale, rigidBodyData2.MassScale);
     }
 
     inline void SetupContactPair(ContactPair& contactPair, const RigidBodyData& rigidBodyData1, const RigidBodyData& rigidBodyData2) const
@@ -214,7 +208,7 @@ public:
 
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
 
-            rigidBodyData.Velocity += (Gravity + rigidBodyData.Force * rigidBodyData.InverseMass) * deltaTime;
+            rigidBodyData.Base.Velocity += (Gravity + rigidBodyData.Force * rigidBodyData.InverseMass) * deltaTime;
             //rigidBodyData.AngularVelocity += deltaTime * rigidBodyData.InverseInertia * rigidBodyData.Torque; //todo
         }
     }
@@ -238,11 +232,11 @@ public:
                     //Apply normal + friction impulse
                     Vector2 P = contactPair.Normal * contact.LastImpulse.Pn + tangent * contact.LastImpulse.Pt;
 
-                    rigidBodyData1.Velocity -= P * rigidBodyData1.InverseMass;
-                    rigidBodyData1.AngularVelocity -= rigidBodyData1.InverseInertia * contact.R1.Cross(P);
+                    rigidBodyData1.Base.Velocity -= P * rigidBodyData1.InverseMass;
+                    rigidBodyData1.Base.AngularVelocity -= rigidBodyData1.InverseInertia * contact.R1.Cross(P);
 
-                    rigidBodyData2.Velocity += P * rigidBodyData2.InverseMass;
-                    rigidBodyData2.AngularVelocity += rigidBodyData2.InverseInertia * contact.R2.Cross(P);
+                    rigidBodyData2.Base.Velocity += P * rigidBodyData2.InverseMass;
+                    rigidBodyData2.Base.AngularVelocity += rigidBodyData2.InverseInertia * contact.R2.Cross(P);
                 }
             }
         }
@@ -260,7 +254,7 @@ public:
                 Contact& contact = contactPair.Contacts[i];
 
                 //Relative velocity at contact
-                Vector2 dv = rigidBodyData2.Velocity + contact.R2.CrossI(rigidBodyData2.AngularVelocity) - rigidBodyData1.Velocity - contact.R1.CrossI(rigidBodyData1.AngularVelocity);
+                Vector2 dv = rigidBodyData2.Base.Velocity + contact.R2.CrossI(rigidBodyData2.Base.AngularVelocity) - rigidBodyData1.Base.Velocity - contact.R1.CrossI(rigidBodyData1.Base.AngularVelocity);
 
                 //Compute normal impulse
                 Fixed16_16 vn = dv.Dot(contactPair.Normal);
@@ -281,14 +275,14 @@ public:
                 //Apply contact impulse
                 Vector2 Pn = contactPair.Normal * dPn;
 
-                rigidBodyData1.Velocity -= Pn * rigidBodyData1.InverseMass;
-                rigidBodyData1.AngularVelocity -= rigidBodyData1.InverseInertia * contact.R1.Cross(Pn);
+                rigidBodyData1.Base.Velocity -= Pn * rigidBodyData1.InverseMass;
+                rigidBodyData1.Base.AngularVelocity -= rigidBodyData1.InverseInertia * contact.R1.Cross(Pn);
 
-                rigidBodyData2.Velocity += Pn * rigidBodyData2.InverseMass;
-                rigidBodyData2.AngularVelocity += rigidBodyData2.InverseInertia * contact.R2.Cross(Pn);
+                rigidBodyData2.Base.Velocity += Pn * rigidBodyData2.InverseMass;
+                rigidBodyData2.Base.AngularVelocity += rigidBodyData2.InverseInertia * contact.R2.Cross(Pn);
 
                 //Relative velocity at contact
-                dv = rigidBodyData2.Velocity + contact.R2.CrossI(rigidBodyData2.AngularVelocity) - rigidBodyData1.Velocity - contact.R1.CrossI(rigidBodyData1.AngularVelocity);
+                dv = rigidBodyData2.Base.Velocity + contact.R2.CrossI(rigidBodyData2.Base.AngularVelocity) - rigidBodyData1.Base.Velocity - contact.R1.CrossI(rigidBodyData1.Base.AngularVelocity);
 
                 Vector2 tangent = contactPair.Normal.Perpendicular();
                 Fixed16_16 vt = dv.Dot(tangent);
@@ -313,11 +307,11 @@ public:
                 //Apply contact impulse
                 Vector2 Pt = tangent * dPt;
 
-                rigidBodyData1.Velocity -= Pt * rigidBodyData1.InverseMass;
-                rigidBodyData1.AngularVelocity -= rigidBodyData1.InverseInertia * contact.R1.Cross(Pt);
+                rigidBodyData1.Base.Velocity -= Pt * rigidBodyData1.InverseMass;
+                rigidBodyData1.Base.AngularVelocity -= rigidBodyData1.InverseInertia * contact.R1.Cross(Pt);
 
-                rigidBodyData2.Velocity += Pt * rigidBodyData2.InverseMass;
-                rigidBodyData2.AngularVelocity += rigidBodyData2.InverseInertia * contact.R2.Cross(Pt);
+                rigidBodyData2.Base.Velocity += Pt * rigidBodyData2.InverseMass;
+                rigidBodyData2.Base.AngularVelocity += rigidBodyData2.InverseInertia * contact.R2.Cross(Pt);
             }
         }
     }
@@ -333,8 +327,8 @@ public:
             Transform& transform = transformCollection->GetComponent(entity);
             RigidBodyData& rigidBodyData = rigidBodyDataCollection->GetComponent(entity);
 
-            transform.MovePosition(rigidBodyData.Velocity * deltaTime);
-            transform.Rotate(rigidBodyData.AngularVelocity * deltaTime);
+            transform.MovePosition(rigidBodyData.Base.Velocity * deltaTime);
+            transform.Rotate(rigidBodyData.Base.AngularVelocity * deltaTime);
 
             rigidBodyData.Force = Vector2(0, 0);
             //rigidBodyData.Torque = Fixed16_16(0); //todo
@@ -369,14 +363,14 @@ public:
                 if (!transformMeta1.IsStatic)
                 {
                     transform1.MovePosition(-impulse * rigidBodyData1.InverseMass);
-                    Vector2 r1 = contact.Position - transform1.Position;
+                    Vector2 r1 = contact.Position - transform1.Base.Position;
                     transform1.Rotate(-r1.Cross(impulse) * rigidBodyData1.InverseInertia);
                 }
 
                 if (!transformMeta2.IsStatic)
                 {
                     transform2.MovePosition(impulse * rigidBodyData2.InverseMass);
-                    Vector2 r2 = contact.Position - transform2.Position;
+                    Vector2 r2 = contact.Position - transform2.Base.Position;
                     transform2.Rotate(r2.Cross(impulse) * rigidBodyData2.InverseInertia);
                 }
             }
@@ -417,7 +411,6 @@ private:
 
 public:
     std::vector<ContactPair> ContactPairs;
-    std::vector<CollisionCheckInfo> CollisionChecks;
     //std::vector<CollisionResponseInfo> CachedResponseInfo;
     EntitySet<MAXENTITIES> Entities;
 };

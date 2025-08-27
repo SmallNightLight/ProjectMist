@@ -28,8 +28,8 @@ public:
             CircleCollider& circleCollider = circleColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
-            auto x = transform.Position.X.ToFloating<float>();
-            auto y = transform.Position.Y.ToFloating<float>();
+            auto x = transform.Base.Position.X.ToFloating<float>();
+            auto y = transform.Base.Position.Y.ToFloating<float>();
             auto radius = circleCollider.GetRadius().ToFloating<float>();
             int numSegments = 100;
 
