@@ -1,20 +1,13 @@
 cmake_minimum_required(VERSION 3.27)
-project(Math)
+project(Math LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 23)
-
-if(WIN32)
-    add_compile_definitions(_WIN32_WINNT=0x0A00)
-endif()
-
-add_executable(Math main.cpp
+add_library(Math INTERFACE
         FPM/fixed.hpp
         FPM/math.hpp
         FPM/ios.hpp
+
         FixedVector2.h
-        Quadtree.h
         Rect.h
-        PartitionGrid.h
         PartitionGrid2.h
         FixedTypes.h
         TestMath.h
@@ -22,10 +15,6 @@ add_executable(Math main.cpp
         FixedRandom.h
         FixedAABB.h
         Stream.h
-
-        TestMath.h
         HashUtils.h
         Span.h
 )
-
-add_subdirectory(FixedLib)

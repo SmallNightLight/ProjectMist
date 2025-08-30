@@ -6,7 +6,7 @@
 #include "../../Math/Stream.h"
 #include "../World.h"
 #include "../CacheManager.h"
-#include "../../Components/Camera.h"
+#include "../../Rendering/Camera.h"
 #include "../../Physics/Physics.h"
 #include "../Input/Input.h"
 #include "PhysicsWorldData.h"

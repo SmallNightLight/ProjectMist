@@ -412,6 +412,5 @@ private:
 
 public:
     std::vector<ContactPair> ContactPairs;
-    //std::vector<CollisionResponseInfo> CachedResponseInfo;
     EntitySet<MAXENTITIES> Entities;
 };
