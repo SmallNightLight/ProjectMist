@@ -4,6 +4,7 @@
 #include "../PhysicsSettings.h"
 #include "../Collision/CollisionDetection.h"
 
+#include <immintrin.h>
 #include <vector>
 
 class RigidBody
@@ -11,7 +12,7 @@ class RigidBody
 public:
     using RequiredComponents = ComponentList<Transform, TransformMeta, RigidBodyData>;
 
-    explicit RigidBody(PhysicsComponentManager& componentManager) : collisionDetection(componentManager) //TODO: Static objects should not need to have a rigidBody
+    explicit RigidBody(PhysicsComponentManager& componentManager) : collisionDetection(componentManager), useCache(false) //TODO: Static objects should not need to have a rigidBody
     {
         transformCollection = componentManager.GetComponentCollection<Transform>();
         transformMetaCollection = componentManager.GetComponentCollection<TransformMeta>();
@@ -37,7 +38,7 @@ public:
         assert(collisionCache && "CollisionCache is null");
 
         //Update & Validate collision cache
-        bool useCache = collisionCache->UpdateFrame(frame);
+        useCache = collisionCache->UpdateFrame(frame);
 
         ContactPairs.clear();
         collisionCache->Flip();
@@ -45,7 +46,7 @@ public:
         //Setup transform from cache
         SetupEntityTransforms(useCache);
         collisionCache->CacheTransformCollection(transformCollection);
-        collisionCache->CacheRigidBodyDataCollection(rigidBodyDataCollection);
+        //collisionCache->CacheRigidBodyDataCollection(rigidBodyDataCollection);
 
         for (Entity* it1 = Entities.begin(); it1 != Entities.end(); ++it1)
         {
@@ -68,17 +69,13 @@ public:
                     //The collision has already happened before (same position and rotation)
                     bool collision = collisionCache->AdvancePairCache(entityPair);
 
-                    if (!collision) continue;
+                    if (!collision) continue; //todo might be faster to skip this completely
 
                     //Get collision response data
                     ContactPair cachedContactPair;
                     if (collisionCache->AdvanceCollisionCache(entityPair, cachedContactPair))
                     {
                         ContactPairs.emplace_back(cachedContactPair);
-                    }
-                    else
-                    {
-                        assert(false && "Should not be possible");
                     }
 
                     continue;
@@ -312,6 +309,8 @@ public:
 
                 rigidBodyData2.Base.Velocity += Pt * rigidBodyData2.InverseMass;
                 rigidBodyData2.Base.AngularVelocity += rigidBodyData2.InverseInertia * contact.R2.Cross(Pt);
+
+                //Cache solver data
             }
         }
     }
@@ -408,6 +407,8 @@ private:
     //Caching
     CollisionCache* collisionCache;
     PhysicsCache* physicsCache;
+
+    bool useCache;
 
 public:
     std::vector<ContactPair> ContactPairs;

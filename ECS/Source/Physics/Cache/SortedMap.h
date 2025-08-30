@@ -7,7 +7,7 @@
 #include <type_traits>
 
 template<typename KeyType, typename ValueType, uint32_t Size>
-class SortedCache
+class SortedMap
 {
     static_assert(std::is_copy_assignable_v<ValueType>, "Value type must be copy assignable");
     static_assert(std::is_copy_constructible_v<ValueType>, "Value type must be copy constructible");
@@ -16,7 +16,7 @@ class SortedCache
     static_assert(std::is_convertible_v<decltype(std::declval<const KeyType&>() < std::declval<const ValueType&>()), bool>, "KeyType must support operator< with ValueType");
 
 public:
-    inline SortedCache() noexcept = default;
+    inline SortedMap() noexcept = default;
 
     ///Clears the cache completely
     inline constexpr void Initialize() noexcept

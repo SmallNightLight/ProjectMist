@@ -3,6 +3,30 @@
 #include "../../ECS/ECSSettings.h"
 #include "../../Math/FixedTypes.h"
 
+struct VelocityData
+{
+    EntityPair EntityKey;
+    Vector2 Velocity;
+    Fixed16_16 AngularVelocity;
+    Fixed16_16 Pn;
+    Fixed16_16 Pt;
+
+    friend inline constexpr bool operator==(const VelocityData& left, const EntityPair& right) noexcept
+    {
+        return left.EntityKey == right;
+    }
+
+    friend inline constexpr bool operator<(const VelocityData& left, const VelocityData& right) noexcept
+    {
+        return left.EntityKey < right.EntityKey;
+    }
+
+    friend inline constexpr bool operator<(const EntityPair& left, const VelocityData& right) noexcept
+    {
+        return left < right.EntityKey;
+    }
+};
+
 union FeaturePair
 {
     struct Edges
@@ -88,3 +112,18 @@ struct ContactPair
         return left < right.EntityKey;
     }
 };
+
+// struct ContactPairSIMD
+// {
+//     ContactPairSIMD() = default;
+//
+//     EntityPair EntityKey;
+//     Entity Entity1;
+//     Entity Entity2;
+//
+//     std::array<Contact, 2> Contacts;
+//     uint8_t ContactCount;
+//
+//     Vector2 Normal;
+//     Fixed16_16 Friction;
+// };

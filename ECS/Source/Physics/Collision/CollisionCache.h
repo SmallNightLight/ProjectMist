@@ -97,6 +97,11 @@ public:
         collisionData[currentIndex].Cache(contactPair);
     }
 
+    inline void CacheSolved(const VelocityData& velocityData)
+    {
+        solverCache[currentIndex].Cache(velocityData);
+    }
+
     inline bool TryGetTransform(Entity entity, Transform& transform)
     {
         return transformCache[currentIndex].TryGetTransform(entity, transform);
@@ -123,6 +128,17 @@ public:
         collisionData[currentIndex].Flip();
     }
 
+    inline constexpr void ResetIteration() noexcept
+    {
+        solverCache[currentIndex].Reset();
+    }
+
+    inline constexpr void NextIteration() noexcept
+    {
+        solverCache[currentIndex].NextIteration();
+    }
+
+
 private:
     constexpr inline uint32_t GetIndex(FrameNumber frame) const
     {
@@ -130,17 +146,15 @@ private:
     }
 
 private:
-    //Can use non-deterministic map as it not used in iteration
     std::vector<TransformCache> transformCache;
     std::vector<RigidBodyDataCache> rigidBodyDataCache;
     std::vector<CollisionPairCache> collisionPairData;
-    std::vector<CollisionResultCache> collisionData; //Used to get the exact collision response data
+    std::vector<CollisionResultCache> collisionData;
+    std::vector<SolverCache> solverCache;
 
-private:
-    FrameNumber frameDepth;
-
+    FrameNumber frameDepth;         //Determines the count of the caches
     FrameNumber oldestFrame;        //Oldest frame where the input it still saved
     FrameNumber startIndex;         //Index of the oldest frame in the inputs, since it is circular
     FrameNumber frameCount;         //Number of frames currently stored in the buffer
-    FrameNumber currentIndex;
+    FrameNumber currentIndex;       //Current index of the frame in the caches
 };

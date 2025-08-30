@@ -77,12 +77,13 @@ add_executable(ECS Source/main.cpp
         Source/ECS/EntityPair.h
         Source/Physics/Collision/PhysicsCache.h
         Source/Game/Worlds/PhysicsWorldData.h
-        Source/Physics/Cache/SortedCache.h
+        Source/Physics/Cache/SortedMap.h
         Source/Physics/Components/Transform.h
         Source/Physics/Components/TransformMeta.h
         Source/Physics/Cache/ComponentCollectionCache.h
-        Source/Physics/Cache/SortedDoubleCache.h
+        Source/Physics/Cache/SortedDoubleSet.h
         Source/Physics/Cache/SortedDoubleMap.h
+        Source/Physics/Cache/SortedMapArray.h
 )
 
 add_subdirectory(Source/Math)

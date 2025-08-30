@@ -8,14 +8,16 @@
 #include "PhysicsSettings.h"
 
 //Cache
-#include "Cache/SortedCache.h"
-#include "Cache/SortedDoubleCache.h"
+#include "Cache/SortedMap.h"
+#include "Cache/SortedDoubleSet.h"
 #include "Cache/SortedDoubleMap.h"
+#include "Cache/SortedMapArray.h"
 
 #include "Collision/ContactPair.h"
-using ImpulseCache = SortedCache<EntityPair, ImpulseData, MaxCollisionCount>;
-using CollisionPairCache = SortedDoubleCache<EntityPair, 3000>;
+using ImpulseCache = SortedMap<EntityPair, ImpulseData, MaxCollisionCount>;
+using CollisionPairCache = SortedDoubleSet<EntityPair, MaxCollisionCount>;
 using CollisionResultCache = SortedDoubleMap<EntityPair, ContactPair, MaxCollisionCount>;
+using SolverCache = SortedMapArray<EntityPair, VelocityData, PhysicsIterations, MaxCollisionCount>;
 
 //Components
 #include "PhysicsComponents.h"

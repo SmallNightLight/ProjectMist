@@ -7,7 +7,7 @@
 #include <type_traits>
 
 template<typename KeyType, uint32_t Size>
-class SortedDoubleCache
+class SortedDoubleSet
 {
     static_assert(std::is_copy_assignable_v<KeyType>, "Key type must be copy assignable");
     static_assert(std::is_copy_constructible_v<KeyType>, "Key type must be copy constructible");
@@ -15,7 +15,7 @@ class SortedDoubleCache
     static_assert(std::is_convertible_v<decltype(std::declval<const KeyType&>() == std::declval<const KeyType&>()), bool>, "KeyType must support operator== with KeyType");
 
 public:
-    inline SortedDoubleCache() noexcept = default;
+    inline SortedDoubleSet() noexcept = default;
 
     ///Clears the cache completely
     inline constexpr void Initialize() noexcept
