@@ -138,6 +138,16 @@ struct FixedVector2
             return X * other.Y - Y * other.X;
       }
 
+      FixedVector2 Cross(const T& scalar) const
+      {
+            return FixedVector2(scalar * Y, -scalar * X);
+      }
+
+      FixedVector2 CrossI(const T& scalar) const
+      {
+            return FixedVector2(-scalar * Y, scalar * X);
+      }
+
       T Magnitude() const
       {
             auto xRaw = static_cast<IntermediateType>(X.raw_value());
@@ -201,6 +211,11 @@ struct FixedVector2
       FixedVector2 Perpendicular() const
       {
             return FixedVector2(-Y, X);
+      }
+
+      FixedVector2 PerpendicularInverse() const
+      {
+            return FixedVector2(Y, -X);
       }
 
       FixedVector2 Rotate(const T& angle) const

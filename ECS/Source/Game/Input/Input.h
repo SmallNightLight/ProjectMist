@@ -2,7 +2,7 @@
 
 #include "InputData.h"
 #include "../../Math/FixedTypes.h"
-#include "../../Components/Camera.h"
+#include "../../Rendering/Camera.h"
 #include "../GameSettings.h"
 
 #include <array>

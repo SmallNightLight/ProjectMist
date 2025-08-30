@@ -25,7 +25,7 @@ public:
     Layer() :
         entityManager(EntityManager<ComponentCount>()),
         componentManager(ComponentManager<Components>()),
-        systemManager(SystemManager<Components,Systems>(componentManager)),
+        systemManager(SystemManager<Components, Systems>(componentManager)),
         ignoreSignatureChanged(false) { }
 
     void Overwrite(const Layer& other)

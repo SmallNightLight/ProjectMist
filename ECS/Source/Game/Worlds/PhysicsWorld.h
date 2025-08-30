@@ -2,12 +2,14 @@
 
 #include <GLFW/glfw3.h>
 
+#include "../../Math/FixedTypes.h"
+#include "../../Math/Stream.h"
 #include "../World.h"
 #include "../CacheManager.h"
-#include "../../Components/Camera.h"
+#include "../../Rendering/Camera.h"
 #include "../../Physics/Physics.h"
 #include "../Input/Input.h"
-#include "../../Math/Stream.h"
+#include "PhysicsWorldData.h"
 
 #include <vector>
 #include <array>
@@ -16,17 +18,18 @@
 class PhysicsWorld : public World
 {
 public:
-    explicit PhysicsWorld(PhysicsLayer& layer) : baseLayer(layer), currentFrame(1), numberGenerator(std::mt19937(12))
+    explicit PhysicsWorld(PhysicsLayer& player, PhysicsWorldData& pPhysicsWorldData) : baseLayer(player), physicsWorldData(pPhysicsWorldData)
     {
-        SetupComponents(layer);
-        SetupSystems(layer);
+        SetupComponents(player);
+        SetupSystems(player);
         InitializeCamera();
     }
 
     ///Registers all components to the layer, sets the component collections and creates a signature which includes all components
     void SetupComponents(PhysicsLayer& layer) //TODO: use GetSystem()
     {
-        colliderTransformCollection = layer.GetComponentCollection<ColliderTransform>();
+        transformCollection = layer.GetComponentCollection<Transform>();
+        transformMetaCollection = layer.GetComponentCollection<TransformMeta>();
         rigidBodyDataCollection = layer.GetComponentCollection<RigidBodyData>();
         circleColliderCollection = layer.GetComponentCollection<CircleCollider>();
         boxColliderCollection = layer.GetComponentCollection<BoxCollider>();
@@ -36,7 +39,8 @@ public:
 
         //Create a signature that has all component flags
         includedComponents = 0;
-        includedComponents.set(PhysicsComponentManager::GetComponentType<ColliderTransform>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<Transform>(), true);
+        includedComponents.set(PhysicsComponentManager::GetComponentType<TransformMeta>(), true);
         includedComponents.set(PhysicsComponentManager::GetComponentType<RigidBodyData>(), true);
         includedComponents.set(PhysicsComponentManager::GetComponentType<CircleCollider>(), true);
         includedComponents.set(PhysicsComponentManager::GetComponentType<BoxCollider>(), true);
@@ -56,17 +60,12 @@ public:
 
     void InitializeCache(CacheManager* cache)
     {
-        rigidBodySystem->InitializeCache(cache->GetCollisionCache());
+        rigidBodySystem->InitializeCache(cache->GetCollisionCache(), &physicsWorldData.Cache);
     }
 
     void InitializeCamera()
     {
         camera = Camera(static_cast<Fixed16_16>(SCREEN_WIDTH), static_cast<Fixed16_16>(SCREEN_HEIGHT), Fixed16_16(20));
-    }
-
-    void OverwriteFrame(FrameNumber frame)
-    {
-        currentFrame = frame;
     }
 
     void AddObjects()
@@ -80,14 +79,14 @@ public:
 
         //Create rotated objects
         Entity e1 = PhysicsUtils::CreateBox(baseLayer, Vector2(10, 10), Fixed16_16(25), Fixed16_16(1), Static);
-        baseLayer.GetComponent<ColliderTransform>(e1).Rotate(Fixed16_16(0, 1));
+        baseLayer.GetComponent<Transform>(e1).Rotate(Fixed16_16(0, 1));
 
         Entity e2 = PhysicsUtils::CreateBox(baseLayer, Vector2(-10, 0), Fixed16_16(25), Fixed16_16(1), Static);
-        baseLayer.GetComponent<ColliderTransform>(e2).Rotate(Fixed16_16(0, -1));
+        baseLayer.GetComponent<Transform>(e2).Rotate(Fixed16_16(0, -1));
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomCircle(baseLayer, numberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
+            PhysicsUtils::CreateRandomCircle(baseLayer, physicsWorldData.NumberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
         }
 
         baseLayer.AddComponent(10, Movable(Fixed16_16(20)));
@@ -95,28 +94,46 @@ public:
         //Add boxes/
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomBox(baseLayer, numberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
+            PhysicsUtils::CreateRandomBox(baseLayer, physicsWorldData.NumberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
         }
 
         for (int i = 0; i < 15; ++i)
         {
-            PhysicsUtils::CreateRandomPolygon(baseLayer, numberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
+            PhysicsUtils::CreateRandomPolygon(baseLayer, physicsWorldData.NumberGenerator, camera.Left, camera.Right, camera.Bottom, camera.Top);
         }
     }
 
-    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs, uint32_t id)
+    void AddObjects2()
+    {
+        //Ground
+        PhysicsUtils::CreateBox(baseLayer, Vector2(0, -10), Fixed16_16(100), Fixed16_16(20), Static);
+
+        //Box
+        Entity box2 = PhysicsUtils::CreateBox(baseLayer, Vector2(0, 1), Fixed16_16(4), Fixed16_16(4), Dynamic, Fixed16_16(200));
+        baseLayer.GetComponent<Transform>(box2).SetRotation(Fixed16_16(0, 7854));
+        baseLayer.AddComponent(box2, Movable(Fixed16_16(5)));
+    }
+
+    void Update(Fixed16_16 deltaTime, std::vector<Input*>& inputs)
     {
         UpdateDebug(inputs);
 
-        Fixed16_16 stepTime = deltaTime / PhysicsIterations;
+        Input* playerInput = inputs[0];
+        movingSystem->Update(deltaTime, playerInput->GetKey(GLFW_KEY_W), playerInput->GetKey(GLFW_KEY_S), playerInput->GetKey(GLFW_KEY_A), playerInput->GetKey(GLFW_KEY_D), playerInput->GetKey(GLFW_KEY_Q), playerInput->GetKey(GLFW_KEY_E));
+
+        rigidBodySystem->HandleCollisions(physicsWorldData.CurrentFrame);
+        rigidBodySystem->IntegrateForces(deltaTime);
+        rigidBodySystem->SetupContacts();
 
         for (uint8_t i = 0; i < PhysicsIterations; ++i)
         {
-            rigidBodySystem->ApplyVelocity(stepTime);
-            rigidBodySystem->HandleCollisions(currentFrame, i, id);
+            rigidBodySystem->SolveContacts();
         }
 
-        ++currentFrame;
+        rigidBodySystem->IntegrateVelocities(deltaTime);
+        rigidBodySystem->IntegratePositions();
+
+        ++physicsWorldData.CurrentFrame;
     }
 
     void UpdateDebug(std::vector<Input*>& inputs)
@@ -125,17 +142,20 @@ public:
         {
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_LEFT))
             {
-                PhysicsUtils::CreateRandomCircleFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomCircleFromPosition(baseLayer, physicsWorldData.NumberGenerator, input->GetMousePosition(camera));
+                std::cout << "Create new circle\n";
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_RIGHT))
             {
-                PhysicsUtils::CreateRandomBoxFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomBoxFromPosition(baseLayer, physicsWorldData.NumberGenerator, input->GetMousePosition(camera));
+                std::cout << "Create new box\n";
             }
 
             if (input->GetKeyDown(GLFW_MOUSE_BUTTON_MIDDLE))
             {
-                PhysicsUtils::CreateRandomPolygonFromPosition(baseLayer, numberGenerator, input->GetMousePosition(camera));
+                PhysicsUtils::CreateRandomPolygonFromPosition(baseLayer, physicsWorldData.NumberGenerator, input->GetMousePosition(camera));
+                std::cout << "Create new convex\n";
             }
         }
     }
@@ -151,22 +171,22 @@ public:
         //Debug
         if (PhysicsDebugMode)
         {
-            RenderDebugInfo(rigidBodySystem->collisionsRE);
-
             circleColliderRenderer->RenderDebugOverlay();
             boxColliderRenderer->RenderDebugOverlay();
             polygonColliderRenderer->RenderDebugOverlay();
+
+            RenderDebugInfo(rigidBodySystem->ContactPairs);
         }
     }
 
     inline FrameNumber GetCurrentFrame() const
     {
-        return currentFrame;
+        return physicsWorldData.CurrentFrame;
     }
 
     inline std::mt19937 GetNumberGenerator() const
     {
-        return numberGenerator;
+        return physicsWorldData.NumberGenerator;
     }
 
     //Serialization
@@ -187,10 +207,10 @@ public:
         std::vector<PhysicsSignature> signatures;
 
         //Write current frame
-        stream.WriteInteger<FrameNumber>(currentFrame);
+        stream.WriteInteger<FrameNumber>(physicsWorldData.CurrentFrame);
 
         //Write number generator
-        SerializeGenerator(stream, numberGenerator);
+        SerializeGenerator(stream, physicsWorldData.NumberGenerator);
 
         //Write the signatures of all active entities
         SerializeEntities(stream, entities, signatures);
@@ -199,7 +219,8 @@ public:
         UpdateTransform(entities, signatures);
 
         //Write all component data
-        SerializeComponentCollection<ColliderTransform>(stream, colliderTransformCollection, entities, signatures);
+        SerializeComponentCollection<Transform>(stream, transformCollection, entities, signatures);
+        SerializeComponentCollection<TransformMeta>(stream, transformMetaCollection, entities, signatures);
         SerializeComponentCollection<RigidBodyData>(stream, rigidBodyDataCollection, entities, signatures);
         SerializeComponentCollection<CircleCollider>(stream, circleColliderCollection, entities, signatures);
         SerializeComponentCollection<BoxCollider>(stream, boxColliderCollection, entities, signatures);
@@ -219,10 +240,10 @@ public:
         std::vector<PhysicsSignature> signatures;
         std::array<uint32_t, MAXENTITIES> entityIndexes;
 
-        currentFrame = stream.ReadInteger<FrameNumber>();
+        physicsWorldData.CurrentFrame = stream.ReadInteger<FrameNumber>();
 
         //Read the number generator
-        DeserializeGenerator(stream, numberGenerator);
+        DeserializeGenerator(stream, physicsWorldData.NumberGenerator);
 
         //Read the signatures of all active entities
         DeserializeEntities(stream, entities, signatures);
@@ -231,7 +252,8 @@ public:
         physicsLayer.IgnoreSignatureChanged(true);
 
         //Write all component data
-        DeserializeComponentCollection<ColliderTransform>(stream, physicsLayer, entityIndexes, signatures);
+        DeserializeComponentCollection<Transform>(stream, physicsLayer, entityIndexes, signatures);
+        DeserializeComponentCollection<TransformMeta>(stream, physicsLayer, entityIndexes, signatures);
         DeserializeComponentCollection<RigidBodyData>(stream, physicsLayer, entityIndexes, signatures);
         DeserializeComponentCollection<CircleCollider>(stream, physicsLayer, entityIndexes, signatures);
         DeserializeComponentCollection<BoxCollider>(stream, physicsLayer, entityIndexes, signatures);
@@ -273,7 +295,7 @@ private:
         }
     }
 
-    void UpdateTransform(const std::vector<Entity>& entities, const std::vector<PhysicsSignature>& signatures) const
+    void UpdateTransform(const std::vector<Entity>& entities, const std::vector<PhysicsSignature>& signatures) const //todo important remove and dont serz transformed
     {
         ComponentType circleColliderComponentType = PhysicsComponentManager::GetComponentType<CircleCollider>();
         ComponentType boxColliderComponentType = PhysicsComponentManager::GetComponentType<BoxCollider>();
@@ -284,21 +306,19 @@ private:
             Entity entity = entities[i];
             PhysicsSignature signature = signatures[i];
 
-            if (signature.test(circleColliderComponentType))
-            {
-                 colliderTransformCollection->GetComponent(entities[i]).OverrideTransformUpdateRequire(false);
-            }
+            if (signature.test(circleColliderComponentType)) continue;
 
             if (signature.test(boxColliderComponentType))
             {
-                auto boxCollider = boxColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
+                BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
+                //boxCollider.GetTransformedVertices()
+                //transformCollection->GetComponent(entities[i]).GetTransformedVertices(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
             }
 
             if (signature.test(polygonColliderComponentType))
             {
-                auto polygonCollider = polygonColliderCollection->GetComponent(entity);
-                colliderTransformCollection->GetComponent(entities[i]).GetTransformedVertices(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
+                //auto polygonCollider = polygonColliderCollection->GetComponent(entity);
+                //transformCollection->GetComponent(entities[i]).GetTransformedVertices(polygonCollider.GetTransformedVertices(), polygonCollider.GetVertices());
             }
         }
     }
@@ -436,81 +456,40 @@ private:
         }
     }
 
-    static void RenderDebugInfo(std::vector<CollisionInfo>& collisions)
+    static void RenderDebugInfo(std::vector<ContactPair>& contactPairs)
     {
-        for (CollisionInfo collision : collisions)
+        for (ContactPair contactPair : contactPairs)
         {
-            //Render normal of collision
-            float normalLength = 1 + collision.Depth.ToFloating<float>();
-            glLineWidth(2.0f);
-            glColor3f(1.0f, 0.0f, 0.0f);
-            glBegin(GL_LINES);
-            glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
-            glVertex2f(collision.Contact1.X.ToFloating<float>() + collision.Normal.X.ToFloating<float>() * normalLength, collision.Contact1.Y.ToFloating<float>() + collision.Normal.Y.ToFloating<float>() * normalLength);
-            glEnd();
-
-            //Render contact points
-            float size = 0.4f;
-            if (collision.ContactCount > 0)
+            for (uint8_t i = 0; i < contactPair.ContactCount; ++i)
             {
+                Contact& contact = contactPair.Contacts[i];
+
+                //Render contact normal
+                float normalLength = -contact.Separation.ToFloating<float>() * 20;
+                glLineWidth(2.0f);
+                glColor3f(1.0f, 0.0f, 0.0f);
+                glBegin(GL_LINES);
+                glVertex2f(contact.Position.X.ToFloating<float>(), contact.Position.Y.ToFloating<float>());
+                glVertex2f(contact.Position.X.ToFloating<float>() + contactPair.Normal.X.ToFloating<float>() * normalLength, contact.Position.Y.ToFloating<float>() + contactPair.Normal.Y.ToFloating<float>() * normalLength);
+                glEnd();
+
+                //Render contact point
+                constexpr float size = 0.4f;
                 glLineWidth(2.0f);
                 glColor3f(0.5f, 0.5f, 0.5f);
                 glBegin(GL_LINES);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() + size);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() + size, collision.Contact1.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact1.X.ToFloating<float>() - size, collision.Contact1.Y.ToFloating<float>() + size);
+                glVertex2f(contact.Position.X.ToFloating<float>() - size, contact.Position.Y.ToFloating<float>() - size);
+                glVertex2f(contact.Position.X.ToFloating<float>() + size, contact.Position.Y.ToFloating<float>() + size);
+                glVertex2f(contact.Position.X.ToFloating<float>() + size, contact.Position.Y.ToFloating<float>() - size);
+                glVertex2f(contact.Position.X.ToFloating<float>() - size, contact.Position.Y.ToFloating<float>() + size);
                 glEnd();
-            }
-            if (collision.ContactCount > 1)
-            {
-                glLineWidth(2.0f);
-                glBegin(GL_LINES);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() + size);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() + size, collision.Contact2.Y.ToFloating<float>() - size);
-                glVertex2f(collision.Contact2.X.ToFloating<float>() - size, collision.Contact2.Y.ToFloating<float>() + size);
-                glEnd();
-            }
-
-            if (collision.ContactCount > 0)
-            {
-                if (collision.IsDynamic1)
-                {
-                    glColor3f(0.0f, 1.0f, 0.0f);
-                }
-                else
-                {
-                    glColor3f(0.0f, 0.0f, 1.0f);
-                }
-
-                glBegin(GL_POINTS);
-                glVertex2f(collision.Contact1.X.ToFloating<float>(), collision.Contact1.Y.ToFloating<float>());
-                glEnd();
-
-                if (collision.IsDynamic2)
-                {
-                    glColor3f(0.0f, 1.0f, 0.0f);
-                }
-                else
-                {
-                    glColor3f(0.0f, 0.0f, 1.0f);
-                }
-
-                if (collision.ContactCount > 1)
-                {
-                    glBegin(GL_POINTS);
-                    glVertex2f(collision.Contact2.X.ToFloating<float>(), collision.Contact2.Y.ToFloating<float>());
-                    glEnd();
-                }
             }
         }
     }
 
 private:
     PhysicsLayer& baseLayer;
-    FrameNumber currentFrame;
-    std::mt19937 numberGenerator;
+    PhysicsWorldData& physicsWorldData;
 
     //Systems
     RigidBody* rigidBodySystem;
@@ -520,7 +499,8 @@ private:
     MovingSystem* movingSystem;
 
     //Components
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<TransformMeta>* transformMetaCollection;
     ComponentCollection<RigidBodyData>* rigidBodyDataCollection;
     ComponentCollection<CircleCollider>* circleColliderCollection;
     ComponentCollection<BoxCollider>* boxColliderCollection;

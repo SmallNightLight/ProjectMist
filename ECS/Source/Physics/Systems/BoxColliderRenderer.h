@@ -5,11 +5,12 @@
 class BoxColliderRenderer
 {
 public:
-    using RequiredComponents = ComponentList<ColliderTransform, BoxCollider, ColliderRenderData>;
+    using RequiredComponents = ComponentList<Transform, BoxCollider, ColliderRenderData>;
 
     explicit BoxColliderRenderer(PhysicsComponentManager& componentManager)
     {
-        colliderTransformCollection = componentManager.GetComponentCollection<ColliderTransform>();
+        transformCollection = componentManager.GetComponentCollection<Transform>();
+        transformMetaCollection = componentManager.GetComponentCollection<TransformMeta>();
         boxColliderCollection = componentManager.GetComponentCollection<BoxCollider>();
         colliderRenderDataCollection = componentManager.GetComponentCollection<ColliderRenderData>();
 
@@ -20,14 +21,14 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& transform = colliderTransformCollection->GetComponent(entity);
+            Transform& transform = transformCollection->GetComponent(entity);
             BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
             ColliderRenderData& colliderRenderData = colliderRenderDataCollection->GetComponent(entity);
 
             //Draw filled rectangle
             glColor3ub(colliderRenderData.R, colliderRenderData.G, colliderRenderData.B);
 
-            Vector2Span vertices = transform.GetTransformedVertices(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
+            Vector2Span vertices = boxCollider.GetTransformedVertices(transform);
 
             glBegin(GL_QUADS);
             for (const auto& vertex : vertices)
@@ -52,10 +53,13 @@ public:
     {
         for (const Entity& entity : Entities)
         {
-            ColliderTransform& colliderTransform = colliderTransformCollection->GetComponent(entity);
+            if (!transformMetaCollection->HasComponent(entity)) continue;
+
+            Transform& transform = transformCollection->GetComponent(entity);
+            TransformMeta& transformMeta = transformMetaCollection->GetComponent(entity);
             BoxCollider& boxCollider = boxColliderCollection->GetComponent(entity);
 
-            if (colliderTransform.Active)
+            if (transformMeta.Active)
             {
                 glColor3ub(128, 128, 128);
             }
@@ -67,7 +71,7 @@ public:
             glLineWidth(2.0f);
             glBegin(GL_LINE_LOOP);
 
-            AABB boundingBox = colliderTransform.GetAABB(boxCollider.GetTransformedVertices(), boxCollider.GetVertices());
+            AABB boundingBox = boxCollider.GetAABB(transform, transformMeta);
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Min.Y.ToFloating<float>());
             glVertex2f(boundingBox.Min.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
             glVertex2f(boundingBox.Max.X.ToFloating<float>(), boundingBox.Max.Y.ToFloating<float>());
@@ -78,7 +82,8 @@ public:
     }
 
 private:
-    ComponentCollection<ColliderTransform>* colliderTransformCollection;
+    ComponentCollection<Transform>* transformCollection;
+    ComponentCollection<TransformMeta>* transformMetaCollection;        //Only for debug todo: remove reference in release build
     ComponentCollection<BoxCollider>* boxColliderCollection;
     ComponentCollection<ColliderRenderData>* colliderRenderDataCollection;
 

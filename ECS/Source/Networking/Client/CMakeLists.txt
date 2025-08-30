@@ -1,5 +1,17 @@
+if (TARGET CLIENT)
+    if(WIN32)
+        add_compile_definitions(_WIN32_WINNT=0x0A00)
+        set(CMAKE_TOOLCHAIN_FILE "C:/Matthias/Study/VStudio/LibariesCPP/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    elseif(UNIX)
+        if(DEFINED ENV{VCPKG_DEFAULT_TRIPLET} AND NOT DEFINED VCPKG_TARGET_TRIPLET)
+            set(VCPKG_TARGET_TRIPLET "$ENV{VCPKG_DEFAULT_TRIPLET}" CACHE STRING "")
+        endif()
+        include("/home/matthias/Applications/vcpkg/scripts/buildsystems/vcpkg.cmake")
+    endif()
+endif()
+
 cmake_minimum_required(VERSION 3.27)
-project(Client)
+project(Client LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 
